@@ -1,4 +1,4 @@
-module github.com/sogo/soulmate-reg
+module github.com/asejik/soulmate-reg/server
 
 go 1.25.6
 
