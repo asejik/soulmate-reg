@@ -54,6 +54,7 @@ func main() {
 
 	// NEW: Admin Route
 	r.Get("/api/admin/stats", handlers.AdminAuth(handlers.GetDashboardStats))
+	r.Get("/api/admin/participants", handlers.AdminAuth(handlers.GetClanParticipants))
 	// --------------
 
 	// 5. Start Server
