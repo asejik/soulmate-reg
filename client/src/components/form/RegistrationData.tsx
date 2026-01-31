@@ -7,6 +7,14 @@ interface RegistrationDataProps {
 }
 
 export const RegistrationData = ({ onNext, onBack }: RegistrationDataProps) => {
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const data = Object.fromEntries(formData.entries());
+    onNext(data);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -26,51 +34,47 @@ export const RegistrationData = ({ onNext, onBack }: RegistrationDataProps) => {
         <p className="text-slate-400">Please provide accurate information for your cohort placement.</p>
       </div>
 
-      <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); onNext({}); }}>
-        {/* Row 1: Name & Email */}
+      <form className="space-y-6" onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-300">Full Name</label>
-            <input type="text" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-white" placeholder="Enter name" required />
+            <input name="full_name" type="text" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-white" placeholder="Enter name" required />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-300">Email Address</label>
-            <input type="email" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-white" placeholder="email@example.com" required />
+            <input name="email" type="email" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-white" placeholder="email@example.com" required />
           </div>
         </div>
 
-        {/* Row 2: WhatsApp & Gender */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-300">WhatsApp Number</label>
-            <input type="tel" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-white" placeholder="+234..." required />
+            <input name="whatsapp_number" type="tel" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-white" placeholder="+234..." required />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-300">Gender</label>
-            <select className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none text-white">
+            <select name="gender" className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none text-white">
               <option value="male">Male</option>
               <option value="female">Female</option>
             </select>
           </div>
         </div>
 
-        {/* Row 3: Location */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-300">Country</label>
-            <input type="text" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-white" placeholder="Nigeria" required />
+            <input name="country" type="text" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-white" placeholder="Nigeria" required />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-300">Location / State</label>
-            <input type="text" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-white" placeholder="Lagos" required />
+            <input name="state" type="text" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-white" placeholder="Lagos" required />
           </div>
         </div>
 
-        {/* Row 4: Age Group & Religion */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-300">Age Group</label>
-            <select className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none text-white">
+            <select name="age_group" className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none text-white">
               <option value="18-25">18-25</option>
               <option value="26-30">26-30</option>
               <option value="31-35">31-35</option>
@@ -80,7 +84,7 @@ export const RegistrationData = ({ onNext, onBack }: RegistrationDataProps) => {
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-300">Religion</label>
-            <select className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none text-white">
+            <select name="religion" className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none text-white">
               <option value="Christian">Christian</option>
               <option value="Muslim">Muslim</option>
               <option value="Traditional">Traditional Worshiper</option>
@@ -89,22 +93,20 @@ export const RegistrationData = ({ onNext, onBack }: RegistrationDataProps) => {
           </div>
         </div>
 
-        {/* Row 5: Instagram & Church */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-300">Instagram Handle</label>
-            <input type="text" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-white" placeholder="@username" required />
+            <input name="instagram_handle" type="text" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-white" placeholder="@username" required />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-300">Church Name (If Christian)</label>
-            <input type="text" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-white" placeholder="Assembly name" />
+            <input name="church_name" type="text" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-white" placeholder="Assembly name" />
           </div>
         </div>
 
-        {/* Row 6: Relationship Status */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-slate-300">Relationship Status</label>
-          <select className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none text-white">
+          <select name="relationship_status" className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none text-white">
             <option value="single">Single</option>
             <option value="single-parent">Single Mum/Dad</option>
             <option value="divorced">Divorced</option>

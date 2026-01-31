@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/asejik/soulmate-reg/server/db"
+	"github.com/asejik/soulmate-reg/server/services"
 )
 
 // Request Struct (Matches your Frontend Form)
@@ -108,7 +109,16 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 7. Success Response
+	// 7. Send Confirmation Email (Async)
+	// We run this in a goroutine so it doesn't block the API response time
+	go services.SendConfirmationEmail(services.EmailData{
+		Name:         req.FullName,
+		Email:        req.Email,
+		ClanName:     clanName,
+		WhatsAppLink: whatsappLink,
+	})
+
+	// 8. Success Response
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(RegistrationResponse{
 		Success:      true,

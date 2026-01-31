@@ -4,7 +4,7 @@ import { Instagram, CheckCircle2, ArrowRight, ChevronLeft } from 'lucide-react';
 
 interface InstagramLockProps {
   onComplete: () => void;
-  onBack: () => void; // Fix: Explicitly added to interface
+  onBack: () => void;
 }
 
 export const InstagramLock = ({ onComplete, onBack }: InstagramLockProps) => {
@@ -16,7 +16,6 @@ export const InstagramLock = ({ onComplete, onBack }: InstagramLockProps) => {
       animate={{ opacity: 1, scale: 1 }}
       className="max-w-md w-full p-8 glass-card rounded-3xl text-center space-y-6 relative"
     >
-      {/* Fix: Added Back Button */}
       <button
         type="button"
         onClick={onBack}
@@ -34,12 +33,12 @@ export const InstagramLock = ({ onComplete, onBack }: InstagramLockProps) => {
       <div className="space-y-2">
         <h2 className="text-2xl font-bold text-white">Final Step</h2>
         <p className="text-slate-400">
-          To stay updated with daily nuggets and cohort announcements, follow our official handle[cite: 61].
+          To stay updated with daily nuggets and cohort announcements, follow our official handle.
         </p>
       </div>
 
       <div className="p-4 bg-white/5 rounded-2xl border border-white/10 space-y-4">
-        <p className="text-sm text-indigo-300 font-medium">Following is mandated to proceed [cite: 40]</p>
+        <p className="text-sm text-indigo-300 font-medium">Following is mandated to proceed</p>
 
         <a
           href="https://www.instagram.com/readyforasoulmate?igsh=ZXBsNDI2b2hsdGo1"

@@ -62,7 +62,7 @@ export const GatekeeperStep = ({ onValidated, onReject, onBack }: GatekeeperStep
           </div>
         </div>
 
-        {/* Step 2: Feedback Commitment (Only shows after Step 1 is valid) */}
+        {/* Step 2: Feedback Commitment */}
         <AnimatePresence>
           {attendanceAnswered && (
             <motion.div
