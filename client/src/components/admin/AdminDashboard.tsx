@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, RefreshCw, LogOut, Users, ArrowLeft, Mail, Phone, MapPin } from 'lucide-react';
 
@@ -38,7 +38,16 @@ export const AdminDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // 1. Fetch Dashboard Stats
+  // 1. Auto-Login on Mount
+  useEffect(() => {
+    const savedSecret = localStorage.getItem('soulmate_admin_secret');
+    if (savedSecret) {
+      setSecret(savedSecret);
+      fetchStats(savedSecret);
+    }
+  }, []);
+
+  // 2. Fetch Dashboard Stats
   const fetchStats = async (key: string) => {
     setLoading(true);
     setError('');
@@ -50,6 +59,7 @@ export const AdminDashboard = () => {
       if (res.status === 401) {
         setError('Invalid Secret Key');
         setIsAuthenticated(false);
+        localStorage.removeItem('soulmate_admin_secret'); // Clear invalid secret
         return;
       }
       if (!res.ok) throw new Error('Failed to fetch');
@@ -57,6 +67,9 @@ export const AdminDashboard = () => {
       const data = await res.json();
       setStats(data || []);
       setIsAuthenticated(true);
+
+      // Save valid secret for persistence
+      localStorage.setItem('soulmate_admin_secret', key);
     } catch (err) {
       setError('Network Error or Server Offline');
     } finally {
@@ -64,7 +77,7 @@ export const AdminDashboard = () => {
     }
   };
 
-  // 2. Fetch Participants for a Specific Clan
+  // 3. Fetch Participants
   const fetchParticipants = async (clan: ClanStat) => {
     setLoading(true);
     setSelectedClan(clan);
@@ -84,6 +97,14 @@ export const AdminDashboard = () => {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     fetchStats(secret);
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setSecret('');
+    setStats([]);
+    setSelectedClan(null);
+    localStorage.removeItem('soulmate_admin_secret');
   };
 
   // --- VIEW 1: LOGIN SCREEN ---
@@ -121,7 +142,7 @@ export const AdminDashboard = () => {
     );
   }
 
-  // --- VIEW 2: PARTICIPANT TABLE (DRILL DOWN) ---
+  // --- VIEW 2: PARTICIPANT TABLE ---
   if (selectedClan) {
     return (
       <div className="w-full max-w-7xl p-6 space-y-6">
@@ -198,7 +219,7 @@ export const AdminDashboard = () => {
     );
   }
 
-  // --- VIEW 3: CLAN GRID (OVERVIEW) ---
+  // --- VIEW 3: CLAN GRID ---
   return (
     <div className="w-full max-w-6xl p-6 space-y-8">
       <div className="flex items-center justify-between text-white">
@@ -213,7 +234,7 @@ export const AdminDashboard = () => {
             <RefreshCw size={20} className={loading ? "animate-spin" : ""} />
           </button>
           <button
-            onClick={() => { setIsAuthenticated(false); setSecret(''); }}
+            onClick={handleLogout}
             className="p-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors"
           >
             <LogOut size={20} />

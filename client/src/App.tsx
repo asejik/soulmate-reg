@@ -4,26 +4,61 @@ import { GatekeeperStep } from './components/form/GatekeeperStep';
 import { RejectionScreen } from './components/form/RejectionScreen';
 import { RegistrationData } from './components/form/RegistrationData';
 import { InstagramLock } from './components/form/InstagramLock';
-import { AdminDashboard } from './components/admin/AdminDashboard'; // Import New Component
+import { AdminDashboard } from './components/admin/AdminDashboard';
 import { Loader2 } from 'lucide-react';
 
-// Added 'admin' to the Step type
 type AppStep = 'welcome' | 'gatekeeper' | 'registration' | 'social-lock' | 'success' | 'rejected' | 'admin';
 
 function App() {
-  const [step, setStep] = useState<AppStep>('welcome');
-  const [rejectionMessage, setRejectionMessage] = useState<string>('');
-  const [formData, setFormData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [assignedClan, setAssignedClan] = useState<{name: string, link: string} | null>(null);
-
-  // Check URL for ?mode=admin on initial load
-  useEffect(() => {
+  // --- STATE INITIALIZATION WITH PERSISTENCE ---
+  const [step, setStep] = useState<AppStep>(() => {
+    // 1. Check if Admin Mode requested via URL
     const params = new URLSearchParams(window.location.search);
-    if (params.get('mode') === 'admin') {
-      setStep('admin');
+    if (params.get('mode') === 'admin') return 'admin';
+
+    // 2. Otherwise load saved step or default to 'welcome'
+    return (localStorage.getItem('soulmate_step') as AppStep) || 'welcome';
+  });
+
+  const [formData, setFormData] = useState<any>(() => {
+    const saved = localStorage.getItem('soulmate_form_data');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const [assignedClan, setAssignedClan] = useState<{name: string, link: string} | null>(() => {
+    const saved = localStorage.getItem('soulmate_assigned_clan');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const [rejectionMessage, setRejectionMessage] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  // --- PERSISTENCE EFFECT ---
+  // Whenever state changes, save it to localStorage
+  useEffect(() => {
+    if (step === 'admin') return; // Don't persist admin step here (handled in AdminDashboard)
+
+    localStorage.setItem('soulmate_step', step);
+
+    if (formData) {
+      localStorage.setItem('soulmate_form_data', JSON.stringify(formData));
     }
-  }, []);
+
+    if (assignedClan) {
+      localStorage.setItem('soulmate_assigned_clan', JSON.stringify(assignedClan));
+    }
+  }, [step, formData, assignedClan]);
+
+  // --- HANDLERS ---
+
+  const handleStart = () => {
+    // Clear old data when starting fresh
+    localStorage.removeItem('soulmate_form_data');
+    localStorage.removeItem('soulmate_assigned_clan');
+    setFormData(null);
+    setAssignedClan(null);
+    setStep('gatekeeper');
+  };
 
   const handleReject = (message: string) => {
     setRejectionMessage(message);
@@ -32,19 +67,24 @@ function App() {
 
   const handleFinalSubmit = async () => {
     setIsLoading(true);
+
     try {
       const response = await fetch('http://localhost:8080/api/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(formData),
       });
 
       const result = await response.json();
+
       if (result.success) {
-        setAssignedClan({ name: result.clan_name, link: result.whatsapp_link });
+        const clanInfo = { name: result.clan_name, link: result.whatsapp_link };
+        setAssignedClan(clanInfo);
         setStep('success');
       } else {
-        handleReject(result.message || "An error occurred.");
+        handleReject(result.message || "An error occurred during registration.");
       }
     } catch (error) {
       console.error("Registration error:", error);
@@ -62,7 +102,7 @@ function App() {
       {step === 'admin' && <AdminDashboard />}
 
       {step === 'welcome' && (
-        <WelcomeScreen onStart={() => setStep('gatekeeper')} />
+        <WelcomeScreen onStart={handleStart} />
       )}
 
       {step === 'gatekeeper' && (
@@ -95,21 +135,26 @@ function App() {
         </div>
       )}
 
-      {step === 'rejected' && <RejectionScreen message={rejectionMessage} />}
+      {step === 'rejected' && (
+        <RejectionScreen message={rejectionMessage} />
+      )}
 
       {step === 'success' && assignedClan && (
         <div className="max-w-md w-full p-10 glass-card rounded-3xl text-center text-white space-y-6">
           <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto">
              <span className="text-3xl">🎉</span>
           </div>
+
           <div>
             <h2 className="text-3xl font-bold">You're In!</h2>
             <p className="mt-2 text-slate-300">Welcome to the journey.</p>
           </div>
+
           <div className="p-6 bg-white/5 rounded-2xl border border-white/10 space-y-2">
             <p className="text-xs uppercase tracking-widest text-slate-400">Your Assigned Group</p>
             <h3 className="text-xl font-bold text-indigo-300">{assignedClan.name}</h3>
           </div>
+
           <a
             href={assignedClan.link}
             target="_blank"
@@ -118,7 +163,10 @@ function App() {
           >
             Join WhatsApp Clan Now
           </a>
-          <p className="text-xs text-slate-500">A confirmation email has also been sent to you.</p>
+
+          <p className="text-xs text-slate-500">
+            A confirmation email has also been sent to you.
+          </p>
         </div>
       )}
     </main>
