@@ -1,73 +1,128 @@
-# React + TypeScript + Vite
+# Ready for a Soulmate - Registration Portal
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A high-concurrency, full-stack registration system built for the "Ready for a Soulmate" cohort. This application handles user eligibility, complex form data, atomic clan assignment (preventing overbooking), and automated email communication.
 
-Currently, two official plugins are available:
+![Project Status](https://img.shields.io/badge/status-production--ready-green)
+![Tech Stack](https://img.shields.io/badge/stack-Go_React_PostgreSQL-blue)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🚀 Features
 
-## React Compiler
+- **Gatekeeper Logic**: Strict eligibility checks (Gender, Marital Status) before access.
+- **Atomic Clan Assignment**: Database locking ensures groups never exceed 20 members, even under high traffic.
+- **Social Lock**: Mandatory Instagram follow step before final submission.
+- **Smart Emailing**: Asynchronous HTML confirmation emails via Resend.
+- **Admin Dashboard**: Secure "Mission Control" to view live stats and download participant data.
+- **Shadow Database**: Real-time backup of participant data to Google Sheets via Webhook.
+- **State Persistence**: Users don't lose their place in the form if they refresh the page.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## 🛠️ Tech Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### **Backend**
+- **Language**: Go (Golang) 1.25+
+- **Framework**: Chi (Lightweight router)
+- **Database**: PostgreSQL (via Supabase Connection Pooler)
+- **Drivers**: pgx/v5 (High performance)
+- **Email**: Resend Go SDK
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### **Frontend**
+- **Framework**: React (Vite)
+- **Styling**: Tailwind CSS + Framer Motion (Animations)
+- **Icons**: Lucide React
+- **Hosting**: Vercel
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+---
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## ⚙️ Environment Variables
+
+Create a `.env` file in the `server/` directory with the following keys:
+
+```env
+# Database (Supabase Transaction Mode Connection String)
+DATABASE_URL="postgres://postgres:[USER]:[PASSWORD]@[HOST]:6543/postgres?default_query_exec_mode=simple_protocol"
+
+# Admin Security (Password for Dashboard)
+ADMIN_SECRET="YourStrongSecretPassword!"
+
+# Email Service (Resend.com)
+RESEND_API_KEY="re_12345678..."
+
+# Server Port
+PORT=8080
+
+# Google Sheets Backup (Apps Script Webhook URL)
+GOOGLE_SHEETS_WEBHOOK_URL="[https://script.google.com/macros/s/](https://script.google.com/macros/s/)..."
+
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 🏃‍♂️ Local Development Setup
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### **1. Backend Setup**
+
+Navigate to the server directory and start the Go API.
+
+```bash
+cd server
+go mod download
+go run main.go
+
 ```
+
+*The server will start on `http://localhost:8080*`
+
+### **2. Frontend Setup**
+
+Open a new terminal, navigate to the client directory, and start the React app.
+
+```bash
+cd client
+npm install
+npm run dev
+
+```
+
+*The app will be available at `http://localhost:5173*`
+
+---
+
+## 📦 Deployment Guide
+
+### **Backend (Render)**
+
+1. Push code to GitHub.
+2. Create a **Web Service** on [Render](https://render.com).
+3. Connect your repo.
+4. **Root Directory**: `server`
+5. **Build Command**: `go build -o main .`
+6. **Start Command**: `./main`
+7. Add Environment Variables from your `.env` file.
+
+### **Frontend (Vercel)**
+
+1. Push code to GitHub.
+2. Create a **New Project** on [Vercel](https://vercel.com).
+3. **Root Directory**: `client`
+4. **Environment Variables**:
+* `VITE_API_URL`: `https://your-render-backend-url.onrender.com` (No trailing slash)
+
+
+5. Deploy.
+
+---
+
+## 🛡️ Admin Access
+
+To access the Mission Control dashboard:
+
+1. Navigate to your deployed URL.
+2. Append `?mode=admin` to the URL (e.g., `https://yourapp.com/?mode=admin`).
+3. Enter the `ADMIN_SECRET` configured in your environment variables.
+
+---
+
+## 📄 License
+
+This project is proprietary software developed for "Temitope Ayenigba Initiative".
