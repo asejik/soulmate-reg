@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/asejik/soulmate-reg/server/db"
@@ -32,6 +34,22 @@ type RegistrationResponse struct {
 	Message      string `json:"message"`
 	ClanName     string `json:"clan_name,omitempty"`
 	WhatsAppLink string `json:"whatsapp_link,omitempty"`
+}
+
+// NEW: Helper struct for Google Sheets payload
+type GoogleSheetPayload struct {
+	FullName           string `json:"full_name"`
+	Email              string `json:"email"`
+	WhatsAppNumber     string `json:"whatsapp_number"`
+	Gender             string `json:"gender"`
+	Country            string `json:"country"`
+	State              string `json:"state"`
+	AgeGroup           string `json:"age_group"`
+	Religion           string `json:"religion"`
+	ChurchName         string `json:"church_name"`
+	InstagramHandle    string `json:"instagram_handle"`
+	RelationshipStatus string `json:"relationship_status"`
+	ClanName           string `json:"clan_name"`
 }
 
 func RegisterUser(w http.ResponseWriter, r *http.Request) {
@@ -117,6 +135,33 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 		ClanName:     clanName,
 		WhatsAppLink: whatsappLink,
 	})
+
+	// --- NEW: Sync to Google Sheets (Async) ---
+	go func() {
+		webhookURL := os.Getenv("GOOGLE_SHEETS_WEBHOOK_URL")
+		if webhookURL == "" {
+			return
+		}
+
+		payload := GoogleSheetPayload{
+			FullName:           req.FullName,
+			Email:              req.Email,
+			WhatsAppNumber:     req.WhatsAppNumber,
+			Gender:             req.Gender,
+			Country:            req.Country,
+			State:              req.State,
+			AgeGroup:           req.AgeGroup,
+			Religion:           req.Religion,
+			ChurchName:         req.ChurchName,
+			InstagramHandle:    req.InstagramHandle,
+			RelationshipStatus: req.RelationshipStatus,
+			ClanName:           clanName,
+		}
+
+		jsonData, _ := json.Marshal(payload)
+		http.Post(webhookURL, "application/json", bytes.NewBuffer(jsonData))
+	}()
+	// ------------------------------------------
 
 	// 8. Success Response
 	w.Header().Set("Content-Type", "application/json")

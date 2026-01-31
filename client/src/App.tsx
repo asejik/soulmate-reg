@@ -52,12 +52,15 @@ function App() {
   // --- HANDLERS ---
 
   const handleStart = () => {
-    // Clear old data when starting fresh
+    // Completely wipe session
+    localStorage.removeItem('soulmate_step'); // <--- ADD THIS LINE
     localStorage.removeItem('soulmate_form_data');
     localStorage.removeItem('soulmate_assigned_clan');
+
     setFormData(null);
     setAssignedClan(null);
-    setStep('gatekeeper');
+    setRejectionMessage(''); // Clear any error message
+    setStep('welcome'); // Send them to the very beginning
   };
 
   const handleReject = (message: string) => {
@@ -102,7 +105,7 @@ function App() {
       {step === 'admin' && <AdminDashboard />}
 
       {step === 'welcome' && (
-        <WelcomeScreen onStart={handleStart} />
+        <WelcomeScreen onStart={() => setStep('gatekeeper')} />
       )}
 
       {step === 'gatekeeper' && (
@@ -136,7 +139,10 @@ function App() {
       )}
 
       {step === 'rejected' && (
-        <RejectionScreen message={rejectionMessage} />
+        <RejectionScreen
+          message={rejectionMessage}
+          onReset={handleStart} // Reuse the existing handleStart which clears storage!
+        />
       )}
 
       {step === 'success' && assignedClan && (
