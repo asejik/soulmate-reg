@@ -49,6 +49,8 @@ func main() {
 
 	// --- NEW ROUTE ---
 	r.Post("/api/register", handlers.RegisterUser)
+	r.Get("/api/admin/stats", handlers.AdminAuth(handlers.GetDashboardStats))
+
 	// -----------------
 
 	fmt.Printf("Server running on port %s\n", port)
