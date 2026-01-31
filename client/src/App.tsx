@@ -54,7 +54,7 @@ function App() {
 
   const handleStart = () => {
     // Completely wipe session
-    localStorage.removeItem('soulmate_step'); // <--- ADD THIS LINE
+    localStorage.removeItem('soulmate_step');
     localStorage.removeItem('soulmate_form_data');
     localStorage.removeItem('soulmate_assigned_clan');
 
@@ -100,92 +100,99 @@ function App() {
 
   return (
     <main className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden">
-      <div className="bg-mesh" />
-      <div className="bg-beam" />
+      {/* FIX: Added 'pointer-events-none' so clicks pass through these divs.
+         Also added 'fixed inset-0' to make sure they cover the screen without affecting layout.
+      */}
+      <div className="bg-mesh fixed inset-0 pointer-events-none" />
+      <div className="bg-beam fixed inset-0 pointer-events-none" />
 
-      {step === 'admin' && <AdminDashboard />}
+      {/* FIX: Wrapped content in 'relative z-10' to force it ABOVE the background
+      */}
+      <div className="relative z-10 w-full flex flex-col items-center">
 
-      {step === 'welcome' && (
-        <WelcomeScreen onStart={() => setStep('gatekeeper')} />
-      )}
+        {step === 'admin' && <AdminDashboard />}
 
-      {step === 'gatekeeper' && (
-        <GatekeeperStep
-          onValidated={() => setStep('registration')}
-          onReject={handleReject}
-          onBack={() => setStep('welcome')}
-        />
-      )}
+        {step === 'welcome' && (
+          <WelcomeScreen onStart={() => setStep('gatekeeper')} />
+        )}
 
-      {step === 'registration' && (
-        <RegistrationData
-          onNext={(data) => { setFormData(data); setStep('social-lock'); }}
-          onBack={() => setStep('gatekeeper')}
-        />
-      )}
-
-      {step === 'social-lock' && (
-        <div className="relative">
-          {isLoading && (
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm z-50 flex flex-col items-center justify-center rounded-3xl">
-              <Loader2 className="w-10 h-10 text-indigo-500 animate-spin" />
-              <p className="text-white mt-4 font-medium">Assigning your Clan...</p>
-            </div>
-          )}
-          <InstagramLock
-            onComplete={handleFinalSubmit}
-            onBack={() => setStep('registration')}
+        {step === 'gatekeeper' && (
+          <GatekeeperStep
+            onValidated={() => setStep('registration')}
+            onReject={handleReject}
+            onBack={() => setStep('welcome')}
           />
-        </div>
-      )}
+        )}
 
-      {step === 'rejected' && (
-        <RejectionScreen
-          message={rejectionMessage}
-          onReset={handleStart} // Reuse the existing handleStart which clears storage!
-        />
-      )}
+        {step === 'registration' && (
+          <RegistrationData
+            onNext={(data) => { setFormData(data); setStep('social-lock'); }}
+            onBack={() => setStep('gatekeeper')}
+          />
+        )}
 
-      {step === 'success' && assignedClan && (
-        <div className="max-w-md w-full p-10 glass-card rounded-3xl text-center text-white space-y-6">
-          <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto">
-             <span className="text-3xl">🎉</span>
+        {step === 'social-lock' && (
+          <div className="relative w-full max-w-md">
+            {isLoading && (
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm z-50 flex flex-col items-center justify-center rounded-3xl">
+                <Loader2 className="w-10 h-10 text-indigo-500 animate-spin" />
+                <p className="text-white mt-4 font-medium">Assigning your Clan...</p>
+              </div>
+            )}
+            <InstagramLock
+              onComplete={handleFinalSubmit}
+              onBack={() => setStep('registration')}
+            />
           </div>
+        )}
 
-          <div>
-            <h2 className="text-3xl font-bold">You're In!</h2>
-            <p className="mt-2 text-slate-300">Welcome to the journey.</p>
-          </div>
+        {step === 'rejected' && (
+          <RejectionScreen
+            message={rejectionMessage}
+            onReset={handleStart}
+          />
+        )}
 
-          <div className="p-6 bg-white/5 rounded-2xl border border-white/10 space-y-2">
-            <p className="text-xs uppercase tracking-widest text-slate-400">Your Assigned Group</p>
-            <h3 className="text-xl font-bold text-indigo-300">{assignedClan.name}</h3>
-          </div>
+        {step === 'success' && assignedClan && (
+          <div className="max-w-md w-full p-10 glass-card rounded-3xl text-center text-white space-y-6">
+            <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto">
+               <span className="text-3xl">🎉</span>
+            </div>
 
-          <a
-            href={assignedClan.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block w-full py-4 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold rounded-xl transition-all shadow-lg shadow-green-900/20"
-          >
-            Join WhatsApp Clan Now
-          </a>
+            <div>
+              <h2 className="text-3xl font-bold">You're In!</h2>
+              <p className="mt-2 text-slate-300">Welcome to the journey.</p>
+            </div>
 
-          <div className="space-y-4">
-            <p className="text-xs text-slate-500">
-              A confirmation email has also been sent to you.
-            </p>
+            <div className="p-6 bg-white/5 rounded-2xl border border-white/10 space-y-2">
+              <p className="text-xs uppercase tracking-widest text-slate-400">Your Assigned Group</p>
+              <h3 className="text-xl font-bold text-indigo-300">{assignedClan.name}</h3>
+            </div>
 
-            {/* NEW: Return to Home Button */}
-            <button
-              onClick={handleStart}
-              className="text-slate-400 hover:text-white text-sm underline underline-offset-4 transition-colors cursor-pointer"
+            <a
+              href={assignedClan.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full py-4 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold rounded-xl transition-all shadow-lg shadow-green-900/20"
             >
-              Return to Home
-            </button>
+              Join WhatsApp Clan Now
+            </a>
+
+            <div className="space-y-4">
+              <p className="text-xs text-slate-500">
+                A confirmation email has also been sent to you.
+              </p>
+
+              <button
+                onClick={handleStart}
+                className="text-slate-400 hover:text-white text-sm underline underline-offset-4 transition-colors cursor-pointer"
+              >
+                Return to Home
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </main>
   );
 }
