@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/asejik/soulmate-reg/server/db"
-	"github.com/asejik/soulmate-reg/server/handlers" // Import handlers
+	"github.com/asejik/soulmate-reg/server/handlers"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -15,10 +15,12 @@ import (
 )
 
 func main() {
+	// 1. Load .env
 	if err := godotenv.Load("../.env"); err != nil {
 		log.Println("Info: No ../.env file found, assuming system variables are set.")
 	}
 
+	// 2. Connect to Database
 	db.Connect()
 	defer db.Close()
 
@@ -27,17 +29,17 @@ func main() {
 		port = "8080"
 	}
 
+	// 3. Setup Router
 	r := chi.NewRouter()
 
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	// FIX: Permissive CORS for Development
+	// 4. CORS (Permissive for Development)
 	r.Use(cors.Handler(cors.Options{
-		// Allow ALL origins for now to prevent "Network Error"
-		AllowedOrigins:   []string{"*"},
+		AllowedOrigins:   []string{"*"}, // Allow All
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "X-Admin-Secret"}, // Added X-Admin-Secret
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: true,
 		MaxAge:           300,
@@ -47,12 +49,14 @@ func main() {
 		w.Write([]byte("Soulmate Backend is Ready!"))
 	})
 
-	// --- NEW ROUTE ---
+	// --- ROUTES ---
 	r.Post("/api/register", handlers.RegisterUser)
+
+	// NEW: Admin Route
 	r.Get("/api/admin/stats", handlers.AdminAuth(handlers.GetDashboardStats))
+	// --------------
 
-	// -----------------
-
+	// 5. Start Server
 	fmt.Printf("Server running on port %s\n", port)
 	if err := http.ListenAndServe(":"+port, r); err != nil {
 		log.Fatal(err)

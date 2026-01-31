@@ -16,13 +16,13 @@ type ClanStat struct {
 	MaxCapacity  int    `json:"max_capacity"`
 }
 
-// AdminAuth is a simple wrapper to protect routes
+// AdminAuth Middleware: Protects the route
 func AdminAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		secret := r.Header.Get("X-Admin-Secret")
 		expected := os.Getenv("ADMIN_SECRET")
 
-		// If env var is not set, block everything for security
+		// Secure comparison: If env is empty or secret is wrong, deny.
 		if expected == "" || secret != expected {
 			http.Error(w, "Unauthorized Access", http.StatusUnauthorized)
 			return
@@ -31,8 +31,9 @@ func AdminAuth(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+// GetDashboardStats: Fetches the data
 func GetDashboardStats(w http.ResponseWriter, r *http.Request) {
-	// Fetch all clans
+	// Query to get all clan details
 	rows, err := db.Pool.Query(context.Background(), "SELECT id, name, current_count, max_capacity FROM clans ORDER BY id ASC")
 	if err != nil {
 		http.Error(w, "Database query error", http.StatusInternalServerError)
