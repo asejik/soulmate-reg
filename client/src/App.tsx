@@ -6,6 +6,7 @@ import { RegistrationData } from './components/form/RegistrationData';
 import { InstagramLock } from './components/form/InstagramLock';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { Loader2 } from 'lucide-react';
+import { API_BASE_URL } from './config';
 
 type AppStep = 'welcome' | 'gatekeeper' | 'registration' | 'social-lock' | 'success' | 'rejected' | 'admin';
 
@@ -72,7 +73,7 @@ function App() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8080/api/register', {
+      const response = await fetch(`${API_BASE_URL}/api/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -170,9 +171,19 @@ function App() {
             Join WhatsApp Clan Now
           </a>
 
-          <p className="text-xs text-slate-500">
-            A confirmation email has also been sent to you.
-          </p>
+          <div className="space-y-4">
+            <p className="text-xs text-slate-500">
+              A confirmation email has also been sent to you.
+            </p>
+
+            {/* NEW: Return to Home Button */}
+            <button
+              onClick={handleStart}
+              className="text-slate-400 hover:text-white text-sm underline underline-offset-4 transition-colors cursor-pointer"
+            >
+              Return to Home
+            </button>
+          </div>
         </div>
       )}
     </main>

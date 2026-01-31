@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, RefreshCw, LogOut, Users, ArrowLeft, Mail, Phone, MapPin } from 'lucide-react';
+import { API_BASE_URL } from '../../config';
 
 interface ClanStat {
   id: number;
@@ -52,7 +53,7 @@ export const AdminDashboard = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('http://localhost:8080/api/admin/stats', {
+      const res = await fetch(`${API_BASE_URL}/api/admin/stats`, {
         headers: { 'X-Admin-Secret': key }
       });
 
@@ -82,7 +83,7 @@ export const AdminDashboard = () => {
     setLoading(true);
     setSelectedClan(clan);
     try {
-      const res = await fetch(`http://localhost:8080/api/admin/participants?clan_id=${clan.id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/admin/participants?clan_id=${clan.id}`, {
         headers: { 'X-Admin-Secret': secret }
       });
       const data = await res.json();
