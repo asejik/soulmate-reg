@@ -71,7 +71,7 @@ func SendConfirmationEmail(data EmailData) {
 	`, data.Name, data.ClanName, data.WhatsAppLink)
 
 	params := &resend.SendEmailRequest{
-		From:    "Ready for a Soulmate <onboarding@resend.dev>", // NOTE: Change this if you have a custom domain on Resend
+		From:    "Ready for a Soulmate <info@temitopeayenigba.com>", // NOTE: Change this if you have a custom domain on Resend
 		To:      []string{data.Email},
 		Subject: "You’re In! Welcome to Ready for a Soulmate (Cohort 3)",
 		Html:    htmlContent,
