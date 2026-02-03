@@ -51,7 +51,7 @@ func main() {
 
 	// --- ROUTES ---
 	r.Post("/api/register", handlers.RegisterUser)
-	r.Post("/launchpad/register", handlers.RegisterLaunchpad)
+	r.Post("/api/launchpad/register", handlers.RegisterLaunchpad)
 
 	// NEW: Admin Route
 	r.Get("/api/admin/stats", handlers.AdminAuth(handlers.GetDashboardStats))
