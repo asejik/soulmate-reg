@@ -2,11 +2,12 @@ package services
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/resend/resend-go/v2"
 )
+
+// --- SOULMATE (RFASM) STRUCTURES ---
 
 type EmailData struct {
 	Name         string
@@ -15,73 +16,174 @@ type EmailData struct {
 	WhatsAppLink string
 }
 
-func SendConfirmationEmail(data EmailData) {
+// SendConfirmationEmail sends the RFASM confirmation email
+func SendConfirmationEmail(data EmailData) error {
 	apiKey := os.Getenv("RESEND_API_KEY")
 	if apiKey == "" {
-		log.Println("⚠️ RESEND_API_KEY is missing. Skipping email.")
-		return
+		fmt.Println("Error: RESEND_API_KEY is missing")
+		return nil
 	}
 
 	client := resend.NewClient(apiKey)
 
-	// HTML Template using the text from your source document
 	htmlContent := fmt.Sprintf(`
-	<div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-		<div style="text-align: center; padding-bottom: 20px; border-bottom: 1px solid #eee;">
-			<h1 style="color: #4F46E5;">You’re In!</h1>
-			<p>Welcome to Ready for a Soulmate (Cohort 3)</p>
-		</div>
+	<!DOCTYPE html>
+	<html>
+	<head>
+		<style>
+			body { font-family: 'Helvetica', 'Arial', sans-serif; line-height: 1.6; color: #333; }
+			.container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px; }
+			.header { background-color: #4f46e5; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
+			.content { padding: 20px; background-color: #fafafa; }
+			.button { display: inline-block; padding: 10px 20px; background-color: #25D366; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; }
+			.footer { font-size: 12px; text-align: center; color: #888; margin-top: 20px; }
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<div class="header">
+				<h1>You're In!</h1>
+				<p>Welcome to Ready for a Soulmate (Cohort 3)</p>
+			</div>
+			<div class="content">
+				<p>Dear <strong>%s</strong>,</p>
+				<p>Congratulations! Your registration for the upcoming Ready for a Soulmate cohort is officially confirmed.</p>
+				<p>We are thrilled to have you join this journey. This isn't just another meeting; it is a consecrated time for those who are ready to be positioned, refined, and settled by God's word.</p>
 
-		<div style="padding: 20px 0;">
-			<p>Dear <strong>%s</strong>,</p>
-
-			<p>Congratulations! Your registration for the upcoming <strong>Ready for a Soulmate</strong> cohort is officially confirmed.</p>
-
-			<p>We are thrilled to have you join this journey. This isn’t just another meeting; it is a consecrated time for those who are ready to be positioned, refined, and settled by God’s word.</p>
-
-			<div style="background-color: #F3F4F6; padding: 15px; border-radius: 8px; margin: 20px 0;">
-				<h3 style="margin-top: 0; color: #4338ca;">1. Your Clan Assignment</h3>
+				<h3>1. Your Clan Assignment</h3>
 				<p>You have been successfully assigned to: <strong>%s</strong></p>
 				<p>This is your primary community for the duration of this cohort.</p>
-				<p><a href="%s" style="background-color: #25D366; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">Join WhatsApp Group</a></p>
-				<p style="font-size: 12px; color: #666;">Clan Conduct: Please stay active, stay prayerful, and honor and obey the administrators on your Clan page.</p>
+				<p><a href="%s" class="button">Join WhatsApp Group</a></p>
+				<p><strong>Clan Conduct:</strong> Please stay active, stay prayerful, and honor and obey the administrators on your Clan page.</p>
+
+				<h3>2. The Feedback Commitment</h3>
+				<p>As you agreed during registration, your participation is tied to your feedback. This helps us document the wonders of God and improve the experience for future brothers and sisters.</p>
+
+				<h3>3. Preparation Checklist</h3>
+				<ul>
+					<li>Follow us on Instagram: <strong>@readyforasoulmate</strong></li>
+					<li>Heart Check: Come with a heart of thanksgiving and a notebook.</li>
+					<li>Privacy: Ensure you are in a quiet, distraction-free environment for our scheduled classes.</li>
+				</ul>
+
+				<p><em>"He makes all things beautiful in His time." You are not here by accident. Trust the process, abide in the Word, and expect your testimony.</em></p>
 			</div>
-
-			<h3>2. The Feedback Commitment</h3>
-			<p>As you agreed during registration, your participation is tied to your feedback. This helps us document the wonders of God and improve the experience for future brothers and sisters.</p>
-
-			<h3>3. Preparation Checklist</h3>
-			<ul>
-				<li><strong>Follow us on Instagram:</strong> <a href="https://instagram.com/readyforasoulmate">@readyforasoulmate</a></li>
-				<li><strong>Heart Check:</strong> Come with a heart of thanksgiving and a notebook.</li>
-				<li><strong>Privacy:</strong> Ensure you are in a quiet, distraction-free environment for our scheduled classes.</li>
-			</ul>
-
-			<div style="border-left: 4px solid #4F46E5; padding-left: 15px; font-style: italic; color: #555;">
-				"He makes all things beautiful in His time." You are not here by accident. Trust the process, abide in the Word, and expect your testimony.
+			<div class="footer">
+				<p>© 2026 Temitope Ayenigba Initiative</p>
 			</div>
 		</div>
-
-		<div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 14px; color: #888;">
-			With Love,<br>
-			<strong>Mrs Temitope Ayenigba</strong><br>
-			Ready for a Soulmate
-		</div>
-	</div>
+	</body>
+	</html>
 	`, data.Name, data.ClanName, data.WhatsAppLink)
 
 	params := &resend.SendEmailRequest{
-		From:    "Ready for a Soulmate <info@temitopeayenigba.com>", // NOTE: Change this if you have a custom domain on Resend
+		From:    "Ready for a Soulmate <admin@temitopeayenigba.com>",
 		To:      []string{data.Email},
-		Subject: "You’re In! Welcome to Ready for a Soulmate (Cohort 3)",
+		Subject: "Welcome to Ready for a Soulmate (Cohort 3)",
 		Html:    htmlContent,
 	}
 
-	_, err := client.Emails.Send(params)
+	sent, err := client.Emails.Send(params)
 	if err != nil {
-		log.Printf("❌ Failed to send email to %s: %v", data.Email, err)
-		return
+		fmt.Println("Error sending email:", err)
+		return err
 	}
 
-	log.Printf("📧 Email sent successfully to %s", data.Email)
+	fmt.Println("Email sent successfully:", sent.Id)
+	return nil
+}
+
+// --- LAUNCHPAD (COUPLES) STRUCTURES ---
+
+type LaunchpadEmailData struct {
+	Name         string
+	Email        string
+	WhatsAppLink string
+	TelegramLink string
+}
+
+// SendLaunchpadEmail sends the Couples' Launchpad specific email
+func SendLaunchpadEmail(data LaunchpadEmailData) error {
+	apiKey := os.Getenv("RESEND_API_KEY")
+	if apiKey == "" {
+		fmt.Println("Error: RESEND_API_KEY is missing")
+		return nil
+	}
+
+	client := resend.NewClient(apiKey)
+
+	htmlContent := fmt.Sprintf(`
+	<!DOCTYPE html>
+	<html>
+	<head>
+		<style>
+			body { font-family: 'Helvetica', 'Arial', sans-serif; line-height: 1.6; color: #333; }
+			.container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px; }
+			.header { background-color: #ec4899; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
+			.content { padding: 20px; background-color: #fafafa; }
+			.button { display: inline-block; padding: 12px 24px; background-color: #25D366; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 10px 0; }
+			.button-tg { background-color: #0088cc; }
+			.footer { font-size: 12px; text-align: center; color: #888; margin-top: 20px; }
+			.highlight { background-color: #fce7f3; padding: 15px; border-left: 4px solid #ec4899; margin: 15px 0; }
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<div class="header">
+				<h1>You're In! 🚀</h1>
+				<p>Couples' Launchpad 5.0</p>
+			</div>
+			<div class="content">
+				<p>Dear <strong>%s</strong>,</p>
+
+				<p>Congratulations! Your registration for <strong>Couples' Launchpad 5.0</strong> is officially confirmed.</p>
+
+				<p>We are thrilled to journey with you and your partner. This is a consecrated time specifically for couples preparing to build a solid foundation.</p>
+
+				<div class="highlight">
+					<h3>📅 Important Schedule</h3>
+					<p>Remember your commitment to attend classes on:</p>
+					<p><strong>Tuesdays & Thursdays @ 8:00 PM</strong></p>
+				</div>
+
+				<h3>🚀 Next Steps (Compulsory)</h3>
+				<p>To receive meeting details, instructions, and prayer updates, you must join BOTH groups below:</p>
+
+				<p>
+					<a href="%s" class="button">1. Join WhatsApp Group (Conversations)</a>
+				</p>
+				<p>
+					<a href="%s" class="button button-tg">2. Join Telegram Group (Prayers)</a>
+				</p>
+
+				<hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
+				<h3>💡 The Feedback Commitment</h3>
+				<p>As you agreed during registration, your participation is tied to your feedback. This helps us document the wonders of God and improve the experience for future couples.</p>
+
+				<p><em>"He makes all things beautiful in His time." Trust the process.</em></p>
+			</div>
+			<div class="footer">
+				<p>© 2026 Temitope Ayenigba Initiative</p>
+			</div>
+		</div>
+	</body>
+	</html>
+	`, data.Name, data.WhatsAppLink, data.TelegramLink)
+
+	params := &resend.SendEmailRequest{
+		From:    "Couples' Launchpad <admin@temitopeayenigba.com>",
+		To:      []string{data.Email},
+		Subject: "Welcome to Couples' Launchpad 5.0! 🚀",
+		Html:    htmlContent,
+	}
+
+	sent, err := client.Emails.Send(params)
+	if err != nil {
+		fmt.Println("Error sending email:", err)
+		return err
+	}
+
+	fmt.Println("Launchpad Email sent successfully:", sent.Id)
+	return nil
 }

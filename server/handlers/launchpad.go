@@ -66,14 +66,31 @@ func RegisterLaunchpad(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 3. Send Email (Async)
+	// --- NEW: 3. Backup to Google Sheets (Async) ---
+    go services.SendToLaunchpadSheet(services.SheetPayload{
+        FullName:          req.FullName,
+        Gender:            req.Gender,
+        Email:             req.Email,
+        WhatsAppNumber:    req.WhatsAppNumber,
+        CountryCity:       req.CountryCity,
+        Religion:          req.Religion,
+        Denomination:      req.Denomination,
+        InstagramHandle:   req.InstagramHandle,
+        WeddingDate:       req.WeddingDate,
+        PartnerRegistered: req.PartnerRegistered,
+        SpouseName:        req.SpouseName,
+        SpouseWhatsApp:    req.SpouseWhatsApp,
+        ReferralSource:    req.ReferralSource,
+    })
+
+	// 4. Send Email (Async)
 	// We reuse the existing email service but arguably should make a specific template later.
 	// For now, we send a generic confirmation.
-	go services.SendConfirmationEmail(services.EmailData{
+	go services.SendLaunchpadEmail(services.LaunchpadEmailData{
 		Name:         req.FullName,
 		Email:        req.Email,
-		ClanName:     "Couples' Launchpad 5.0",
 		WhatsAppLink: "https://chat.whatsapp.com/JpuFSjuo8lBHRSUtDtDwsT?mode=gi_t",
+		TelegramLink: "https://t.me/+Ybj-HVY5KLw5MzY0",
 	})
 
 	// 4. Success Response
