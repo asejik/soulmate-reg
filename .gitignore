@@ -4,6 +4,7 @@ vendor/
 
 # Environment Variables (Critical Security)
 .env
+.env.local
 .env.*
 !.env.example
 
