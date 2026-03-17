@@ -4,6 +4,7 @@ import { SoulmateApp } from './pages/SoulmateApp';
 import { LaunchpadApp } from './pages/LaunchpadApp';
 import { LoginPage } from './pages/auth/LoginPage';
 import { ProtectedRoute } from './components/shared/ProtectedRoute';
+import { DashboardLayout } from './components/shared/DashboardLayout';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
 
 export default function App() {
@@ -16,10 +17,12 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
 
       {/* --- PROTECTED LMS ROUTES --- */}
-      {/* Any route inside this wrapper requires a valid Supabase session */}
       <Route element={<ProtectedRoute />}>
-        <Route path="/dashboard" element={<DashboardPage />} />
-        {/* Future routes like /dashboard/lessons/:id will go here */}
+        {/* The Layout wraps all dashboard pages */}
+        <Route element={<DashboardLayout />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          {/* We will add /dashboard/lessons/:id here later */}
+        </Route>
       </Route>
     </Routes>
   );
