@@ -1,18 +1,26 @@
-import { Routes, Route, BrowserRouter } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { LandingPage } from './pages/LandingPage';
 import { SoulmateApp } from './pages/SoulmateApp';
 import { LaunchpadApp } from './pages/LaunchpadApp';
+import { LoginPage } from './pages/auth/LoginPage';
+import { ProtectedRoute } from './components/shared/ProtectedRoute';
+import { DashboardPage } from './pages/dashboard/DashboardPage';
 
-function App() {
+export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/soulmate" element={<SoulmateApp />} />
-        <Route path="/launchpad" element={<LaunchpadApp />} />
-      </Routes>
-    </BrowserRouter>
+    <Routes>
+      {/* --- PUBLIC ROUTES --- */}
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/soulmate" element={<SoulmateApp />} />
+      <Route path="/launchpad" element={<LaunchpadApp />} />
+      <Route path="/login" element={<LoginPage />} />
+
+      {/* --- PROTECTED LMS ROUTES --- */}
+      {/* Any route inside this wrapper requires a valid Supabase session */}
+      <Route element={<ProtectedRoute />}>
+        <Route path="/dashboard" element={<DashboardPage />} />
+        {/* Future routes like /dashboard/lessons/:id will go here */}
+      </Route>
+    </Routes>
   );
 }
-
-export default App;
