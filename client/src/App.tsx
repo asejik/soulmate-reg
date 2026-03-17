@@ -6,6 +6,8 @@ import { LoginPage } from './pages/auth/LoginPage';
 import { ProtectedRoute } from './components/shared/ProtectedRoute';
 import { DashboardLayout } from './components/shared/DashboardLayout';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
+// NEW IMPORT
+import { LessonPage } from './pages/dashboard/LessonPage';
 
 export default function App() {
   return (
@@ -18,10 +20,10 @@ export default function App() {
 
       {/* --- PROTECTED LMS ROUTES --- */}
       <Route element={<ProtectedRoute />}>
-        {/* The Layout wraps all dashboard pages */}
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
-          {/* We will add /dashboard/lessons/:id here later */}
+          {/* NEW ROUTE */}
+          <Route path="/dashboard/lessons/:id" element={<LessonPage />} />
         </Route>
       </Route>
     </Routes>
