@@ -1,119 +1,156 @@
-import { motion, type Variants } from 'framer-motion';
-import { PlayCircle, CheckCircle, BookOpen, Clock } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import type { Variants } from 'framer-motion';
+import { PlayCircle, BookOpen, Clock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { fetchLMS } from '../../lib/api';
 
-// Mock Data (To be replaced by Go Backend API later)
-const mockUser = { name: "Sogo" };
-const mockCohort = { name: "Couples' Launchpad 5.0", totalLessons: 12, completedLessons: 2 };
-const progressPercentage = Math.round((mockCohort.completedLessons / mockCohort.totalLessons) * 100);
-
-// Framer Motion animation variants for staggered reveals
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.1 } }
-};
-
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
-};
+// We define the shape of the data Go is sending us
+interface DashboardData {
+  user_id: string;
+  cohort: {
+    name: string;
+    total_lessons: number;
+    completed_lessons: number;
+  };
+  next_lesson: {
+    id: string;
+    title: string;
+    estimated_time: string;
+  };
+}
 
 export const DashboardPage = () => {
+  const navigate = useNavigate();
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    // Call our Go backend the moment the dashboard loads
+    fetchLMS('/lms/dashboard')
+      .then((responseData) => {
+        setData(responseData);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setError('Failed to load dashboard data. Your session may have expired.');
+        setIsLoading(false);
+      });
+  }, []);
+
+  // Show a loading state while fetching from Go
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="w-8 h-8 border-4 border-pink-500/30 border-t-pink-500 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Show an error state if the backend rejects the token or fails
+  if (error || !data) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
+        <div className="text-red-400 text-center">{error}</div>
+        <button
+          onClick={() => navigate('/login')}
+          className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition"
+        >
+          Return to Login
+        </button>
+      </div>
+    );
+  }
+
+  // Framer Motion animation variants
+  const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+  };
+
+  const itemVariants: Variants = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+  };
+
+  // Calculate percentage for the progress bar
+  const progressPercentage = Math.round((data.cohort.completed_lessons / data.cohort.total_lessons) * 100);
+
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-12">
-
-      {/* --- HEADER SECTION --- */}
-      <motion.header variants={itemVariants} className="space-y-4">
-        <div className="inline-block px-4 py-1.5 bg-white/5 border border-white/10 rounded-full text-xs font-semibold text-pink-300 tracking-wide uppercase mb-2">
-          {mockCohort.name}
-        </div>
-        <h1 className="font-heading text-4xl md:text-5xl font-bold text-white tracking-tight">
-          Welcome back, {mockUser.name}.
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+      className="max-w-5xl mx-auto space-y-8 pb-20"
+    >
+      {/* --- Header Section --- */}
+      <motion.div variants={itemVariants} className="space-y-2">
+        <h1 className="font-heading text-3xl md:text-4xl font-bold text-white tracking-tight">
+          Welcome back
         </h1>
-        <p className="text-lg text-slate-400 font-light max-w-2xl">
-          Pick up exactly where you left off. Consistency is the foundation of transformation.
+        <p className="text-slate-400 font-light">
+          {data.cohort.name} • {data.cohort.completed_lessons} of {data.cohort.total_lessons} modules completed
         </p>
-      </motion.header>
+      </motion.div>
 
-      {/* --- MAIN DASHBOARD GRID --- */}
-      <div className="grid md:grid-cols-12 gap-8">
+      {/* --- Progress Overview Card --- */}
+      <motion.div variants={itemVariants} className="bg-[#13132b] border border-white/5 rounded-3xl p-8 space-y-6 shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-8 opacity-5">
+          <BookOpen size={120} />
+        </div>
 
-        {/* Left Column: Active Journey (Takes up 8 columns on desktop) */}
-        <motion.div variants={itemVariants} className="md:col-span-8 space-y-6">
-          <h2 className="font-heading text-2xl font-semibold text-white">Your Journey</h2>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-4 flex-1">
+            <div className="flex items-center justify-between text-sm font-medium">
+              <span className="text-white">Overall Progress</span>
+              <span className="text-pink-400">{progressPercentage}%</span>
+            </div>
+            <div className="h-3 bg-black/50 rounded-full overflow-hidden border border-white/5">
+              <div
+                className="h-full bg-gradient-to-r from-pink-600 to-pink-400 rounded-full transition-all duration-1000 ease-out"
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      </motion.div>
 
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-8 opacity-10 text-white">
-              <BookOpen size={120} />
+      {/* --- Up Next Card --- */}
+      <motion.div variants={itemVariants} className="space-y-4">
+        <h2 className="text-xl font-bold text-white">Up Next For You</h2>
+
+        <div
+          className="group bg-gradient-to-r from-[#1a1a3a] to-[#13132b] border border-pink-500/20 hover:border-pink-500/50 rounded-2xl p-6 transition-all duration-300 hover:shadow-[0_0_30px_-10px_rgba(236,72,153,0.3)] cursor-pointer"
+          // This routes to the dynamic lesson ID provided by Go
+          onClick={() => navigate(`/dashboard/lessons/${data.next_lesson.id}`)}
+        >
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+
+            <div className="w-16 h-16 rounded-2xl bg-pink-500/20 text-pink-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+              <PlayCircle size={32} />
             </div>
 
-            <div className="relative z-10 space-y-8">
-              <div>
-                <p className="text-pink-400 text-sm font-bold mb-2">UP NEXT</p>
-                <h3 className="text-3xl font-heading font-bold text-white">Module 3: The Power of Vision</h3>
-                <p className="text-slate-400 mt-2 text-sm flex items-center gap-2">
-                  <Clock size={14} /> Est. time: 45 mins
-                </p>
+            <div className="flex-1 space-y-2">
+              <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-pink-400">
+                <Clock size={14} /> {data.next_lesson.estimated_time}
               </div>
+              <h3 className="text-xl font-bold text-white group-hover:text-pink-300 transition-colors">
+                {data.next_lesson.title}
+              </h3>
+            </div>
 
-              {/* Progress Bar UI */}
-              <div className="space-y-3">
-                <div className="flex justify-between text-sm font-medium">
-                  <span className="text-slate-300">Overall Progress</span>
-                  <span className="text-white">{progressPercentage}%</span>
-                </div>
-                <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${progressPercentage}%` }}
-                    transition={{ duration: 1, ease: "easeOut" }}
-                    className="h-full bg-gradient-to-r from-pink-600 to-pink-400 rounded-full"
-                  />
-                </div>
-                <p className="text-xs text-slate-500">
-                  {mockCohort.completedLessons} of {mockCohort.totalLessons} modules completed
-                </p>
-              </div>
-
-              <button className="flex items-center gap-3 bg-white text-black px-8 py-4 rounded-xl font-bold hover:bg-pink-50 hover:text-pink-600 transition-all shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)]">
-                <PlayCircle size={20} />
-                Resume Learning
+            <div className="w-full md:w-auto mt-4 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-white/10">
+              <button className="w-full md:w-auto px-6 py-3 bg-white text-black font-bold rounded-xl hover:bg-slate-200 transition-colors">
+                Start Learning
               </button>
             </div>
+
           </div>
-        </motion.div>
+        </div>
+      </motion.div>
 
-        {/* Right Column: Expectations & Info (Takes up 4 columns on desktop) */}
-        <motion.div variants={itemVariants} className="md:col-span-4 space-y-6">
-          <h2 className="font-heading text-2xl font-semibold text-white">Guidelines</h2>
-
-          <div className="bg-[#13132b] border border-white/5 rounded-3xl p-6 space-y-6">
-            <div className="flex items-start gap-4">
-              <div className="bg-pink-500/10 p-2 rounded-lg text-pink-400 mt-1">
-                <PlayCircle size={18} />
-              </div>
-              <div>
-                <h4 className="font-bold text-white text-sm">80% Watch Requirement</h4>
-                <p className="text-xs text-slate-400 mt-1 leading-relaxed">You must watch at least 80% of a lesson video to unlock the assignment step. Skipping is disabled.</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-4">
-              <div className="bg-indigo-500/10 p-2 rounded-lg text-indigo-400 mt-1">
-                <CheckCircle size={18} />
-              </div>
-              <div>
-                <h4 className="font-bold text-white text-sm">Mandatory Assignments</h4>
-                <p className="text-xs text-slate-400 mt-1 leading-relaxed">Even if submitted on the WhatsApp community, a copy must be uploaded here to unlock the next module.</p>
-              </div>
-            </div>
-
-            <div className="p-4 bg-white/5 rounded-xl border border-white/5 italic text-xs text-slate-300">
-              "Trust the process, abide in the Word, and expect your testimony."
-            </div>
-          </div>
-        </motion.div>
-
-      </div>
     </motion.div>
   );
 };

@@ -53,10 +53,18 @@ func main() {
 	r.Post("/api/register", handlers.RegisterUser)
 	r.Post("/api/launchpad/register", handlers.RegisterLaunchpad)
 
-	// NEW: Admin Route
+	// Admin Routes
 	r.Get("/api/admin/stats", handlers.AdminAuth(handlers.GetDashboardStats))
 	r.Get("/api/admin/participants", handlers.AdminAuth(handlers.GetClanParticipants))
-	// --------------
+
+	// NEW: Protected LMS Routes
+	r.Group(func(r chi.Router) {
+		// Anything inside this group strictly requires a valid Supabase Auth Token
+		r.Use(handlers.LMSAuth)
+
+		r.Get("/api/lms/dashboard", handlers.GetDashboard)
+		r.Get("/api/lms/lessons/{id}", handlers.GetLesson)
+	})
 
 	// 5. Start Server
 	fmt.Printf("Server running on port %s\n", port)

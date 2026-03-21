@@ -1,22 +1,77 @@
 // client/src/pages/dashboard/LessonPage.tsx
 
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play, Pause, CheckCircle, ArrowLeft,
   Link as LinkIcon, FileText, RotateCcw
 } from 'lucide-react';
 import { useYouTubePlayer } from '../../hooks/useYouTubePlayer';
+import { fetchLMS } from '../../lib/api';
 
-const mockLesson = {
-  title:            "Module 3: The Power of Vision",
-  description:      "In this session, we explore how a unified vision accelerates your preparation for a God-centered marriage.",
-  videoId:          "LXb3EKWsInQ",
-  assignmentPrompt: "Submit the link to your 2-minute video reflection, or write a 300-word summary of your key takeaways."
+// 1. Define the shape of data coming from Go
+interface LessonData {
+  id: string;
+  title: string;
+  description: string;
+  videoId: string; // Updated from videoUrl to match your new architecture
+  assignmentPrompt: string;
+}
+
+// 2. The Fetching Wrapper
+export const LessonPage = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+
+  const [lesson, setLesson] = useState<LessonData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!id) return;
+
+    fetchLMS(`/lms/lessons/${id}`)
+      .then((data) => {
+        setLesson(data);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setError('Failed to load lesson data. Your session may have expired.');
+        setIsLoading(false);
+      });
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="w-8 h-8 border-4 border-pink-500/30 border-t-pink-500 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (error || !lesson) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
+        <div className="text-red-400 text-center">{error}</div>
+        <button
+          onClick={() => navigate('/dashboard')}
+          className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition"
+        >
+          Back to Dashboard
+        </button>
+      </div>
+    );
+  }
+
+  // Once data is loaded, render the actual content and fire the YouTube hook
+  return <LessonContent lesson={lesson} />;
 };
 
-export const LessonPage = () => {
+
+// 3. Your Exact Layout & Logic
+const LessonContent = ({ lesson }: { lesson: LessonData }) => {
   const navigate = useNavigate();
 
   const [isUnlocked,      setIsUnlocked]      = useState(false);
@@ -27,11 +82,11 @@ export const LessonPage = () => {
   const {
     containerRef,
     isPlaying,
-    isEnded,      // NEW: true when video is at 98%+ and paused
+    isEnded,      // true when video is at 98%+ and paused
     togglePlay,
     progress,
   } = useYouTubePlayer({
-    videoId:          mockLesson.videoId,
+    videoId:          lesson.videoId, // Passing dynamic data to your hook
     onProgressChange: (pct) => { if (pct >= 80) setIsUnlocked(true); },
     onComplete:       ()    => setIsUnlocked(true),
   });
@@ -62,10 +117,10 @@ export const LessonPage = () => {
       {/* Lesson Header */}
       <div className="space-y-2">
         <h1 className="font-heading text-3xl md:text-4xl font-bold text-white tracking-tight">
-          {mockLesson.title}
+          {lesson.title}
         </h1>
         <p className="text-slate-400 font-light leading-relaxed">
-          {mockLesson.description}
+          {lesson.description}
         </p>
       </div>
 
@@ -170,7 +225,7 @@ export const LessonPage = () => {
                 Lesson Assignment
               </h2>
               <p className="text-slate-400 text-sm leading-relaxed max-w-2xl">
-                {mockLesson.assignmentPrompt}
+                {lesson.assignmentPrompt}
               </p>
             </div>
 
