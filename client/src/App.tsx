@@ -8,6 +8,7 @@ import { DashboardLayout } from './components/shared/DashboardLayout';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
 // NEW IMPORT
 import { LessonPage } from './pages/dashboard/LessonPage';
+import ClaimAccountPage from './pages/ClaimAccountPage';
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
       <Route path="/soulmate" element={<SoulmateApp />} />
       <Route path="/launchpad" element={<LaunchpadApp />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<ClaimAccountPage />} />
 
       {/* --- PROTECTED LMS ROUTES --- */}
       <Route element={<ProtectedRoute />}>

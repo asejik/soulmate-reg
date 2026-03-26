@@ -8,7 +8,7 @@ import {
   Link as LinkIcon, FileText, RotateCcw
 } from 'lucide-react';
 import { useYouTubePlayer } from '../../hooks/useYouTubePlayer';
-import { fetchLMS } from '../../lib/api';
+import { fetchLMS, postLMS } from '../../lib/api';
 
 // 1. Define the shape of data coming from Go
 interface LessonData {
@@ -91,13 +91,25 @@ const LessonContent = ({ lesson }: { lesson: LessonData }) => {
     onComplete:       ()    => setIsUnlocked(true),
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
+
+    try {
+      // Send the data to our new Go endpoint!
+      await postLMS(`/lms/lessons/${lesson.id}/submit`, {
+        submissionType: submissionType,
+        content: submissionValue
+      });
+
+      // If successful, navigate back to the dashboard
       navigate('/dashboard');
-    }, 1500);
+    } catch (err) {
+      console.error("Submission error:", err);
+      // Fallback UI alert just in case the network fails
+      alert("Failed to submit assignment. Please check your connection and try again.");
+      setIsSubmitting(false);
+    }
   };
 
   return (

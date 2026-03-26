@@ -52,6 +52,7 @@ func main() {
 	// --- ROUTES ---
 	r.Post("/api/register", handlers.RegisterUser)
 	r.Post("/api/launchpad/register", handlers.RegisterLaunchpad)
+	r.Post("/api/auth/claim", handlers.ClaimAccount)
 
 	// Admin Routes
 	r.Get("/api/admin/stats", handlers.AdminAuth(handlers.GetDashboardStats))
@@ -64,6 +65,8 @@ func main() {
 
 		r.Get("/api/lms/dashboard", handlers.GetDashboard)
 		r.Get("/api/lms/lessons/{id}", handlers.GetLesson)
+		r.Post("/api/lms/lessons/{id}/submit", handlers.SubmitAssignment)
+		r.Get("/api/lms/certificate", handlers.GenerateCertificate)
 	})
 
 	// 5. Start Server
