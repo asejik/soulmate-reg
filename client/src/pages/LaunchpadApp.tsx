@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { LaunchpadWelcome } from '../components/launchpad/LaunchpadWelcome';
 import { LaunchpadWizard } from '../components/launchpad/LaunchpadWizard';
-import { RejectionScreen } from '../components/form/RejectionScreen'; // Reuse existing
+import { RejectionScreen } from '../components/form/RejectionScreen';
 import { API_BASE_URL } from '../config';
+import { Link } from 'react-router-dom';
+import { LogIn } from 'lucide-react';
 
 export const LaunchpadApp = () => {
   const [view, setView] = useState<'welcome' | 'form' | 'success' | 'rejected'>('welcome');
@@ -34,6 +36,17 @@ export const LaunchpadApp = () => {
     <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden">
       <div className="bg-mesh fixed inset-0 pointer-events-none" />
       <div className="bg-beam fixed inset-0 pointer-events-none" />
+
+      {/* Floating Login Button (FIXED to the screen) */}
+      <div className="fixed top-6 right-6 md:top-8 md:right-8 z-50">
+        <Link
+          to="/login"
+          className="flex items-center gap-2 px-5 py-2.5 bg-black/20 hover:bg-black/40 border border-white/10 rounded-full text-sm font-bold text-slate-300 hover:text-white transition-all backdrop-blur-md shadow-[0_0_30px_-10px_rgba(236,72,153,0.3)]"
+        >
+          <LogIn size={16} className="text-pink-400" />
+          <span>Participant Login</span>
+        </Link>
+      </div>
 
       <div className="relative z-10 w-full flex justify-center">
         {view === 'welcome' && <LaunchpadWelcome onStart={() => setView('form')} />}

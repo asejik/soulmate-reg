@@ -61,62 +61,132 @@ func LMSAuth(next http.Handler) http.Handler {
 	})
 }
 
+// --- Structs for the Curriculum List ---
+type DashLesson struct {
+	ID            string `json:"id"`
+	Title         string `json:"title"`
+	EstimatedTime string `json:"estimated_time"`
+	IsCompleted   bool   `json:"is_completed"`
+}
+
+type DashModule struct {
+	ID      string       `json:"id"`
+	Title   string       `json:"title"`
+	Lessons []DashLesson `json:"lessons"`
+}
+
 // GetDashboard Handler
 func GetDashboard(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(userIDKey).(string)
 
-	// 1. Fetch the Cohort Name
-	var cohortName string
-	err := db.Pool.QueryRow(r.Context(), `SELECT title FROM public.modules WHERE id = '11111111-1111-1111-1111-111111111111'`).Scan(&cohortName)
-	if err != nil {
-		http.Error(w, "Failed to load cohort data", http.StatusInternalServerError)
-		return
-	}
-
-	// 2. NEW: Dynamically count how many lessons this specific user has completed
-	var completedLessons int
-	err = db.Pool.QueryRow(r.Context(), `
-		SELECT COUNT(*)
-		FROM public.lesson_progress
-		WHERE user_id = $1 AND is_completed = true
-	`, userID).Scan(&completedLessons)
+	// 1. Determine User's Program
+	var programName string
+	err := db.Pool.QueryRow(r.Context(), `
+		SELECT CASE
+			WHEN cl.email IS NOT NULL THEN 'launchpad'
+			WHEN p.email IS NOT NULL THEN 'Ready for a Soulmate'
+			ELSE 'launchpad'
+		END
+		FROM auth.users au
+		LEFT JOIN public.couples_launchpad cl ON au.email = cl.email
+		LEFT JOIN public.participants p ON au.email = p.email
+		WHERE au.id = $1 LIMIT 1
+	`, userID).Scan(&programName)
 
 	if err != nil {
-		completedLessons = 0 // If they haven't completed any, default to 0
+		programName = "launchpad"
 	}
 
-	// 3. NEW: Dynamically count the total lessons in this module
+	displayCohortName := programName
+	if programName == "launchpad" {
+		displayCohortName = "Couples' Launchpad 5.0"
+	}
+
+	// 2. Count Total Lessons
 	var totalLessons int
-	err = db.Pool.QueryRow(r.Context(), `
-		SELECT COUNT(*)
-		FROM public.lessons
-		WHERE module_id = '11111111-1111-1111-1111-111111111111'
-	`).Scan(&totalLessons)
+	db.Pool.QueryRow(r.Context(), `
+		SELECT COUNT(l.id) FROM public.lessons l
+		JOIN public.modules m ON l.module_id = m.id WHERE m.program_name = $1
+	`, programName).Scan(&totalLessons)
+	if totalLessons == 0 { totalLessons = 1 }
 
-	if err != nil || totalLessons == 0 {
-		totalLessons = 1 // Prevent divide-by-zero errors in the frontend
-	}
+	// 3. Count Completed Lessons
+	var completedLessons int
+	db.Pool.QueryRow(r.Context(), `
+		SELECT COUNT(lp.lesson_id) FROM public.lesson_progress lp
+		JOIN public.lessons l ON lp.lesson_id = l.id
+		JOIN public.modules m ON l.module_id = m.id
+		WHERE lp.user_id = $1 AND lp.is_completed = true AND m.program_name = $2
+	`, userID, programName).Scan(&completedLessons)
 
-	// 4. Fetch the Next Lesson
+	// 4. Smart Next Lesson
 	var lessonID, lessonTitle, estimatedTime string
-	err = db.Pool.QueryRow(r.Context(), `SELECT id, title, estimated_time FROM public.lessons WHERE id = '22222222-2222-2222-2222-222222222222'`).Scan(&lessonID, &lessonTitle, &estimatedTime)
+	err = db.Pool.QueryRow(r.Context(), `
+		SELECT l.id, l.title, l.estimated_time FROM public.lessons l
+		JOIN public.modules m ON l.module_id = m.id
+		WHERE m.program_name = $1 AND l.id NOT IN (
+			SELECT lesson_id FROM public.lesson_progress WHERE user_id = $2 AND is_completed = true
+		)
+		ORDER BY m.sort_order ASC, l.sort_order ASC LIMIT 1
+	`, programName, userID).Scan(&lessonID, &lessonTitle, &estimatedTime)
+
 	if err != nil {
-		http.Error(w, "Failed to load next lesson", http.StatusInternalServerError)
-		return
+		lessonID = ""
+		lessonTitle = "Course Completed"
+		estimatedTime = "0 mins"
 	}
 
+	// 5. NEW: Fetch the Full Curriculum for Rewatching
+	rows, err := db.Pool.Query(r.Context(), `
+		SELECT m.id, m.title, l.id, l.title, l.estimated_time, COALESCE(lp.is_completed, false)
+		FROM public.modules m
+		JOIN public.lessons l ON m.id = l.module_id
+		LEFT JOIN public.lesson_progress lp ON l.id = lp.lesson_id AND lp.user_id = $2
+		WHERE m.program_name = $1
+		ORDER BY m.sort_order ASC, l.sort_order ASC
+	`, programName, userID)
+
+	var modules []DashModule
+	var currentModule *DashModule
+
+	if err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var mID, mTitle, lID, lTitle, lEstTime string
+			var lCompleted bool
+
+			if err := rows.Scan(&mID, &mTitle, &lID, &lTitle, &lEstTime, &lCompleted); err == nil {
+				// Group lessons into their modules
+				if currentModule == nil || currentModule.ID != mID {
+					if currentModule != nil {
+						modules = append(modules, *currentModule)
+					}
+					currentModule = &DashModule{ID: mID, Title: mTitle, Lessons: []DashLesson{}}
+				}
+				currentModule.Lessons = append(currentModule.Lessons, DashLesson{
+					ID: lID, Title: lTitle, EstimatedTime: lEstTime, IsCompleted: lCompleted,
+				})
+			}
+		}
+		if currentModule != nil {
+			modules = append(modules, *currentModule)
+		}
+	}
+
+	// 6. Return Data
 	response := map[string]interface{}{
 		"user_id": userID,
 		"cohort": map[string]interface{}{
-			"name":              cohortName,
-			"total_lessons":     totalLessons,     // Now dynamic!
-			"completed_lessons": completedLessons, // Now dynamic!
+			"name":              displayCohortName,
+			"total_lessons":     totalLessons,
+			"completed_lessons": completedLessons,
 		},
 		"next_lesson": map[string]interface{}{
 			"id":             lessonID,
 			"title":          lessonTitle,
 			"estimated_time": estimatedTime,
 		},
+		"curriculum": modules, // Send the full list to React!
 	}
 
 	w.Header().Set("Content-Type", "application/json")

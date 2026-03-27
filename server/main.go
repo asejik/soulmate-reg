@@ -67,6 +67,12 @@ func main() {
 		r.Get("/api/lms/lessons/{id}", handlers.GetLesson)
 		r.Post("/api/lms/lessons/{id}/submit", handlers.SubmitAssignment)
 		r.Get("/api/lms/certificate", handlers.GenerateCertificate)
+		r.Get("/api/admin/users", handlers.GetMasterAdminUsers)
+		r.Delete("/api/admin/users", handlers.DeleteAdminUser)
+		r.Get("/api/admin/submissions", handlers.GetAdminSubmissions)
+		r.Get("/api/admin/modules", handlers.GetAdminModules)
+		r.Post("/api/admin/modules", handlers.CreateAdminModule)
+		r.Post("/api/admin/lessons", handlers.CreateAdminLesson)
 	})
 
 	// 5. Start Server

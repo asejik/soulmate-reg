@@ -9,6 +9,7 @@ import { DashboardPage } from './pages/dashboard/DashboardPage';
 // NEW IMPORT
 import { LessonPage } from './pages/dashboard/LessonPage';
 import ClaimAccountPage from './pages/ClaimAccountPage';
+import AdminPortalPage from './pages/admin/AdminPortalPage';
 
 export default function App() {
   return (
@@ -22,11 +23,16 @@ export default function App() {
 
       {/* --- PROTECTED LMS ROUTES --- */}
       <Route element={<ProtectedRoute />}>
+
+        {/* Admin Portal gets its own full-screen layout */}
+        <Route path="/admin" element={<AdminPortalPage />} />
+
+        {/* Regular Participant Layout */}
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
-          {/* NEW ROUTE */}
           <Route path="/dashboard/lessons/:id" element={<LessonPage />} />
         </Route>
+
       </Route>
     </Routes>
   );
