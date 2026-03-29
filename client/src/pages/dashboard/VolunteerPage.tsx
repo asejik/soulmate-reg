@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 import { Users, Send, CheckCircle2 } from 'lucide-react';
 
 export const VolunteerPage = () => {

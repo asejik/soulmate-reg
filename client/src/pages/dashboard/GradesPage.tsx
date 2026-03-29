@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { Award, CheckCircle2, Circle, Clock, ChevronLeft } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Award, CheckCircle2, Circle, ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { fetchLMS } from '../../lib/api';
 
