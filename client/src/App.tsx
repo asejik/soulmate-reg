@@ -4,12 +4,16 @@ import { SoulmateApp } from './pages/SoulmateApp';
 import { LaunchpadApp } from './pages/LaunchpadApp';
 import { LoginPage } from './pages/auth/LoginPage';
 import { ProtectedRoute } from './components/shared/ProtectedRoute';
-import { DashboardLayout } from './components/shared/DashboardLayout';
+import { CourseLayout } from './components/shared/CourseLayout';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
-// NEW IMPORT
 import { LessonPage } from './pages/dashboard/LessonPage';
 import ClaimAccountPage from './pages/ClaimAccountPage';
 import AdminPortalPage from './pages/admin/AdminPortalPage';
+import { GivingPage } from './pages/dashboard/GivingPage';
+import { VolunteerPage } from './pages/dashboard/VolunteerPage';
+import { GradesPage } from './pages/dashboard/GradesPage';
+import { DiscussionsPage } from './pages/dashboard/DiscussionsPage';
+import { MidCohortReviewPage } from './pages/dashboard/MidCohortReviewPage';
 
 export default function App() {
   return (
@@ -27,10 +31,15 @@ export default function App() {
         {/* Admin Portal gets its own full-screen layout */}
         <Route path="/admin" element={<AdminPortalPage />} />
 
-        {/* Regular Participant Layout */}
-        <Route element={<DashboardLayout />}>
+        {/* NEW: Professional Coursera-Style Participant Layout */}
+        <Route element={<CourseLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/dashboard/lessons/:id" element={<LessonPage />} />
+          <Route path="/dashboard/grades" element={<GradesPage />} />
+          <Route path="/dashboard/giving" element={<GivingPage />} />
+          <Route path="/dashboard/volunteer" element={<VolunteerPage />} />
+          <Route path="/dashboard/discussions" element={<DiscussionsPage />} />
+          <Route path="/dashboard/mid-review" element={<MidCohortReviewPage />} />
         </Route>
 
       </Route>

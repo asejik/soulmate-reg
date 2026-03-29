@@ -5,7 +5,7 @@ import type { RefObject } from 'react';
 
 declare global {
   interface Window {
-    YT: typeof YT;
+    YT: any;
     onYouTubeIframeAPIReady: () => void;
   }
 }
@@ -17,11 +17,17 @@ interface UseYouTubePlayerOptions {
 }
 
 interface UseYouTubePlayerReturn {
-  containerRef: RefObject<HTMLDivElement | null>;
-  isPlaying:    boolean;
-  isEnded:      boolean;
-  togglePlay:   () => void;
-  progress:     number;
+  containerRef:       RefObject<HTMLDivElement | null>;
+  isPlaying:          boolean;
+  isEnded:            boolean;
+  togglePlay:         () => void;
+  progress:           number;
+  volume:             number;
+  isMuted:            boolean;
+  handleVolumeChange: (newVolume: number) => void;
+  toggleMute:         () => void;
+  // --- NEW: Expose the Seek function ---
+  handleSeek:         (percent: number) => void;
 }
 
 function loadYouTubeApi(): Promise<void> {
@@ -46,13 +52,16 @@ export function useYouTubePlayer({
   onComplete,
 }: UseYouTubePlayerOptions): UseYouTubePlayerReturn {
   const containerRef    = useRef<HTMLDivElement>(null);
-  const playerRef       = useRef<YT.Player | null>(null);
+  const playerRef       = useRef<any>(null);
   const intervalRef     = useRef<ReturnType<typeof setInterval> | null>(null);
-  const hasCompletedRef = useRef(false); // prevents multiple onComplete calls
+  const hasCompletedRef = useRef(false);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isEnded,   setIsEnded]   = useState(false);
   const [progress,  setProgress]  = useState(0);
+
+  const [volume, setVolume]   = useState(100);
+  const [isMuted, setIsMuted] = useState(false);
 
   const onProgressRef = useRef(onProgressChange);
   const onCompleteRef = useRef(onComplete);
@@ -79,13 +88,15 @@ export function useYouTubePlayer({
           iv_load_policy: 3,
           playsinline:    1,
           showinfo:       0,
-          // FIX 1: loop and playlist removed entirely.
-          // We intercept at 98% in the progress interval and
-          // pause manually, so YouTube never reaches ENDED state
-          // and never renders the end screen.
         },
         events: {
-          onStateChange: (event: YT.OnStateChangeEvent) => {
+          onReady: (event: any) => {
+            if (event.target && event.target.getVolume) {
+              setVolume(event.target.getVolume());
+              setIsMuted(event.target.isMuted());
+            }
+          },
+          onStateChange: (event: any) => {
 
             if (event.data === window.YT.PlayerState.PLAYING) {
               setIsPlaying(true);
@@ -101,9 +112,6 @@ export function useYouTubePlayer({
                 setProgress(pct);
                 onProgressRef.current(pct);
 
-                // FIX 1: Intercept at 98% and pause manually.
-                // This stops the video before YouTube fires the
-                // ENDED event, which is what triggers the end screen.
                 if (pct >= 98 && !hasCompletedRef.current) {
                   hasCompletedRef.current = true;
                   playerRef.current.pauseVideo();
@@ -120,9 +128,6 @@ export function useYouTubePlayer({
                 intervalRef.current = null;
               }
 
-              // We still handle ENDED as a safety net,
-              // but the interval interception above means
-              // this should rarely if ever fire.
               if (event.data === window.YT.PlayerState.ENDED) {
                 playerRef.current?.pauseVideo();
                 setIsEnded(true);
@@ -134,10 +139,6 @@ export function useYouTubePlayer({
                 }
               }
 
-              // FIX 2: Mark as ended when paused too,
-              // so LessonPage can render the opaque cover overlay.
-              // We only do this after completion so normal mid-video
-              // pausing does not trigger the cover.
               if (
                 event.data === window.YT.PlayerState.PAUSED &&
                 hasCompletedRef.current
@@ -153,7 +154,9 @@ export function useYouTubePlayer({
     return () => {
       destroyed = true;
       if (intervalRef.current) clearInterval(intervalRef.current);
-      if (playerRef.current)   playerRef.current.destroy();
+      if (playerRef.current && playerRef.current.destroy) {
+        playerRef.current.destroy();
+      }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoId]);
@@ -163,7 +166,6 @@ export function useYouTubePlayer({
     if (isPlaying) {
       playerRef.current.pauseVideo();
     } else {
-      // If the video was completed, restart from beginning
       if (hasCompletedRef.current) {
         hasCompletedRef.current = false;
         setIsEnded(false);
@@ -174,5 +176,45 @@ export function useYouTubePlayer({
     }
   };
 
-  return { containerRef, isPlaying, isEnded, togglePlay, progress };
+  const handleVolumeChange = (newVolume: number) => {
+    setVolume(newVolume);
+    if (playerRef.current && playerRef.current.setVolume) {
+      playerRef.current.setVolume(newVolume);
+      if (newVolume > 0 && isMuted) {
+        setIsMuted(false);
+        if (playerRef.current.unMute) playerRef.current.unMute();
+      }
+    }
+  };
+
+  const toggleMute = () => {
+    if (!playerRef.current) return;
+    if (isMuted) {
+      if (playerRef.current.unMute) playerRef.current.unMute();
+      setIsMuted(false);
+      if (volume === 0) {
+        setVolume(100);
+        if (playerRef.current.setVolume) playerRef.current.setVolume(100);
+      }
+    } else {
+      if (playerRef.current.mute) playerRef.current.mute();
+      setIsMuted(true);
+    }
+  };
+
+  // --- NEW: Calculate the exact second to seek to based on percentage ---
+  const handleSeek = (percent: number) => {
+    if (!playerRef.current || !playerRef.current.getDuration) return;
+    const duration = playerRef.current.getDuration();
+    if (duration > 0) {
+      const seekTime = (percent / 100) * duration;
+      playerRef.current.seekTo(seekTime, true);
+      setProgress(percent);
+    }
+  };
+
+  return {
+    containerRef, isPlaying, isEnded, togglePlay, progress,
+    volume, isMuted, handleVolumeChange, toggleMute, handleSeek
+  };
 }

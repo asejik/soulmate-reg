@@ -119,6 +119,24 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 		WHERE lp.user_id = $1 AND lp.is_completed = true AND m.program_name = $2
 	`, userID, programName).Scan(&completedLessons)
 
+	// 3.5 NEW: Check if the user has completed the final review
+	var hasCompletedFinalReview bool
+	db.Pool.QueryRow(r.Context(), `
+		SELECT EXISTS(
+			SELECT 1 FROM public.program_reviews
+			WHERE user_id = $1 AND program_name = $2
+		)
+	`, userID, programName).Scan(&hasCompletedFinalReview)
+
+	// NEW: Check if the user has completed the mid-cohort review
+	var hasCompletedMidReview bool
+	db.Pool.QueryRow(r.Context(), `
+		SELECT EXISTS(
+			SELECT 1 FROM public.program_reviews
+			WHERE user_id = $1 AND program_name = $2 AND review_type = 'mid_cohort'
+		)
+	`, userID, programName).Scan(&hasCompletedMidReview)
+
 	// 4. Smart Next Lesson
 	var lessonID, lessonTitle, estimatedTime string
 	err = db.Pool.QueryRow(r.Context(), `
@@ -176,6 +194,8 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 	// 6. Return Data
 	response := map[string]interface{}{
 		"user_id": userID,
+		"has_completed_final_review": hasCompletedFinalReview,
+		"has_completed_mid_review": hasCompletedMidReview,
 		"cohort": map[string]interface{}{
 			"name":              displayCohortName,
 			"total_lessons":     totalLessons,
@@ -193,34 +213,42 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// GetLesson Handler
+// GetLesson fetches data for a single lesson and checks if the user has already completed it
 func GetLesson(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(userIDKey).(string)
 	lessonID := chi.URLParam(r, "id")
 
-	var id, title, description, videoId, assignmentPrompt string
+	var lesson struct {
+		ID               string `json:"id"`
+		Title            string `json:"title"`
+		Description      string `json:"description"`
+		VideoID          string `json:"videoId"`
+		EstimatedTime    string `json:"estimatedTime"`
+		AssignmentPrompt string `json:"assignmentPrompt"`
+		IsCompleted      bool   `json:"is_completed"` // <-- NEW FLAG
+	}
 
-	// Query the exact lesson the user clicked on using the dynamic ID!
+	// 1. Fetch the lesson details
 	err := db.Pool.QueryRow(r.Context(), `
-		SELECT id, title, description, video_id, assignment_prompt
-		FROM public.lessons
-		WHERE id = $1
-	`, lessonID).Scan(&id, &title, &description, &videoId, &assignmentPrompt)
+		SELECT id, title, description, video_id, estimated_time, assignment_prompt
+		FROM public.lessons WHERE id = $1
+	`, lessonID).Scan(&lesson.ID, &lesson.Title, &lesson.Description, &lesson.VideoID, &lesson.EstimatedTime, &lesson.AssignmentPrompt)
 
 	if err != nil {
 		http.Error(w, "Lesson not found", http.StatusNotFound)
 		return
 	}
 
-	response := map[string]interface{}{
-		"id":               id,
-		"title":            title,
-		"description":      description,
-		"videoId":          videoId,
-		"assignmentPrompt": assignmentPrompt,
-	}
+	// 2. Check if the user has already completed this lesson
+	db.Pool.QueryRow(r.Context(), `
+		SELECT EXISTS(
+			SELECT 1 FROM public.lesson_progress
+			WHERE user_id = $1 AND lesson_id = $2 AND is_completed = true
+		)
+	`, userID, lessonID).Scan(&lesson.IsCompleted)
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	json.NewEncoder(w).Encode(lesson)
 }
 
 // --- NEW: Assignment Submission Engine ---
@@ -352,4 +380,175 @@ func GenerateCertificate(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", `attachment; filename="TAI_Certificate.pdf"`)
 
 	pdf.Output(w)
+}
+
+// --- NEW: Testimonial Gateway Engine ---
+
+type ReviewSubmissionRequest struct {
+	ReviewType string `json:"reviewType"`
+	Content    string `json:"content"`
+}
+
+func SubmitReview(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(userIDKey).(string)
+
+	var req ReviewSubmissionRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	// Figure out which program they belong to
+	var programName string
+	db.Pool.QueryRow(r.Context(), `
+		SELECT CASE
+			WHEN cl.email IS NOT NULL THEN 'launchpad'
+			WHEN p.email IS NOT NULL THEN 'Ready for a Soulmate'
+			ELSE 'launchpad'
+		END
+		FROM auth.users au
+		LEFT JOIN public.couples_launchpad cl ON au.email = cl.email
+		LEFT JOIN public.participants p ON au.email = p.email
+		WHERE au.id = $1 LIMIT 1
+	`, userID).Scan(&programName)
+
+	// Save the review to the database
+	_, err := db.Pool.Exec(r.Context(), `
+		INSERT INTO public.program_reviews (user_id, program_name, review_type, content)
+		VALUES ($1, $2, $3, $4)
+		ON CONFLICT (user_id, program_name) DO NOTHING
+	`, userID, programName, req.ReviewType, req.Content)
+
+	if err != nil {
+		http.Error(w, "Failed to save review", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Review submitted successfully!"})
+}
+
+// --- NEW: Discussion Forum Engine ---
+
+type CommentResponse struct {
+	ID          string `json:"id"`
+	LessonID    string `json:"lesson_id"`
+	LessonTitle string `json:"lesson_title"`
+	UserName    string `json:"user_name"`
+	Content     string `json:"content"`
+	CreatedAt   string `json:"created_at"`
+}
+
+type PostCommentRequest struct {
+	Content string `json:"content"`
+}
+
+// PostLessonComment saves a new comment to the database
+func PostLessonComment(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(userIDKey).(string)
+	lessonID := chi.URLParam(r, "id")
+
+	var req PostCommentRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid payload", http.StatusBadRequest)
+		return
+	}
+
+	_, err := db.Pool.Exec(r.Context(), `
+		INSERT INTO public.lesson_comments (lesson_id, user_id, content)
+		VALUES ($1, $2, $3)
+	`, lessonID, userID, req.Content)
+
+	if err != nil {
+		http.Error(w, "Failed to post comment", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Comment posted!"})
+}
+
+// GetLessonComments fetches comments for ONE specific video
+func GetLessonComments(w http.ResponseWriter, r *http.Request) {
+	lessonID := chi.URLParam(r, "id")
+
+	// We join the auth table with your registration tables to get their real name!
+	rows, err := db.Pool.Query(r.Context(), `
+		SELECT c.id, c.lesson_id, l.title, c.content, c.created_at,
+		       COALESCE(cl.full_name, p.full_name, 'Participant') AS user_name
+		FROM public.lesson_comments c
+		JOIN public.lessons l ON c.lesson_id = l.id
+		JOIN auth.users au ON c.user_id = au.id
+		LEFT JOIN public.couples_launchpad cl ON au.email = cl.email
+		LEFT JOIN public.participants p ON au.email = p.email
+		WHERE c.lesson_id = $1
+		ORDER BY c.created_at DESC
+	`, lessonID)
+
+	if err != nil {
+		http.Error(w, "Failed to fetch comments", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var comments []CommentResponse
+	for rows.Next() {
+		var c CommentResponse
+		if err := rows.Scan(&c.ID, &c.LessonID, &c.LessonTitle, &c.Content, &c.CreatedAt, &c.UserName); err == nil {
+			comments = append(comments, c)
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(comments)
+}
+
+// GetGlobalDiscussions fetches ALL comments for the user's specific cohort
+func GetGlobalDiscussions(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(userIDKey).(string)
+
+	// 1. Determine User's Program so we don't mix RFASM and Launchpad comments!
+	var programName string
+	db.Pool.QueryRow(r.Context(), `
+		SELECT CASE
+			WHEN cl.email IS NOT NULL THEN 'launchpad'
+			WHEN p.email IS NOT NULL THEN 'Ready for a Soulmate'
+			ELSE 'launchpad'
+		END
+		FROM auth.users au
+		LEFT JOIN public.couples_launchpad cl ON au.email = cl.email
+		LEFT JOIN public.participants p ON au.email = p.email
+		WHERE au.id = $1 LIMIT 1
+	`, userID).Scan(&programName)
+
+	// 2. Fetch all comments for that program, ordered by module/lesson flow
+	rows, err := db.Pool.Query(r.Context(), `
+		SELECT c.id, c.lesson_id, l.title, c.content, c.created_at,
+		       COALESCE(cl.full_name, p.full_name, 'Participant') AS user_name
+		FROM public.lesson_comments c
+		JOIN public.lessons l ON c.lesson_id = l.id
+		JOIN public.modules m ON l.module_id = m.id
+		JOIN auth.users au ON c.user_id = au.id
+		LEFT JOIN public.couples_launchpad cl ON au.email = cl.email
+		LEFT JOIN public.participants p ON au.email = p.email
+		WHERE m.program_name = $1
+		ORDER BY m.sort_order ASC, l.sort_order ASC, c.created_at DESC
+	`, programName)
+
+	if err != nil {
+		http.Error(w, "Failed to fetch global discussions", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var comments []CommentResponse
+	for rows.Next() {
+		var c CommentResponse
+		if err := rows.Scan(&c.ID, &c.LessonID, &c.LessonTitle, &c.Content, &c.CreatedAt, &c.UserName); err == nil {
+			comments = append(comments, c)
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(comments)
 }

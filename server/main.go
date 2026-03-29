@@ -73,6 +73,11 @@ func main() {
 		r.Get("/api/admin/modules", handlers.GetAdminModules)
 		r.Post("/api/admin/modules", handlers.CreateAdminModule)
 		r.Post("/api/admin/lessons", handlers.CreateAdminLesson)
+		r.Post("/api/lms/reviews", handlers.SubmitReview)
+		r.Get("/api/lms/discussions", handlers.GetGlobalDiscussions)
+		r.Get("/api/lms/lessons/{id}/comments", handlers.GetLessonComments)
+		r.Post("/api/lms/lessons/{id}/comments", handlers.PostLessonComment)
+
 	})
 
 	// 5. Start Server
