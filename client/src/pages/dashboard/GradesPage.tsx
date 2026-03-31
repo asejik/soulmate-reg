@@ -16,7 +16,8 @@ export const GradesPage = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchLMS('/lms/dashboard')
+    const activeProg = localStorage.getItem('tai_active_program') || '';
+    fetchLMS(`/lms/dashboard?program=${activeProg}`)
       .then((res) => { setData(res); setIsLoading(false); })
       .catch(() => setIsLoading(false));
   }, []);

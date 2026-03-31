@@ -1,16 +1,37 @@
-export const TAiLogo = ({ className = "h-16 w-auto" }: { className?: string }) => (
-  <svg viewBox="0 0 200 100" className={className} fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-    <style>
-      {`
-        .serif { font-family: 'Didot', 'Bodoni MT', 'Playfair Display', serif; font-weight: bold; }
-      `}
-    </style>
-    {/* T */}
-    <text x="10" y="80" fontSize="90" className="serif" fill="currentColor">T</text>
-    {/* A - Shifted left to overlap */}
-    <text x="55" y="80" fontSize="90" className="serif" fill="currentColor">A</text>
-    {/* i - Small, serif */}
-    <text x="115" y="80" fontSize="90" className="serif" fill="currentColor">i</text>
-    {/* Optional: The connecting line from the image if needed, but font overlap often suffices */}
-  </svg>
-);
+import React from 'react';
+import { motion } from 'framer-motion';
+
+interface TAiLogoProps {
+  className?: string;
+  withText?: boolean;
+}
+
+export const TAiLogo: React.FC<TAiLogoProps> = ({ className = '', withText = true }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className={`flex items-center gap-3 ${className}`}
+    >
+      {/* This points directly to client/public/logo.png
+        Adjust the w-10 / h-10 to make it bigger or smaller!
+      */}
+      <img
+        src="/logo.png"
+        alt="Temitope Ayenigba Logo"
+        className="w-10 h-10 object-contain drop-shadow-lg"
+      />
+
+      {withText && (
+        <div className="flex flex-col">
+          {/* <span className="text-white font-bold text-lg leading-tight tracking-wide">
+            Temitope Ayenigba
+          </span> */}
+          <span className="text-blue-400 text-[10px] uppercase font-bold tracking-widest leading-none">
+            {/* Learning Platform */}
+          </span>
+        </div>
+      )}
+    </motion.div>
+  );
+};

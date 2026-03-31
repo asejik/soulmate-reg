@@ -18,7 +18,8 @@ export const DiscussionsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchLMS('/lms/discussions')
+    const activeProg = localStorage.getItem('tai_active_program') || '';
+    fetchLMS(`/lms/discussions?program=${activeProg}`)
       .then((data) => { setComments(data || []); setIsLoading(false); })
       .catch(() => setIsLoading(false));
   }, []);

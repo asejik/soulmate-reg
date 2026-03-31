@@ -1,17 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PlayCircle, CheckCircle2, ChevronDown, ChevronUp, Clock, BookOpen, Award, Video, FileText, Star } from 'lucide-react';
+import { PlayCircle, CheckCircle2, ChevronDown, ChevronUp, Clock, BookOpen, Award, Video, FileText, Star, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../config';
 import { fetchLMS, postLMS } from '../../lib/api';
 
-// --- DATA INTERFACES ---
 interface DashboardLesson { id: string; title: string; estimated_time: string; is_completed: boolean; }
 interface DashboardModule { id: string; title: string; lessons: DashboardLesson[]; }
 interface DashboardData {
   user_id: string;
   has_completed_final_review: boolean;
   has_completed_mid_review: boolean;
+  active_program: string;
+  enrolled_programs: string[];
   cohort: { name: string; total_lessons: number; completed_lessons: number; };
   next_lesson: { id: string; title: string; estimated_time: string; };
   curriculum: DashboardModule[];
@@ -24,19 +25,22 @@ export const DashboardPage = () => {
   const [error, setError] = useState('');
   const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({});
 
-  // --- Testimonial Gateway State ---
   const [reviewType, setReviewType] = useState<'video' | 'text'>('video');
   const [reviewContent, setReviewContent] = useState('');
   const [isReviewSubmitting, setIsReviewSubmitting] = useState(false);
   const [hasCompletedFinalReview, setHasCompletedFinalReview] = useState(false);
 
   useEffect(() => {
-    fetchLMS('/lms/dashboard')
+    // Check if they previously switched courses
+    const storedProgram = localStorage.getItem('tai_active_program') || '';
+
+    fetchLMS(`/lms/dashboard?program=${storedProgram}`)
       .then((responseData: DashboardData) => {
         setData(responseData);
-
-        // Tell React if the database says they already reviewed!
         setHasCompletedFinalReview(responseData.has_completed_final_review);
+
+        // Save their active program securely
+        localStorage.setItem('tai_active_program', responseData.active_program);
 
         const nextLessonId = responseData.next_lesson?.id;
         const initialExpanded: Record<string, boolean> = {};
@@ -56,9 +60,16 @@ export const DashboardPage = () => {
 
   const toggleModule = (moduleId: string) => setExpandedModules(prev => ({ ...prev, [moduleId]: !prev[moduleId] }));
 
+  // THE MAGIC SWITCHER FUNCTION
+  const handleSwitchProgram = (newProgram: string) => {
+    localStorage.setItem('tai_active_program', newProgram);
+    window.location.reload(); // Instantly clears state and refetches the new curriculum
+  };
+
   const handleDownloadCertificate = async () => {
     const { data: { session } } = await supabase.auth.getSession();
-    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080/api'}/lms/certificate`, {
+    const activeProg = localStorage.getItem('tai_active_program') || '';
+    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080/api'}/lms/certificate?program=${activeProg}`, {
       headers: { 'Authorization': `Bearer ${session?.access_token}` }
     });
     if (response.ok) {
@@ -74,16 +85,12 @@ export const DashboardPage = () => {
   const submitFinalReview = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsReviewSubmitting(true);
-
     try {
-      await postLMS('/lms/reviews', {
-        reviewType: reviewType,
-        content: reviewContent
-      });
+      const activeProg = localStorage.getItem('tai_active_program') || '';
+      await postLMS(`/lms/reviews?program=${activeProg}`, { reviewType, content: reviewContent });
       setHasCompletedFinalReview(true);
     } catch (err) {
-      console.error(err);
-      alert("Failed to submit review. Please check your connection and try again.");
+      alert("Failed to submit review.");
     } finally {
       setIsReviewSubmitting(false);
     }
@@ -99,11 +106,32 @@ export const DashboardPage = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-20">
 
-      {/* 1. COURSE HEADER */}
+      {/* 1. COURSE HEADER & SWITCHER */}
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight mb-2">{data.cohort.name}</h1>
-          <p className="text-slate-400 text-sm">Review syllabus, track your progress, and continue your learning journey.</p>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-white tracking-tight mb-2">{data.cohort.name}</h1>
+            <p className="text-slate-400 text-sm">Review syllabus, track your progress, and continue your learning journey.</p>
+          </div>
+
+          {/* --- THE COURSE SWITCHER (Only visible if enrolled in both!) --- */}
+          {data.enrolled_programs && data.enrolled_programs.length > 1 && (
+            <div className="flex items-center bg-black/20 border border-white/10 rounded-xl p-1.5 shadow-inner shrink-0">
+              {data.enrolled_programs.map(prog => (
+                <button
+                  key={prog}
+                  onClick={() => handleSwitchProgram(prog)}
+                  className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${
+                    data.active_program === prog
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  {prog === 'launchpad' ? "Launchpad" : "Soulmate"}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="bg-[#111827] border border-white/10 rounded-xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
@@ -135,7 +163,6 @@ export const DashboardPage = () => {
       {/* 2. DYNAMIC TOP SECTION */}
       {isFullyCompleted ? (
 
-        /* --- STATE 1: 100% COMPLETE (FINAL GATEWAY) --- */
         <div className="bg-[#111827] border border-blue-500/30 rounded-2xl overflow-hidden shadow-[0_0_30px_-10px_rgba(59,130,246,0.2)]">
           {!hasCompletedFinalReview ? (
             <div className="p-8 space-y-8">
@@ -213,7 +240,6 @@ export const DashboardPage = () => {
 
       ) : requiresMidReview ? (
 
-        /* --- STATE 2: 50% COMPLETE (MID-COHORT CHECKPOINT) --- */
         <div className="bg-gradient-to-r from-[#2a1a1a] to-[#1a1313] border border-amber-500/40 rounded-2xl p-6 flex flex-col md:flex-row items-start md:items-center gap-6 shadow-[0_0_30px_-10px_rgba(245,158,11,0.2)]">
           <div className="w-16 h-16 rounded-2xl bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0">
             <Star size={32} />
@@ -230,7 +256,6 @@ export const DashboardPage = () => {
 
       ) : (
 
-        /* --- STATE 3: NORMAL LEARNING (UP NEXT) --- */
         <div className="bg-gradient-to-r from-[#1a1a3a] to-[#13132b] border border-blue-500/20 rounded-2xl p-6 flex flex-col md:flex-row items-start md:items-center gap-6 shadow-lg">
           <div className="w-16 h-16 rounded-2xl bg-blue-500/20 text-blue-500 flex items-center justify-center shrink-0">
             <PlayCircle size={32} />
@@ -273,20 +298,44 @@ export const DashboardPage = () => {
                       <div className="flex flex-col divide-y divide-white/5">
                         {module.lessons.map((lesson) => {
                           const isNextLesson = lesson.id === data.next_lesson?.id;
+                          const isLocked = !lesson.is_completed && !isNextLesson;
+
                           return (
-                            <div key={lesson.id} className={`flex flex-col md:flex-row md:items-center justify-between p-5 gap-4 transition-colors ${isNextLesson ? 'bg-blue-500/[0.03]' : 'hover:bg-white/[0.02]'}`}>
+                            <div key={lesson.id} className={`flex flex-col md:flex-row md:items-center justify-between p-5 gap-4 transition-colors ${isNextLesson ? 'bg-blue-500/[0.03]' : isLocked ? 'opacity-80' : 'hover:bg-white/[0.02]'}`}>
                               <div className="flex items-start md:items-center gap-4">
                                 <div className="mt-0.5 md:mt-0 shrink-0">
-                                  {lesson.is_completed ? <CheckCircle2 size={20} className="text-green-500" /> : isNextLesson ? <div className="w-5 h-5 rounded-full border-2 border-blue-500 flex items-center justify-center"><div className="w-2 h-2 bg-blue-500 rounded-full" /></div> : <PlayCircle size={20} className="text-slate-600" />}
+                                  {lesson.is_completed ? (
+                                    <CheckCircle2 size={20} className="text-green-500" />
+                                  ) : isNextLesson ? (
+                                    <div className="w-5 h-5 rounded-full border-2 border-blue-500 flex items-center justify-center">
+                                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                                    </div>
+                                  ) : (
+                                    <Lock size={18} className="text-slate-700" />
+                                  )}
                                 </div>
                                 <div>
-                                  <h4 className={`font-medium ${lesson.is_completed ? 'text-slate-300' : isNextLesson ? 'text-white font-bold' : 'text-slate-400'}`}>{lesson.title}</h4>
-                                  <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-1"><Clock size={12} /> {lesson.estimated_time} • Video</div>
+                                  <h4 className={`font-medium ${lesson.is_completed ? 'text-slate-300' : isNextLesson ? 'text-white font-bold' : 'text-slate-500'}`}>
+                                    {lesson.title}
+                                  </h4>
+                                  <div className={`flex items-center gap-1.5 text-xs mt-1 ${isLocked ? 'text-slate-700' : 'text-slate-500'}`}>
+                                    <Clock size={12} /> {lesson.estimated_time} • Video
+                                  </div>
                                 </div>
                               </div>
                               <div className="pl-9 md:pl-0 shrink-0">
-                                <button onClick={() => navigate(`/dashboard/lessons/${lesson.id}`)} className={`px-5 py-2 text-sm font-bold rounded-lg transition-all ${isNextLesson ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-900/20' : 'bg-white/5 hover:bg-white/10 text-slate-300'}`}>
-                                  {lesson.is_completed ? 'Review' : isNextLesson ? 'Resume' : 'Start'}
+                                <button
+                                  onClick={() => navigate(`/dashboard/lessons/${lesson.id}`)}
+                                  disabled={isLocked}
+                                  className={`px-5 py-2 text-sm font-bold rounded-lg transition-all ${
+                                    isLocked
+                                      ? 'bg-transparent text-slate-700 border border-white/5 cursor-not-allowed'
+                                      : isNextLesson
+                                        ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-900/20'
+                                        : 'bg-white/5 hover:bg-white/10 text-slate-300'
+                                  }`}
+                                >
+                                  {isLocked ? 'Locked' : lesson.is_completed ? 'Review' : 'Start'}
                                 </button>
                               </div>
                             </div>

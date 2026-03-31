@@ -16,6 +16,7 @@ interface LessonData {
   videoId: string;
   assignmentPrompt: string;
   is_completed: boolean;
+  is_locked: boolean;
 }
 
 export const LessonPage = () => {
@@ -42,6 +43,29 @@ export const LessonPage = () => {
 
   if (isLoading) return <div className="flex items-center justify-center min-h-[50vh]"><div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" /></div>;
   if (error || !lesson) return <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4"><div className="text-red-400 text-center">{error}</div><button onClick={() => navigate('/dashboard')} className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition">Back to Course Material</button></div>;
+
+  // Handle locked lessons
+  if (lesson.is_locked) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 max-w-lg mx-auto text-center px-4">
+        <div className="w-24 h-24 bg-red-500/10 border border-red-500/20 rounded-full flex items-center justify-center text-red-500">
+          <Lock size={48} />
+        </div>
+        <div>
+          <h2 className="text-3xl font-bold text-white mb-3">Lesson Locked</h2>
+          <p className="text-slate-400 leading-relaxed">
+            You cannot skip ahead to this lesson. You must watch the preceding videos and submit your assignments before this module unlocks.
+          </p>
+        </div>
+        <button
+          onClick={() => navigate('/dashboard')}
+          className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-900/20"
+        >
+          Return to Dashboard
+        </button>
+      </div>
+    );
+  }
 
   return <LessonContent lesson={lesson} />;
 };

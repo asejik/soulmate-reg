@@ -1,12 +1,26 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Award, MessageSquare, Menu, X, LogOut, Layout, Heart, Users } from 'lucide-react';
 import { supabase } from '../../config';
+import { TAiLogo } from '../TAiLogo';
 
 export const CourseLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const [userInitial, setUserInitial] = useState('U');
+  const [userEmail, setUserEmail] = useState('');
+
+  // Fetch the logged-in user's email to create a dynamic avatar
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.email) {
+        setUserEmail(session.user.email);
+        setUserInitial(session.user.email.charAt(0).toUpperCase());
+      }
+    });
+  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -40,11 +54,9 @@ export const CourseLayout = () => {
         md:relative md:translate-x-0
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        {/* Logo Area */}
-        <div className="hidden md:flex items-center p-6 border-b border-white/5">
-          <div className="text-2xl font-bold tracking-widest text-white">
-            T<span className="text-pink-500">A</span>I <span className="text-xs font-normal text-slate-500 tracking-normal ml-2">Learning</span>
-          </div>
+        {/* LOGO AREA */}
+        <div className="h-20 flex items-center px-8 border-b border-white/5">
+           <TAiLogo />
         </div>
 
         {/* Navigation Links */}
@@ -86,12 +98,19 @@ export const CourseLayout = () => {
         {/* DESKTOP TOP BAR */}
         <header className="hidden md:flex items-center justify-between bg-[#0b0f19] border-b border-white/5 px-8 py-4">
           <div className="text-sm text-slate-500 font-medium">
-            {/* We can make this dynamic breadcrumbs later! */}
-            Temitope Ayenigba Platform
+            Learning Portal
           </div>
-          <div className="flex items-center gap-4">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold shadow-lg">
-              ME
+
+          <div className="flex items-center gap-4 relative group">
+            {/* The Dynamic Avatar */}
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-pink-500 flex items-center justify-center text-white text-sm font-bold shadow-lg cursor-pointer">
+              {userInitial}
+            </div>
+
+            {/* The Hover Tooltip */}
+            <div className="absolute right-0 top-10 w-max px-3 py-2 bg-[#111827] border border-white/10 text-xs text-slate-300 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl">
+              <span className="block text-slate-500 mb-0.5">Signed in as</span>
+              <span className="font-bold text-white">{userEmail}</span>
             </div>
           </div>
         </header>
