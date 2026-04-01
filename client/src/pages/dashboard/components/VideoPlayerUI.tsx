@@ -1,0 +1,98 @@
+import { Play, Pause, RotateCcw, Volume2, VolumeX } from 'lucide-react';
+import { useYouTubePlayer } from '../../../hooks/useYouTubePlayer';
+import { postLMS } from '../../../lib/api';
+import type { LessonData } from '../LessonPage';
+
+interface Props {
+  lesson: LessonData;
+  isUnlocked: boolean;
+  setIsUnlocked: (v: boolean) => void;
+}
+
+export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked }: Props) => {
+  const formatTime = (s: number) => `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
+
+  const {
+    containerRef, isPlaying, isEnded, progress, progressInSeconds,
+    isLiveMode, volume, isMuted, togglePlay, handleSeek, toggleMute, handleVolumeChange
+  } = useYouTubePlayer({
+    videoId: lesson.videoId,
+    scheduledStartTime: lesson.scheduled_start_time,
+    initialTime: lesson.last_watched_seconds, // <-- The Auto-Resume Magic!
+    onProgressChange: (pct) => { if (pct >= 80) setIsUnlocked(true); },
+    onTimeUpdate: (seconds, percent) => {
+      postLMS(`/lms/lessons/${lesson.id}/progress`, { seconds, percent })
+        .then(() => console.log(`Saved: ${seconds}s at ${percent}%`))
+        .catch((err) => console.error("SAVE FAILED:", err));
+    },
+    onComplete: () => setIsUnlocked(true),
+  });
+
+  return (
+    <div className="w-full bg-black rounded-2xl overflow-hidden shadow-2xl border border-white/5 relative aspect-video group">
+      <div ref={containerRef} className="absolute inset-0 w-full h-full" />
+      <div className="absolute inset-0 z-10" />
+
+      {isLiveMode && (
+        <div className="absolute top-6 left-6 z-50 flex items-center gap-2 px-3 py-1.5 bg-red-600 text-white rounded-md font-bold text-[10px] tracking-widest shadow-xl animate-pulse">
+          <div className="w-1.5 h-1.5 bg-white rounded-full" /> LIVE SESSION
+        </div>
+      )}
+
+      <div className={`absolute inset-0 z-20 bg-black transition-opacity duration-300 ${(!isPlaying && progress > 0 && !isLiveMode) ? 'opacity-100' : 'opacity-0'}`}>
+        {isEnded && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center space-y-3">
+              <div className="text-white/40 text-sm font-medium uppercase tracking-widest">Video Complete</div>
+              <div className="text-white/20 text-xs">Click play to rewatch</div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className={`absolute inset-0 z-30 transition-opacity flex flex-col justify-end p-6 pointer-events-none ${isPlaying ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'}`}>
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
+        <div className="relative flex items-center gap-4 pointer-events-auto">
+
+          {!isLiveMode && (
+            <button onClick={togglePlay} className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white hover:scale-105 hover:bg-blue-500 transition-all shadow-lg flex-shrink-0">
+              {isEnded ? <RotateCcw size={20} /> : isPlaying ? <Pause size={24} className="fill-current" /> : <Play size={24} className="fill-current ml-1" />}
+            </button>
+          )}
+
+          <div className="flex items-center gap-2 group/volume cursor-pointer bg-black/40 px-3 py-2 rounded-full border border-white/10 backdrop-blur-md">
+            <button onClick={toggleMute} className="text-white hover:text-blue-400 transition-colors flex-shrink-0">
+              {isMuted || volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
+            </button>
+            <input type="range" min="0" max="100" value={isMuted ? 0 : volume} onChange={(e) => handleVolumeChange(Number(e.target.value))} className="w-0 opacity-0 group-hover/volume:w-20 group-hover/volume:opacity-100 transition-all duration-300 accent-blue-500 h-1 cursor-pointer origin-left" />
+          </div>
+
+          {isLiveMode ? (
+            <div className="flex-1 flex justify-end items-center">
+              <div className="text-white text-xs font-mono bg-red-500/20 text-red-100 px-3 py-2 rounded-full border border-red-500/20 backdrop-blur-md">
+                Live: {formatTime(progressInSeconds)}
+              </div>
+            </div>
+          ) : (
+            <>
+              {isUnlocked ? (
+                <div className="flex-1 relative ml-2 flex items-center h-2 group/progress cursor-pointer">
+                  <input type="range" min="0" max="100" value={progress} onChange={(e) => handleSeek(Number(e.target.value))} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                  <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
+                    <div className="h-full bg-blue-500 transition-all duration-75" style={{ width: `${progress}%` }} />
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 h-2 bg-white/20 rounded-full overflow-hidden ml-2">
+                  <div className="h-full bg-blue-500 transition-all duration-300 ease-out" style={{ width: `${progress}%` }} />
+                </div>
+              )}
+              <span className="text-white text-sm font-bold w-12 text-right flex-shrink-0">{progress}%</span>
+            </>
+          )}
+
+        </div>
+      </div>
+    </div>
+  );
+};

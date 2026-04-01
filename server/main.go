@@ -77,6 +77,7 @@ func main() {
 		r.Get("/api/lms/discussions", handlers.GetGlobalDiscussions)
 		r.Get("/api/lms/lessons/{id}/comments", handlers.GetLessonComments)
 		r.Post("/api/lms/lessons/{id}/comments", handlers.PostLessonComment)
+		r.Post("/api/lms/lessons/{id}/progress", handlers.UpdateProgress)
 
 	})
 
