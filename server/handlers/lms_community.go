@@ -53,10 +53,21 @@ func GetGlobalDiscussions(w http.ResponseWriter, r *http.Request) {
 	programName, _, _ := resolveActiveProgram(r.Context(), userID, requestedProgram)
 
 	rows, _ := db.Pool.Query(r.Context(), `
-		SELECT c.id, c.lesson_id, l.title, c.content, c.created_at, COALESCE(cl.full_name, p.full_name, 'Participant') AS user_name
-		FROM public.lesson_comments c JOIN public.lessons l ON c.lesson_id = l.id JOIN public.modules m ON l.module_id = m.id
-		JOIN auth.users au ON c.user_id = au.id LEFT JOIN public.couples_launchpad cl ON au.email = cl.email LEFT JOIN public.participants p ON au.email = p.email
-		WHERE m.program_name = $1 ORDER BY c.created_at DESC
+		WITH LatestComments AS (
+			SELECT DISTINCT ON (lesson_id) *
+			FROM public.lesson_comments
+			ORDER BY lesson_id, created_at DESC
+		)
+		SELECT lc.id, lc.lesson_id, l.title, lc.content, lc.created_at, 
+			   COALESCE(cl.full_name, p.full_name, 'Participant') AS user_name
+		FROM LatestComments lc
+		JOIN public.lessons l ON lc.lesson_id = l.id
+		JOIN public.modules m ON l.module_id = m.id
+		JOIN auth.users au ON lc.user_id = au.id 
+		LEFT JOIN public.couples_launchpad cl ON au.email = cl.email 
+		LEFT JOIN public.participants p ON au.email = p.email
+		WHERE m.program_name = $1
+		ORDER BY lc.created_at DESC
 	`, programName)
 	defer rows.Close()
 

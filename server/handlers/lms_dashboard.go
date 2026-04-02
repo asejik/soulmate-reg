@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -40,14 +39,43 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 		programNameDisplay = "Couples' Launchpad 5.0"
 	}
 
-	var totalLessons, completedLessons int
-	db.Pool.QueryRow(r.Context(), "SELECT COUNT(l.id) FROM public.lessons l JOIN public.modules m ON l.module_id = m.id WHERE m.program_name = $1", programName).Scan(&totalLessons)
-	db.Pool.QueryRow(r.Context(), "SELECT COUNT(lp.lesson_id) FROM public.lesson_progress lp JOIN public.lessons l ON lp.lesson_id = l.id JOIN public.modules m ON l.module_id = m.id WHERE lp.user_id = $1 AND lp.is_completed = true AND m.program_name = $2", userID, programName).Scan(&completedLessons)
+	// PARALLEL EXECUTION: Run independent count/exists queries in parallel
+	type result struct { val interface{}; err error }
+	totalLessonsChan := make(chan result, 1)
+	completedLessonsChan := make(chan result, 1)
+	finalReviewChan := make(chan result, 1)
+	midReviewChan := make(chan result, 1)
 
-	var hasCompletedFinalReview, hasCompletedMidReview bool
-	db.Pool.QueryRow(r.Context(), "SELECT EXISTS(SELECT 1 FROM public.program_reviews WHERE user_id = $1 AND program_name = $2)", userID, programName).Scan(&hasCompletedFinalReview)
-	db.Pool.QueryRow(r.Context(), "SELECT EXISTS(SELECT 1 FROM public.program_reviews WHERE user_id = $1 AND program_name = $2 AND review_type = 'mid_cohort')", userID, programName).Scan(&hasCompletedMidReview)
+	go func() {
+		var count int
+		err := db.Pool.QueryRow(r.Context(), "SELECT COUNT(l.id) FROM public.lessons l JOIN public.modules m ON l.module_id = m.id WHERE m.program_name = $1", programName).Scan(&count)
+		totalLessonsChan <- result{count, err}
+	}()
 
+	go func() {
+		var count int
+		err := db.Pool.QueryRow(r.Context(), `
+			SELECT COUNT(lp.lesson_id) FROM public.lesson_progress lp 
+			JOIN public.lessons l ON lp.lesson_id = l.id 
+			JOIN public.modules m ON l.module_id = m.id 
+			WHERE lp.user_id = $1 AND lp.is_completed = true AND m.program_name = $2
+		`, userID, programName).Scan(&count)
+		completedLessonsChan <- result{count, err}
+	}()
+
+	go func() {
+		var exists bool
+		err := db.Pool.QueryRow(r.Context(), "SELECT EXISTS(SELECT 1 FROM public.program_reviews WHERE user_id = $1 AND program_name = $2)", userID, programName).Scan(&exists)
+		finalReviewChan <- result{exists, err}
+	}()
+
+	go func() {
+		var exists bool
+		err := db.Pool.QueryRow(r.Context(), "SELECT EXISTS(SELECT 1 FROM public.program_reviews WHERE user_id = $1 AND program_name = $2 AND review_type = 'mid_cohort')", userID, programName).Scan(&exists)
+		midReviewChan <- result{exists, err}
+	}()
+
+	// Continue with the main module query while others run
 	rows, err := db.Pool.Query(r.Context(), `
 		SELECT
 			m.id, m.title, l.id, l.title,
@@ -64,9 +92,7 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 	var currentModule *DashModule
 	var nextLessonID string
 
-	if err != nil {
-		fmt.Println("CRITICAL SQL ERROR in GetDashboard:", err)
-	} else {
+	if err == nil {
 		defer rows.Close()
 		for rows.Next() {
 			var mID, mTitle, lID, lTitle, lEstTime string
@@ -90,10 +116,16 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 		if currentModule != nil { modules = append(modules, *currentModule) }
 	}
 
+	// COLLECT PARALLEL RESULTS (Wait for channels)
+	resTotal := <-totalLessonsChan
+	resCompleted := <-completedLessonsChan
+	resFinal := <-finalReviewChan
+	resMid := <-midReviewChan
+
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"user_id": userID, "has_completed_final_review": hasCompletedFinalReview, "has_completed_mid_review": hasCompletedMidReview,
+		"user_id": userID, "has_completed_final_review": resFinal.val, "has_completed_mid_review": resMid.val,
 		"active_program": programName, "enrolled_programs": enrolledPrograms,
-		"cohort": map[string]interface{}{"name": programNameDisplay, "total_lessons": totalLessons, "completed_lessons": completedLessons},
+		"cohort": map[string]interface{}{"name": programNameDisplay, "total_lessons": resTotal.val, "completed_lessons": resCompleted.val},
 		"curriculum": modules, "next_lesson": map[string]interface{}{"id": nextLessonID},
 	})
 }

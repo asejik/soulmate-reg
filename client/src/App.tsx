@@ -1,6 +1,5 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { LandingPage } from './pages/LandingPage';
-import { SoulmateApp } from './pages/SoulmateApp';
 import { LaunchpadApp } from './pages/LaunchpadApp';
 import { LoginPage } from './pages/auth/LoginPage';
 import { ProtectedRoute } from './components/shared/ProtectedRoute';
@@ -20,7 +19,7 @@ export default function App() {
     <Routes>
       {/* --- PUBLIC ROUTES --- */}
       <Route path="/" element={<LandingPage />} />
-      <Route path="/soulmate" element={<SoulmateApp />} />
+      <Route path="/soulmate" element={<Navigate to="/" replace />} />
       <Route path="/launchpad" element={<LaunchpadApp />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<ClaimAccountPage />} />

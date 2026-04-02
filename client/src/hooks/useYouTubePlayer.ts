@@ -30,6 +30,8 @@ interface UseYouTubePlayerReturn {
   toggleMute:         () => void;
   handleSeek:         (percent: number) => void;
   isLiveMode:         boolean;
+  isWaiting:          boolean;
+  timeLeft:           number;
 }
 
 function loadYouTubeApi(): Promise<void> {
@@ -67,6 +69,8 @@ export function useYouTubePlayer({
   const [progress,  setProgress]  = useState(0);
   const [progressInSeconds, setProgressInSeconds] = useState(0);
   const [isLiveMode, setIsLiveMode] = useState(false);
+  const [isWaiting, setIsWaiting]   = useState(false);
+  const [timeLeft, setTimeLeft]     = useState(0);
 
   const [volume, setVolume]   = useState(100);
   const [isMuted, setIsMuted] = useState(false);
@@ -111,38 +115,45 @@ export function useYouTubePlayer({
 
                 setProgressInSeconds(current);
 
-                // --- SIMULATED LIVE ENGINE ---
-                if (scheduledStartTime && !hasCompletedRef.current) {
-                  const startTimeMs = new Date(scheduledStartTime).getTime();
-                  const nowMs = Date.now();
-                  const offsetSec = (nowMs - startTimeMs) / 1000;
+                 // --- SIMULATED LIVE ENGINE (Running while Playing) ---
+                 if (scheduledStartTime && !hasCompletedRef.current) {
+                   const startTimeMs = new Date(scheduledStartTime).getTime();
+                   const nowMs = Date.now();
+                   const offsetSec = (nowMs - startTimeMs) / 1000;
 
-                  if (offsetSec > 0 && offsetSec < duration) {
-                    setIsLiveMode(true);
-                    if (Math.abs(offsetSec - current) > 3) playerRef.current.seekTo(offsetSec, true);
-                  } else { setIsLiveMode(false); }
-                } else { setIsLiveMode(false); }
+                   if (offsetSec >= 0 && offsetSec < duration) {
+                     setIsLiveMode(true);
+                     setIsWaiting(false);
+                     if (Math.abs(offsetSec - current) > 3) playerRef.current.seekTo(offsetSec, true);
+                   } else if (offsetSec < 0) {
+                     setIsWaiting(true);
+                     setIsLiveMode(false);
+                     setTimeLeft(Math.abs(Math.floor(offsetSec)));
+                     playerRef.current.pauseVideo();
+                   }
+                 }
 
-                // Progress Tracking & Auto-Save
-                const pct = Math.round((current / duration) * 100);
-                setProgress(pct);
-                onProgressRef.current(pct);
+                 // Progress Tracking & Auto-Save
+                 const pct = Math.round((current / duration) * 100);
+                 setProgress(pct);
+                 onProgressRef.current(pct);
 
-                const roundedSec = Math.floor(current);
-                if (roundedSec > 0 && roundedSec % 5 === 0 && roundedSec !== lastSavedTime.current) {
-                  lastSavedTime.current = roundedSec;
-                  if (onTimeUpdateRef.current) onTimeUpdateRef.current(current, pct);
-                }
+                 const roundedSec = Math.floor(current);
+                 if (roundedSec > 0 && roundedSec % 5 === 0 && roundedSec !== lastSavedTime.current) {
+                   lastSavedTime.current = roundedSec;
+                   if (onTimeUpdateRef.current) onTimeUpdateRef.current(current, pct);
+                 }
 
-                if (pct >= 98 && !hasCompletedRef.current) {
-                  hasCompletedRef.current = true;
-                  playerRef.current.pauseVideo();
-                  setIsLiveMode(false);
-                  setProgress(100);
-                  onProgressRef.current(100);
-                  onCompleteRef.current();
-                }
-              }, 1000);
+                 if (pct >= 98 && !hasCompletedRef.current) {
+                   hasCompletedRef.current = true;
+                   playerRef.current.pauseVideo();
+                   setIsLiveMode(false);
+                   setIsWaiting(false);
+                   setProgress(100);
+                   onProgressRef.current(100);
+                   onCompleteRef.current();
+                 }
+               }, 1000);
 
             } else {
               setIsPlaying(false);
@@ -172,6 +183,32 @@ export function useYouTubePlayer({
       if (playerRef.current && playerRef.current.destroy) playerRef.current.destroy();
     };
   }, [videoId, scheduledStartTime, initialTime]);
+
+  // --- SEPARATE PREMIERE COUNTDOWN TICKER ---
+  useEffect(() => {
+    if (!scheduledStartTime || hasCompletedRef.current) return;
+    
+    const ticker = setInterval(() => {
+      const startTimeMs = new Date(scheduledStartTime).getTime();
+      const nowMs = Date.now();
+      const diffSec = (startTimeMs - nowMs) / 1000;
+
+      if (diffSec > 0) {
+        setIsWaiting(true);
+        setTimeLeft(Math.floor(diffSec));
+      } else {
+        // Time is up!
+        if (isWaiting) {
+          setIsWaiting(false);
+          if (playerRef.current && playerRef.current.playVideo) {
+            playerRef.current.playVideo();
+          }
+        }
+      }
+    }, 1000);
+
+    return () => clearInterval(ticker);
+  }, [scheduledStartTime, isWaiting]);
 
   const togglePlay = () => {
     if (!playerRef.current) return;
@@ -221,5 +258,5 @@ export function useYouTubePlayer({
     }
   };
 
-  return { containerRef, isPlaying, isEnded, togglePlay, progress, progressInSeconds, volume, isMuted, handleVolumeChange, toggleMute, handleSeek, isLiveMode };
+  return { containerRef, isPlaying, isEnded, togglePlay, progress, progressInSeconds, volume, isMuted, handleVolumeChange, toggleMute, handleSeek, isLiveMode, isWaiting, timeLeft };
 }

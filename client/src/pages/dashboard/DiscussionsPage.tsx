@@ -12,19 +12,42 @@ interface Comment {
   created_at: string;
 }
 
+import { Skeleton } from '../../components/shared/Skeleton';
+
+const DiscussionsSkeleton = () => (
+  <div className="max-w-4xl mx-auto space-y-8 pb-20 animate-in fade-in duration-500">
+    <div className="space-y-4">
+      <Skeleton className="h-4 w-32" />
+      <Skeleton className="h-10 w-64" />
+      <Skeleton className="h-4 w-48" />
+    </div>
+    <div className="grid gap-6">
+      {[1, 2, 3].map(i => (
+        <div key={i} className="bg-[#111827] border border-white/5 rounded-3xl p-8 space-y-6">
+           <div className="space-y-2">
+             <Skeleton className="h-6 w-3/4" />
+             <Skeleton className="h-3 w-24" />
+           </div>
+           <Skeleton className="h-20 w-full" />
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 export const DiscussionsPage = () => {
   const navigate = useNavigate();
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [topics, setTopics] = useState<Comment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const activeProg = localStorage.getItem('tai_active_program') || '';
     fetchLMS(`/lms/discussions?program=${activeProg}`)
-      .then((data) => { setComments(data || []); setIsLoading(false); })
+      .then((data) => { setTopics(data || []); setIsLoading(false); })
       .catch(() => setIsLoading(false));
   }, []);
 
-  if (isLoading) return <div className="flex items-center justify-center min-h-[50vh]"><div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" /></div>;
+  if (isLoading) return <DiscussionsSkeleton />;
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-20">
@@ -34,47 +57,51 @@ export const DiscussionsPage = () => {
           <ChevronLeft size={16} /> Back to Dashboard
         </button>
         <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-3">
-          <MessageSquare className="text-blue-500" size={32} /> Discussion Forums
+          <MessageSquare className="text-blue-500" size={32} /> Central Forums
         </h1>
-        <p className="text-slate-400 text-sm">See what other participants are discussing across the curriculum.</p>
+        <p className="text-slate-400 text-sm">Join the latest curriculum-wide discussions.</p>
       </div>
 
-      <div className="space-y-4">
-        {comments.length === 0 ? (
-          <div className="text-center py-12 bg-[#111827] border border-white/5 rounded-2xl text-slate-400">
+      <div className="grid gap-6">
+        {topics.length === 0 ? (
+          <div className="text-center py-16 bg-[#111827]/50 border border-white/5 rounded-3xl text-slate-500 italic">
             No discussions yet. Be the first to start a conversation inside a lesson!
           </div>
         ) : (
-          comments.map((comment) => (
-            <div key={comment.id} className="bg-[#111827] border border-white/5 rounded-2xl p-6 hover:border-white/10 transition-colors shadow-lg">
-
-              {/* Comment Header */}
-              <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
-                    <User size={16} />
+          topics.map((topic) => (
+            <div
+              key={topic.id}
+              onClick={() => navigate(`/dashboard/lessons/${topic.lesson_id}`)}
+              className="group relative bg-[#111827] border border-white/5 rounded-3xl p-6 md:p-8 hover:border-blue-500/30 hover:bg-blue-500/[0.02] transition-all cursor-pointer shadow-xl"
+            >
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="flex-1 space-y-4">
+                  <div className="space-y-1">
+                    <h2 className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors">
+                      {topic.lesson_title}
+                    </h2>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Global Topic</p>
                   </div>
-                  <div>
-                    <div className="font-bold text-sm text-slate-200">{comment.user_name}</div>
-                    <div className="text-xs text-slate-500">{new Date(comment.created_at).toLocaleDateString()}</div>
+
+                  <div className="bg-black/20 rounded-2xl p-4 border border-white/5 relative">
+                    <div className="flex items-center gap-2 mb-2">
+                       <div className="w-5 h-5 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400">
+                         <User size={10} />
+                       </div>
+                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{topic.user_name}</span>
+                       <span className="text-[10px] text-slate-600">• {new Date(topic.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <p className="text-sm text-slate-300 leading-relaxed line-clamp-2">
+                      {topic.content}
+                    </p>
                   </div>
                 </div>
-                <button
-                  onClick={() => navigate(`/dashboard/lessons/${comment.lesson_id}`)}
-                  className="flex items-center gap-2 text-xs font-bold text-blue-400 hover:text-blue-300 transition-colors bg-blue-500/10 px-3 py-1.5 rounded-lg"
-                >
-                  <ExternalLink size={14} /> Go to Lesson
-                </button>
-              </div>
 
-              {/* Comment Body */}
-              <div className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
-                {comment.content}
-              </div>
-
-              {/* Context Tag */}
-              <div className="mt-4 inline-block text-xs font-medium text-slate-500 bg-black/20 px-3 py-1 rounded-full border border-white/5">
-                Posted in: {comment.lesson_title}
+                <div className="flex items-center justify-end">
+                   <button className="flex items-center gap-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-full transition-all shadow-lg shadow-blue-500/10 group-hover:scale-105">
+                     <MessageSquare size={14} /> Join Discussion
+                   </button>
+                </div>
               </div>
             </div>
           ))

@@ -1,4 +1,5 @@
 import { Play, Pause, RotateCcw, Volume2, VolumeX } from 'lucide-react';
+import { useEffect } from 'react';
 import { useYouTubePlayer } from '../../../hooks/useYouTubePlayer';
 import { postLMS } from '../../../lib/api';
 import type { LessonData } from '../LessonPage';
@@ -7,18 +8,19 @@ interface Props {
   lesson: LessonData;
   isUnlocked: boolean;
   setIsUnlocked: (v: boolean) => void;
+  onLiveModeChange?: (live: boolean) => void;
 }
 
-export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked }: Props) => {
+export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeChange }: Props) => {
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
 
   const {
     containerRef, isPlaying, isEnded, progress, progressInSeconds,
-    isLiveMode, volume, isMuted, togglePlay, handleSeek, toggleMute, handleVolumeChange
+    isLiveMode, isWaiting, timeLeft, volume, isMuted, togglePlay, handleSeek, toggleMute, handleVolumeChange
   } = useYouTubePlayer({
     videoId: lesson.videoId,
     scheduledStartTime: lesson.scheduled_start_time,
-    initialTime: lesson.last_watched_seconds, // <-- The Auto-Resume Magic!
+    initialTime: lesson.last_watched_seconds,
     onProgressChange: (pct) => { if (pct >= 80) setIsUnlocked(true); },
     onTimeUpdate: (seconds, percent) => {
       postLMS(`/lms/lessons/${lesson.id}/progress`, { seconds, percent })
@@ -27,6 +29,18 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked }: Props) => {
     },
     onComplete: () => setIsUnlocked(true),
   });
+
+  const formatCountdown = (seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${h > 0 ? h + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  // Bubble isLiveMode up to the parent so LessonTabs can react
+  useEffect(() => {
+    onLiveModeChange?.(isLiveMode);
+  }, [isLiveMode, onLiveModeChange]);
 
   return (
     <div className="w-full bg-black rounded-2xl overflow-hidden shadow-2xl border border-white/5 relative aspect-video group">
@@ -39,7 +53,27 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked }: Props) => {
         </div>
       )}
 
-      <div className={`absolute inset-0 z-20 bg-black transition-opacity duration-300 ${(!isPlaying && progress > 0 && !isLiveMode) ? 'opacity-100' : 'opacity-0'}`}>
+      {isWaiting && (
+        <div className="absolute inset-0 z-50 bg-[#050510] flex flex-col items-center justify-center space-y-6">
+          <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay" />
+          <div className="relative z-10 flex flex-col items-center">
+            <div className="mb-6 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-black uppercase tracking-[0.3em] animate-pulse">
+              Up Next: Video Premiere
+            </div>
+            <div className="text-7xl md:text-9xl font-black text-white tracking-tighter tabular-nums drop-shadow-[0_0_30px_rgba(255,255,255,0.1)]">
+              {formatCountdown(timeLeft)}
+            </div>
+            <p className="mt-8 text-slate-400 font-medium text-center max-w-xs px-4">
+              Sit tight! The live session will begin automatically in a few moments.
+            </p>
+          </div>
+          <div className="absolute bottom-10 left-10 right-10 h-1 bg-white/5 rounded-full overflow-hidden">
+             <div className="h-full bg-amber-500/40 animate-scale-x w-full" />
+          </div>
+        </div>
+      )}
+
+      <div className={`absolute inset-0 z-20 bg-black transition-opacity duration-300 ${(!isPlaying && progress > 0 && !isLiveMode && !isWaiting) ? 'opacity-100' : 'opacity-0'}`}>
         {isEnded && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center space-y-3">

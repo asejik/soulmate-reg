@@ -51,12 +51,18 @@ func GetLesson(w http.ResponseWriter, r *http.Request) {
 
 	if lesson.IsCompleted {
 		lesson.IsLocked = false
-	} else if lesson.ScheduledStartTime != nil && time.Now().UTC().Before(*lesson.ScheduledStartTime) {
-		lesson.IsLocked = true
 	} else {
+		// Rely ONLY on sequence logic. If it's the next lesson, it's unlocked even if it premieres in the future.
+		// The frontend countdown will handle the waiting state.
 		var nextID string
-		db.Pool.QueryRow(r.Context(), "SELECT l.id FROM public.lessons l JOIN public.modules m ON l.module_id = m.id WHERE m.program_name = $1 AND l.id NOT IN (SELECT lesson_id FROM public.lesson_progress WHERE user_id = $2 AND is_completed = true) ORDER BY m.sort_order ASC, l.sort_order ASC LIMIT 1", programName, userID).Scan(&nextID)
-		lesson.IsLocked = (nextID != lessonID)
+		db.Pool.QueryRow(r.Context(), `
+			SELECT l.id FROM public.lessons l 
+			JOIN public.modules m ON l.module_id = m.id 
+			WHERE m.program_name = $1 
+			  AND l.id NOT IN (SELECT lesson_id FROM public.lesson_progress WHERE user_id = $2 AND is_completed = true) 
+			ORDER BY m.sort_order ASC, l.sort_order ASC LIMIT 1
+		`, programName, userID).Scan(&nextID)
+		lesson.IsLocked = (nextID != "") && (nextID != lessonID)
 	}
 
 	w.Header().Set("Content-Type", "application/json")

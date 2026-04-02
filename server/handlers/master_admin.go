@@ -10,11 +10,34 @@ import (
 )
 
 type MasterAdminUser struct {
-	ID        string    `json:"id"`
-	FullName  string    `json:"full_name"`
-	Email     string    `json:"email"`
-	Source    string    `json:"source"`
-	CreatedAt time.Time `json:"created_at"`
+	ID                   string    `json:"id"`
+	FullName             string    `json:"full_name"`
+	Email                string    `json:"email"`
+	WhatsAppNumber       string    `json:"whatsapp_number"`
+	Gender               string    `json:"gender"`
+	Location             string    `json:"location"`
+	Religion             string    `json:"religion"`
+	InstagramHandle      string    `json:"instagram_handle"`
+	Source               string    `json:"source"`
+	CreatedAt            time.Time `json:"created_at"`
+
+	// RFASM Specific
+	State              string `json:"state"`
+	AgeGroup           string `json:"age_group"`
+	ChurchName         string `json:"church_name"`
+	RelationshipStatus string `json:"relationship_status"`
+	ClanID             string `json:"clan_id"`
+
+	// CLP Specific
+	Denomination       string `json:"denomination"`
+	ReferralSource     string `json:"referral_source"`
+	WeddingDate        string `json:"wedding_date"`
+	PartnerRegistered  string `json:"partner_registered"`
+	SpouseName         string `json:"spouse_name"`
+	SpouseWhatsApp     string `json:"spouse_whatsapp"`
+	AttendedBefore     bool   `json:"attended_before"`
+	AgreedToFeedback   bool   `json:"agreed_to_feedback"`
+	AgreedToParticipation bool `json:"agreed_to_participation"`
 }
 
 // GetMasterAdminUsers fetches all registered users across both programs
@@ -29,12 +52,22 @@ func GetMasterAdminUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 2. Query BOTH tables and combine them into one list using UNION ALL
+	// 2. Query BOTH tables with all fields mapped correctly (using COALESCE to handle legacy NULLs)
 	rows, err := db.Pool.Query(r.Context(), `
-		SELECT id::text, full_name, email, 'Ready for a Soulmate' as source, created_at
+		SELECT 
+			id::text, full_name, email, COALESCE(whatsapp_number, ''), COALESCE(gender, ''), COALESCE(country, ''), 
+			COALESCE(religion, ''), COALESCE(instagram_handle, ''), 'Ready for a Soulmate' as source, created_at,
+			COALESCE(state, ''), COALESCE(age_group, ''), COALESCE(church_name, ''), COALESCE(relationship_status, ''), COALESCE(clan_id::text, ''),
+			'' as denomination, '' as referral_source, '' as wedding_date, '' as partner_registered,
+			'' as spouse_name, '' as spouse_whatsapp, false as attended_before, false as agreed_to_feedback, false as agreed_to_participation
 		FROM public.participants
 		UNION ALL
-		SELECT id::text, full_name, email, 'Couples Launchpad' as source, created_at
+		SELECT 
+			id::text, full_name, email, COALESCE(whatsapp_number, ''), COALESCE(gender, ''), COALESCE(country_city, ''),
+			COALESCE(religion, ''), COALESCE(instagram_handle, ''), 'Couples Launchpad' as source, created_at,
+			'' as state, '' as age_group, '' as church_name, '' as relationship_status, '' as clan_id,
+			COALESCE(denomination, ''), COALESCE(referral_source, ''), COALESCE(wedding_date::text, ''), COALESCE(partner_registered, ''),
+			COALESCE(spouse_name, ''), COALESCE(spouse_whatsapp, ''), COALESCE(attended_before, false), COALESCE(agreed_to_feedback, false), COALESCE(agreed_to_participation, false)
 		FROM public.couples_launchpad
 		ORDER BY created_at DESC
 	`)
@@ -48,7 +81,15 @@ func GetMasterAdminUsers(w http.ResponseWriter, r *http.Request) {
 	var users []MasterAdminUser
 	for rows.Next() {
 		var u MasterAdminUser
-		if err := rows.Scan(&u.ID, &u.FullName, &u.Email, &u.Source, &u.CreatedAt); err != nil {
+		err := rows.Scan(
+			&u.ID, &u.FullName, &u.Email, &u.WhatsAppNumber, &u.Gender, &u.Location,
+			&u.Religion, &u.InstagramHandle, &u.Source, &u.CreatedAt,
+			&u.State, &u.AgeGroup, &u.ChurchName, &u.RelationshipStatus, &u.ClanID,
+			&u.Denomination, &u.ReferralSource, &u.WeddingDate, &u.PartnerRegistered,
+			&u.SpouseName, &u.SpouseWhatsApp, &u.AttendedBefore, &u.AgreedToFeedback, &u.AgreedToParticipation,
+		)
+		if err != nil {
+			fmt.Println("Scaning error:", err)
 			continue
 		}
 		users = append(users, u)
@@ -166,6 +207,82 @@ func DeleteAdminUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "User successfully deleted"})
 }
 
+// CreateAdminUser allows manual insertion of users into specific programs
+func CreateAdminUser(w http.ResponseWriter, r *http.Request) {
+	// 1. Verify Admin
+	userID := r.Context().Value(userIDKey).(string)
+	var adminEmail string
+	db.Pool.QueryRow(r.Context(), "SELECT email FROM auth.users WHERE id = $1", userID).Scan(&adminEmail)
+	if adminEmail != "asejik@gmail.com" {
+		http.Error(w, "Unauthorized Admin Access", http.StatusForbidden)
+		return
+	}
+
+	// 2. Parse payload
+	var req struct {
+		Source             string `json:"source"`
+		FullName           string `json:"full_name"`
+		Email              string `json:"email"`
+		WhatsAppNumber     string `json:"whatsapp_number"`
+		Gender             string `json:"gender"`
+		CountryCity        string `json:"country_city"`
+		State              string `json:"state"`
+		AgeGroup           string `json:"age_group"`
+		Religion           string `json:"religion"`
+		ChurchName         string `json:"church_name"`
+		InstagramHandle    string `json:"instagram_handle"`
+		RelationshipStatus string `json:"relationship_status"`
+		WeddingDate        string `json:"wedding_date"`
+		PartnerRegistered  string `json:"partner_registered"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid Input", http.StatusBadRequest)
+		return
+	}
+
+	if req.Source == "Ready for a Soulmate" {
+		// Assign to first available clan
+		var clanID int64
+		err := db.Pool.QueryRow(r.Context(), "SELECT id FROM clans WHERE current_count < max_capacity ORDER BY id ASC LIMIT 1").Scan(&clanID)
+		if err != nil {
+			http.Error(w, "No available clans/cohorts found", http.StatusInternalServerError)
+			return
+		}
+
+		_, err = db.Pool.Exec(r.Context(), `
+			INSERT INTO public.participants (
+				full_name, email, whatsapp_number, gender, country, state, 
+				age_group, religion, church_name, instagram_handle, relationship_status, clan_id
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+			req.FullName, req.Email, req.WhatsAppNumber, req.Gender, req.CountryCity, req.State,
+			req.AgeGroup, req.Religion, req.ChurchName, req.InstagramHandle, req.RelationshipStatus, clanID)
+		if err != nil {
+			fmt.Println("💥 DB INSERT ERROR (Manual Soulmate):", err)
+			http.Error(w, "Failed to create user", http.StatusInternalServerError)
+			return
+		}
+		// Update clan count
+		db.Pool.Exec(r.Context(), "UPDATE clans SET current_count = current_count + 1 WHERE id = $1", clanID)
+
+	} else if req.Source == "Couples Launchpad" {
+		_, err := db.Pool.Exec(r.Context(), `
+			INSERT INTO public.couples_launchpad (full_name, email, whatsapp_number, gender, country_city, religion, instagram_handle, wedding_date, partner_registered)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+			req.FullName, req.Email, req.WhatsAppNumber, req.Gender, req.CountryCity, req.Religion, req.InstagramHandle, req.WeddingDate, req.PartnerRegistered)
+		if err != nil {
+			fmt.Println("💥 DB INSERT ERROR (Manual CLP):", err)
+			http.Error(w, "Failed to create user", http.StatusInternalServerError)
+			return
+		}
+	} else {
+		http.Error(w, "Invalid source program", http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]string{"message": "User manually registered successfully!"})
+}
+
 // --- CURRICULUM MANAGER DATA STRUCTURES ---
 type CurriculumModule struct {
 	ID          string `json:"id"`
@@ -175,13 +292,14 @@ type CurriculumModule struct {
 }
 
 type CurriculumLesson struct {
-	ModuleID         string `json:"module_id"`
-	Title            string `json:"title"`
-	Description      string `json:"description"`
-	VideoID          string `json:"video_id"`
-	EstimatedTime    string `json:"estimated_time"`
-	AssignmentPrompt string `json:"assignment_prompt"`
-	SortOrder        int    `json:"sort_order"`
+	ModuleID           string     `json:"module_id"`
+	Title              string     `json:"title"`
+	Description        string     `json:"description"`
+	VideoID            string     `json:"video_id"`
+	EstimatedTime      string     `json:"estimated_time"`
+	AssignmentPrompt   string     `json:"assignment_prompt"`
+	SortOrder          int        `json:"sort_order"`
+	ScheduledStartTime *time.Time `json:"scheduled_start_time"`
 }
 
 // GetAdminModules fetches modules for the dropdown in the UI
@@ -263,9 +381,9 @@ func CreateAdminLesson(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, err := db.Pool.Exec(r.Context(), `
-		INSERT INTO public.lessons (module_id, title, description, video_id, estimated_time, assignment_prompt, sort_order)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-		l.ModuleID, l.Title, l.Description, l.VideoID, l.EstimatedTime, l.AssignmentPrompt, l.SortOrder)
+		INSERT INTO public.lessons (module_id, title, description, video_id, estimated_time, assignment_prompt, sort_order, scheduled_start_time)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+		l.ModuleID, l.Title, l.Description, l.VideoID, l.EstimatedTime, l.AssignmentPrompt, l.SortOrder, l.ScheduledStartTime)
 
 	if err != nil {
 		fmt.Println("💥 DB INSERT ERROR (Lesson):", err)
@@ -275,4 +393,171 @@ func CreateAdminLesson(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]string{"message": "Lesson created successfully!"})
+}
+
+// GetAdminLessons fetches all lessons across all modules for the admin curriculum view
+func GetAdminLessons(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(userIDKey).(string)
+	var adminEmail string
+	db.Pool.QueryRow(r.Context(), "SELECT email FROM auth.users WHERE id = $1", userID).Scan(&adminEmail)
+	if adminEmail != "asejik@gmail.com" {
+		http.Error(w, "Unauthorized", http.StatusForbidden)
+		return
+	}
+
+	type AdminLesson struct {
+		ID                 string     `json:"id"`
+		ModuleID           string     `json:"module_id"`
+		ModuleTitle        string     `json:"module_title"`
+		ProgramName        string     `json:"program_name"`
+		Title              string     `json:"title"`
+		Description        string     `json:"description"`
+		VideoID            string     `json:"video_id"`
+		EstimatedTime      string     `json:"estimated_time"`
+		AssignmentPrompt   string     `json:"assignment_prompt"`
+		SortOrder          int        `json:"sort_order"`
+		ScheduledStartTime *time.Time `json:"scheduled_start_time"`
+	}
+
+	rows, err := db.Pool.Query(r.Context(), `
+		SELECT l.id::text, l.module_id::text, m.title, m.program_name,
+			   l.title, COALESCE(l.description,''), COALESCE(l.video_id,''),
+			   COALESCE(l.estimated_time,''), COALESCE(l.assignment_prompt,''), l.sort_order,
+			   l.scheduled_start_time
+		FROM public.lessons l
+		JOIN public.modules m ON l.module_id = m.id
+		ORDER BY m.program_name, m.sort_order, l.sort_order ASC
+	`)
+	if err != nil {
+		http.Error(w, "Failed to fetch lessons", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var lessons []AdminLesson
+	for rows.Next() {
+		var l AdminLesson
+		if err := rows.Scan(&l.ID, &l.ModuleID, &l.ModuleTitle, &l.ProgramName, &l.Title,
+			&l.Description, &l.VideoID, &l.EstimatedTime, &l.AssignmentPrompt, &l.SortOrder,
+			&l.ScheduledStartTime); err == nil {
+			lessons = append(lessons, l)
+		}
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(lessons)
+}
+
+// UpdateAdminModule updates a module's title, program, or sort_order
+func UpdateAdminModule(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(userIDKey).(string)
+	var adminEmail string
+	db.Pool.QueryRow(r.Context(), "SELECT email FROM auth.users WHERE id = $1", userID).Scan(&adminEmail)
+	if adminEmail != "asejik@gmail.com" {
+		http.Error(w, "Unauthorized", http.StatusForbidden)
+		return
+	}
+
+	id := r.URL.Query().Get("id")
+	var m CurriculumModule
+	if err := json.NewDecoder(r.Body).Decode(&m); err != nil || id == "" {
+		http.Error(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
+
+	_, err := db.Pool.Exec(r.Context(),
+		"UPDATE public.modules SET program_name=$1, title=$2, sort_order=$3 WHERE id=$4",
+		m.ProgramName, m.Title, m.SortOrder, id)
+	if err != nil {
+		fmt.Println("💥 UPDATE MODULE ERROR:", err)
+		http.Error(w, "Failed to update module", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "Module updated"})
+}
+
+// DeleteAdminModule deletes a module (and cascades to its lessons via FK if set, else fails)
+func DeleteAdminModule(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(userIDKey).(string)
+	var adminEmail string
+	db.Pool.QueryRow(r.Context(), "SELECT email FROM auth.users WHERE id = $1", userID).Scan(&adminEmail)
+	if adminEmail != "asejik@gmail.com" {
+		http.Error(w, "Unauthorized", http.StatusForbidden)
+		return
+	}
+
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		http.Error(w, "Missing id", http.StatusBadRequest)
+		return
+	}
+
+	_, err := db.Pool.Exec(r.Context(), "DELETE FROM public.modules WHERE id=$1", id)
+	if err != nil {
+		fmt.Println("💥 DELETE MODULE ERROR:", err)
+		http.Error(w, "Failed to delete module", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "Module deleted"})
+}
+
+// UpdateAdminLesson updates all editable fields on a lesson
+func UpdateAdminLesson(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(userIDKey).(string)
+	var adminEmail string
+	db.Pool.QueryRow(r.Context(), "SELECT email FROM auth.users WHERE id = $1", userID).Scan(&adminEmail)
+	if adminEmail != "asejik@gmail.com" {
+		http.Error(w, "Unauthorized", http.StatusForbidden)
+		return
+	}
+
+	id := r.URL.Query().Get("id")
+	var l CurriculumLesson
+	if err := json.NewDecoder(r.Body).Decode(&l); err != nil || id == "" {
+		http.Error(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
+
+	_, err := db.Pool.Exec(r.Context(), `
+		UPDATE public.lessons
+		SET module_id=$1, title=$2, description=$3, video_id=$4,
+		    estimated_time=$5, assignment_prompt=$6, sort_order=$7,
+		    scheduled_start_time=$8
+		WHERE id=$9`,
+		l.ModuleID, l.Title, l.Description, l.VideoID,
+		l.EstimatedTime, l.AssignmentPrompt, l.SortOrder, l.ScheduledStartTime, id)
+	if err != nil {
+		fmt.Println("💥 UPDATE LESSON ERROR:", err)
+		http.Error(w, "Failed to update lesson", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "Lesson updated"})
+}
+
+// DeleteAdminLesson removes a single lesson
+func DeleteAdminLesson(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(userIDKey).(string)
+	var adminEmail string
+	db.Pool.QueryRow(r.Context(), "SELECT email FROM auth.users WHERE id = $1", userID).Scan(&adminEmail)
+	if adminEmail != "asejik@gmail.com" {
+		http.Error(w, "Unauthorized", http.StatusForbidden)
+		return
+	}
+
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		http.Error(w, "Missing id", http.StatusBadRequest)
+		return
+	}
+
+	_, err := db.Pool.Exec(r.Context(), "DELETE FROM public.lessons WHERE id=$1", id)
+	if err != nil {
+		fmt.Println("💥 DELETE LESSON ERROR:", err)
+		http.Error(w, "Failed to delete lesson", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "Lesson deleted"})
 }

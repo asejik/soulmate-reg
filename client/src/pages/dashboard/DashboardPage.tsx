@@ -19,6 +19,33 @@ export interface DashboardData {
   curriculum: DashboardModule[];
 }
 
+import { Skeleton } from '../../components/shared/Skeleton';
+
+// --- Dashboard Skeleton Layout ---
+const DashboardSkeleton = () => (
+  <div className="max-w-4xl mx-auto space-y-8 pb-20 animate-in fade-in duration-500">
+    {/* Header Skeleton */}
+    <div className="bg-[#111827] border border-white/5 rounded-3xl p-8 space-y-4">
+      <Skeleton className="h-6 w-32" />
+      <Skeleton className="h-10 w-64" />
+      <div className="grid md:grid-cols-2 gap-4 pt-4">
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-24 w-full" />
+      </div>
+    </div>
+    {/* Gateway Skeleton */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <Skeleton className="h-40 w-full" />
+      <Skeleton className="h-40 w-full" />
+    </div>
+    {/* Module Skeleton */}
+    <div className="space-y-4">
+      <Skeleton className="h-8 w-48" />
+      {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 w-full" />)}
+    </div>
+  </div>
+);
+
 export const DashboardPage = () => {
   const navigate = useNavigate();
   const [data, setData] = useState<DashboardData | null>(null);
@@ -43,7 +70,7 @@ export const DashboardPage = () => {
       .catch(() => setIsLoading(false));
   }, []);
 
-  if (isLoading) return <div className="flex items-center justify-center min-h-[50vh]"><div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" /></div>;
+  if (isLoading) return <DashboardSkeleton />;
   if (!data) return <div className="flex flex-col items-center justify-center min-h-[50vh]"><button onClick={() => navigate('/login')} className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition">Return to Login</button></div>;
 
   const progressPercentage = Math.round((data.cohort.completed_lessons / data.cohort.total_lessons) * 100);

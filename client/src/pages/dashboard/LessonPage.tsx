@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Lock } from 'lucide-react';
 import { fetchLMS } from '../../lib/api';
@@ -18,6 +18,9 @@ export const LessonPage = () => {
   const [lesson, setLesson] = useState<LessonData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUnlocked, setIsUnlocked] = useState(false);
+  const [isLiveMode, setIsLiveMode] = useState(false);
+
+  const handleLiveModeChange = useCallback((live: boolean) => setIsLiveMode(live), []);
 
   useEffect(() => {
     if (!id) return;
@@ -47,9 +50,9 @@ export const LessonPage = () => {
       <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-sm font-medium text-slate-400 hover:text-white transition-colors w-max">
         <ChevronLeft size={16} /> Back to Course Material
       </button>
-      <VideoPlayerUI lesson={lesson} isUnlocked={isUnlocked} setIsUnlocked={setIsUnlocked} />
+      <VideoPlayerUI lesson={lesson} isUnlocked={isUnlocked} setIsUnlocked={setIsUnlocked} onLiveModeChange={handleLiveModeChange} />
       <div><h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{lesson.title}</h1></div>
-      <LessonTabs lesson={lesson} isUnlocked={isUnlocked} />
+      <LessonTabs lesson={lesson} isUnlocked={isUnlocked} isLiveMode={isLiveMode} />
     </div>
   );
 };

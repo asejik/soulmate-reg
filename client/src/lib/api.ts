@@ -51,5 +51,13 @@ export async function postLMS(endpoint: string, body: any) {
     throw new Error(`Backend rejected the request: ${errorText}`);
   }
 
-  return response.json();
+  // Some endpoints (e.g. PostLessonComment) return 201 with no body.
+  // Trying to parse an empty body as JSON throws a SyntaxError, so
+  // we check content-length / content-type before calling .json().
+  const contentType = response.headers.get('Content-Type') || '';
+  const contentLength = response.headers.get('Content-Length');
+  const hasBody = contentType.includes('application/json') ||
+                  (contentLength !== null && contentLength !== '0');
+
+  return hasBody ? response.json() : null;
 }

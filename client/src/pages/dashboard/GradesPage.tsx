@@ -10,6 +10,42 @@ interface DashboardData {
   curriculum: DashboardModule[];
 }
 
+import { Skeleton } from '../../components/shared/Skeleton';
+
+const GradesSkeleton = () => (
+  <div className="max-w-4xl mx-auto space-y-8 pb-20 animate-in fade-in duration-500">
+    <div className="space-y-4">
+      <Skeleton className="h-4 w-32" />
+      <Skeleton className="h-10 w-64" />
+      <Skeleton className="h-4 w-48" />
+    </div>
+    <div className="bg-[#111827] border border-white/5 rounded-2xl p-8 flex items-center gap-6 shadow-xl">
+      <Skeleton className="h-20 w-20 rounded-full" variant="circular" />
+      <div className="space-y-2 flex-1">
+        <Skeleton className="h-6 w-48" />
+        <Skeleton className="h-4 w-full" />
+      </div>
+    </div>
+    <div className="bg-[#111827] border border-white/5 rounded-2xl overflow-hidden shadow-xl">
+       <div className="bg-black/20 p-6 border-b border-white/5">
+          <Skeleton className="h-4 w-32" />
+       </div>
+       {[1, 2, 3, 4, 5].map(i => (
+         <div key={i} className="p-6 flex items-center justify-between gap-4">
+           <div className="flex gap-4 w-full">
+             <Skeleton className="h-6 w-6 rounded-full" variant="circular" />
+             <div className="space-y-2 flex-1">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-5 w-3/4" />
+             </div>
+           </div>
+           <Skeleton className="h-6 w-24" />
+         </div>
+       ))}
+    </div>
+  </div>
+);
+
 export const GradesPage = () => {
   const navigate = useNavigate();
   const [data, setData] = useState<DashboardData | null>(null);
@@ -22,7 +58,7 @@ export const GradesPage = () => {
       .catch(() => setIsLoading(false));
   }, []);
 
-  if (isLoading) return <div className="flex items-center justify-center min-h-[50vh]"><div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" /></div>;
+  if (isLoading) return <GradesSkeleton />;
   if (!data) return null;
 
   const progressPercentage = Math.round((data.cohort.completed_lessons / data.cohort.total_lessons) * 100);
