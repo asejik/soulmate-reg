@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '../../config';
