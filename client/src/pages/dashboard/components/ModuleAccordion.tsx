@@ -83,7 +83,6 @@ export const ModuleAccordion = ({ curriculum, nextLessonId, currentTime }: Props
                             <div className="pl-9 md:pl-0 shrink-0">
                               <button
                                 onClick={() => navigate(`/dashboard/lessons/${lesson.id}`)}
-                                disabled={isTimeLocked}
                                 className={`px-5 py-2 text-sm font-bold rounded-lg transition-all ${
                                   isTimeLocked ? 'bg-amber-600/10 hover:bg-amber-600/20 text-amber-500 border border-amber-500/20'
                                   : isNowLive ? 'bg-red-600 hover:bg-red-500 text-white shadow-md shadow-red-900/20'
