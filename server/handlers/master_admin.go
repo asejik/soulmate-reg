@@ -9,6 +9,20 @@ import (
 	"github.com/asejik/soulmate-reg/server/db"
 )
 
+// isAdminEmail checks if the provided email belongs to one of the master administrators
+func isAdminEmail(email string) bool {
+	allowedAdmins := []string{
+		"asejik@gmail.com",
+		"temitopeayenigba@gmail.com",
+	}
+	for _, admin := range allowedAdmins {
+		if email == admin {
+			return true
+		}
+	}
+	return false
+}
+
 type MasterAdminUser struct {
 	ID                   string    `json:"id"`
 	FullName             string    `json:"full_name"`
@@ -47,7 +61,7 @@ func GetMasterAdminUsers(w http.ResponseWriter, r *http.Request) {
 
 	var email string
 	err := db.Pool.QueryRow(r.Context(), "SELECT email FROM auth.users WHERE id = $1", userID).Scan(&email)
-	if err != nil || email != "asejik@gmail.com" {
+	if err != nil || !isAdminEmail(email) {
 		http.Error(w, "Unauthorized Admin Access", http.StatusForbidden)
 		return
 	}
@@ -116,7 +130,7 @@ func GetAdminSubmissions(w http.ResponseWriter, r *http.Request) {
 
 	var adminEmail string
 	err := db.Pool.QueryRow(r.Context(), "SELECT email FROM auth.users WHERE id = $1", userID).Scan(&adminEmail)
-	if err != nil || adminEmail != "asejik@gmail.com" {
+	if err != nil || !isAdminEmail(adminEmail) {
 		http.Error(w, "Unauthorized Admin Access", http.StatusForbidden)
 		return
 	}
@@ -168,7 +182,7 @@ func DeleteAdminUser(w http.ResponseWriter, r *http.Request) {
 
 	var adminEmail string
 	err := db.Pool.QueryRow(r.Context(), "SELECT email FROM auth.users WHERE id = $1", userID).Scan(&adminEmail)
-	if err != nil || adminEmail != "asejik@gmail.com" {
+	if err != nil || !isAdminEmail(adminEmail) {
 		http.Error(w, "Unauthorized Admin Access", http.StatusForbidden)
 		return
 	}
@@ -213,7 +227,7 @@ func CreateAdminUser(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(userIDKey).(string)
 	var adminEmail string
 	db.Pool.QueryRow(r.Context(), "SELECT email FROM auth.users WHERE id = $1", userID).Scan(&adminEmail)
-	if adminEmail != "asejik@gmail.com" {
+	if !isAdminEmail(adminEmail) {
 		http.Error(w, "Unauthorized Admin Access", http.StatusForbidden)
 		return
 	}
@@ -308,7 +322,7 @@ func GetAdminModules(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(userIDKey).(string)
 	var adminEmail string
 	db.Pool.QueryRow(r.Context(), "SELECT email FROM auth.users WHERE id = $1", userID).Scan(&adminEmail)
-	if adminEmail != "asejik@gmail.com" {
+	if !isAdminEmail(adminEmail) {
 		http.Error(w, "Unauthorized", http.StatusForbidden)
 		return
 	}
@@ -337,7 +351,7 @@ func CreateAdminModule(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(userIDKey).(string)
 	var adminEmail string
 	db.Pool.QueryRow(r.Context(), "SELECT email FROM auth.users WHERE id = $1", userID).Scan(&adminEmail)
-	if adminEmail != "asejik@gmail.com" {
+	if !isAdminEmail(adminEmail) {
 		http.Error(w, "Unauthorized", http.StatusForbidden)
 		return
 	}
@@ -369,7 +383,7 @@ func CreateAdminLesson(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(userIDKey).(string)
 	var adminEmail string
 	db.Pool.QueryRow(r.Context(), "SELECT email FROM auth.users WHERE id = $1", userID).Scan(&adminEmail)
-	if adminEmail != "asejik@gmail.com" {
+	if !isAdminEmail(adminEmail) {
 		http.Error(w, "Unauthorized", http.StatusForbidden)
 		return
 	}
@@ -400,7 +414,7 @@ func GetAdminLessons(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(userIDKey).(string)
 	var adminEmail string
 	db.Pool.QueryRow(r.Context(), "SELECT email FROM auth.users WHERE id = $1", userID).Scan(&adminEmail)
-	if adminEmail != "asejik@gmail.com" {
+	if !isAdminEmail(adminEmail) {
 		http.Error(w, "Unauthorized", http.StatusForbidden)
 		return
 	}
@@ -452,7 +466,7 @@ func UpdateAdminModule(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(userIDKey).(string)
 	var adminEmail string
 	db.Pool.QueryRow(r.Context(), "SELECT email FROM auth.users WHERE id = $1", userID).Scan(&adminEmail)
-	if adminEmail != "asejik@gmail.com" {
+	if !isAdminEmail(adminEmail) {
 		http.Error(w, "Unauthorized", http.StatusForbidden)
 		return
 	}
@@ -481,7 +495,7 @@ func DeleteAdminModule(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(userIDKey).(string)
 	var adminEmail string
 	db.Pool.QueryRow(r.Context(), "SELECT email FROM auth.users WHERE id = $1", userID).Scan(&adminEmail)
-	if adminEmail != "asejik@gmail.com" {
+	if !isAdminEmail(adminEmail) {
 		http.Error(w, "Unauthorized", http.StatusForbidden)
 		return
 	}
@@ -507,7 +521,7 @@ func UpdateAdminLesson(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(userIDKey).(string)
 	var adminEmail string
 	db.Pool.QueryRow(r.Context(), "SELECT email FROM auth.users WHERE id = $1", userID).Scan(&adminEmail)
-	if adminEmail != "asejik@gmail.com" {
+	if !isAdminEmail(adminEmail) {
 		http.Error(w, "Unauthorized", http.StatusForbidden)
 		return
 	}
