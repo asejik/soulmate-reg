@@ -23,12 +23,18 @@ func LMSAuth(next http.Handler) http.Handler {
 			return
 		}
 
-		supabaseURL := os.Getenv("SUPABASE_URL")
+		supabaseURL := strings.TrimSuffix(os.Getenv("SUPABASE_URL"), "/")
 		serviceKey := os.Getenv("SUPABASE_SERVICE_ROLE_KEY")
 
-		req, err := http.NewRequest("GET", supabaseURL+"/auth/v1/user", nil)
+		if supabaseURL == "" || serviceKey == "" {
+			http.Error(w, "Background Configuration Error: Supabase credentials missing on server", http.StatusInternalServerError)
+			return
+		}
+
+		userURL := supabaseURL + "/auth/v1/user"
+		req, err := http.NewRequest("GET", userURL, nil)
 		if err != nil {
-			http.Error(w, "Server error", http.StatusInternalServerError)
+			http.Error(w, "Server error creating auth request", http.StatusInternalServerError)
 			return
 		}
 		req.Header.Set("Authorization", authHeader)
@@ -37,11 +43,16 @@ func LMSAuth(next http.Handler) http.Handler {
 		client := &http.Client{}
 		resp, err := client.Do(req)
 
-		if err != nil || resp.StatusCode != http.StatusOK {
-			http.Error(w, "Unauthorized or Expired Token", http.StatusUnauthorized)
+		if err != nil {
+			http.Error(w, "Failed to reach Auth Provider", http.StatusInternalServerError)
 			return
 		}
 		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			http.Error(w, "LMS Session Expired or Unauthorized. Please log in again.", http.StatusUnauthorized)
+			return
+		}
 
 		var result map[string]interface{}
 		json.NewDecoder(resp.Body).Decode(&result)
