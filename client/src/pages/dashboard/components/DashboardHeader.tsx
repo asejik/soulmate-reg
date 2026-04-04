@@ -1,5 +1,5 @@
 import { BookOpen, Award } from 'lucide-react';
-import { supabase } from '../../../config';
+import { supabase, API_BASE_URL } from '../../../config';
 import { type DashboardData } from '../DashboardPage';
 
 interface Props {
@@ -18,7 +18,7 @@ export const DashboardHeader = ({ data, progressPercentage, isFullyCompleted, ha
   const handleDownloadCertificate = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     const activeProg = localStorage.getItem('tai_active_program') || '';
-    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080/api'}/lms/certificate?program=${activeProg}`, {
+    const response = await fetch(`${API_BASE_URL}/lms/certificate?program=${activeProg}`, {
       headers: { 'Authorization': `Bearer ${session?.access_token}` }
     });
     if (response.ok) {

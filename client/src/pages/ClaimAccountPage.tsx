@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 // If you don't have these icons, you can remove them or install lucide-react: npm install lucide-react
 import { Mail, Lock, ArrowRight, Loader2, CheckCircle } from 'lucide-react';
 
+import { API_BASE_URL } from '../config';
+
 export default function ClaimAccountPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -19,8 +21,7 @@ export default function ClaimAccountPage() {
 
     try {
       // Send the request to our new Go "Bouncer" endpoint
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
-      const response = await fetch(`${API_URL}/auth/claim`, {
+      const response = await fetch(`${API_BASE_URL}/auth/claim`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })

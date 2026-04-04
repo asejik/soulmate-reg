@@ -1,7 +1,6 @@
-import { supabase } from '../config'; // Adjust this import path if your supabase client is located elsewhere
+import { supabase, API_BASE_URL } from '../config';
 
-// Use the local Go server in development, and a live URL in production
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+// Use the robust API_BASE_URL from config.ts which ensures the /api prefix
 
 export async function fetchLMS(endpoint: string) {
   // 1. Get the current logged-in user's session

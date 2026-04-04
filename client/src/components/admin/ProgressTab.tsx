@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Filter, ChevronLeft, ChevronRight } from 'lucide-react';
-import { supabase } from '../../config';
+import { supabase, API_BASE_URL } from '../../config';
 import { CustomDropdown } from './CustomDropdown';
 
 export const ProgressTab = () => {
@@ -18,7 +18,7 @@ export const ProgressTab = () => {
       setIsLoading(true);
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080/api'}/admin/submissions`, { headers: { 'Authorization': `Bearer ${session?.access_token}` } });
+        const res = await fetch(`${API_BASE_URL}/admin/submissions`, { headers: { 'Authorization': `Bearer ${session?.access_token}` } });
         if (res.ok) setSubmissions(await res.json() || []);
       } catch (err) { console.error(err); } finally { setIsLoading(false); }
     };

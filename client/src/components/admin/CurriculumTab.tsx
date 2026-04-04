@@ -4,7 +4,7 @@ import {
   PlusCircle, ChevronRight, ChevronDown, BookOpen, FileVideo,
   Pencil, Trash2, X, AlertTriangle, Layers, Save, RotateCcw,
 } from 'lucide-react';
-import { supabase } from '../../config';
+import { supabase, API_BASE_URL } from '../../config';
 import { useToast, ToastContainer } from '../shared/Toast';
 import { CustomDropdown } from './CustomDropdown';
 
@@ -44,8 +44,6 @@ interface DeleteTarget {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
 async function authHeaders() {
   const { data: { session } } = await supabase.auth.getSession();
@@ -146,7 +144,7 @@ const ModuleForm = ({
     setSaving(true);
     try {
       const headers = await authHeaders();
-      const url = mode === 'edit' ? `${API}/admin/modules?id=${initial!.id}` : `${API}/admin/modules`;
+      const url = mode === 'edit' ? `${API_BASE_URL}/admin/modules?id=${initial!.id}` : `${API_BASE_URL}/admin/modules`;
       const method = mode === 'edit' ? 'PUT' : 'POST';
       const res = await fetch(url, { method, headers, body: JSON.stringify(form) });
       if (!res.ok) throw new Error(await res.text());
@@ -224,7 +222,7 @@ const LessonForm = ({
     setSaving(true);
     try {
       const headers = await authHeaders();
-      const url = mode === 'edit' ? `${API}/admin/lessons?id=${initial!.id}` : `${API}/admin/lessons`;
+      const url = mode === 'edit' ? `${API_BASE_URL}/admin/lessons?id=${initial!.id}` : `${API_BASE_URL}/admin/lessons`;
       const method = mode === 'edit' ? 'PUT' : 'POST';
       const payload = {
         ...form,
@@ -313,8 +311,8 @@ export const CurriculumTab = () => {
     try {
       const headers = await authHeaders();
       const [mRes, lRes] = await Promise.all([
-        fetch(`${API}/admin/modules`, { headers }),
-        fetch(`${API}/admin/lessons`, { headers }),
+        fetch(`${API_BASE_URL}/admin/modules`, { headers }),
+        fetch(`${API_BASE_URL}/admin/lessons`, { headers }),
       ]);
       const [mData, lData] = await Promise.all([mRes.json(), lRes.json()]);
       setModules(mData || []);
@@ -349,7 +347,7 @@ export const CurriculumTab = () => {
     try {
       const headers = await authHeaders();
       const endpoint = deleteTarget.kind === 'module' ? 'modules' : 'lessons';
-      const res = await fetch(`${API}/admin/${endpoint}?id=${deleteTarget.id}`, { method: 'DELETE', headers });
+      const res = await fetch(`${API_BASE_URL}/admin/${endpoint}?id=${deleteTarget.id}`, { method: 'DELETE', headers });
       if (!res.ok) throw new Error();
       toast.success(`${deleteTarget.kind === 'module' ? 'Module' : 'Lesson'} deleted.`);
       setDeleteTarget(null);

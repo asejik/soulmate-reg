@@ -53,7 +53,7 @@ export const AdminDashboard = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`${API_BASE_URL}/api/admin/stats`, {
+      const res = await fetch(`${API_BASE_URL}/admin/stats`, {
         headers: { 'X-Admin-Secret': key }
       });
 
@@ -83,7 +83,7 @@ export const AdminDashboard = () => {
     setLoading(true);
     setSelectedClan(clan);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/admin/participants?clan_id=${clan.id}`, {
+      const res = await fetch(`${API_BASE_URL}/admin/participants?clan_id=${clan.id}`, {
         headers: { 'X-Admin-Secret': secret }
       });
       const data = await res.json();

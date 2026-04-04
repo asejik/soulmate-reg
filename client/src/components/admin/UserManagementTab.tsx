@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trash2, AlertTriangle, Filter, ChevronLeft, ChevronRight, UserPlus, X, Save, LogIn, Mail, Phone, Instagram, Users } from 'lucide-react';
-import { supabase } from '../../config';
+import { supabase, API_BASE_URL } from '../../config';
 import { CustomDropdown } from './CustomDropdown';
 
 export const UserManagementTab = () => {
@@ -37,7 +37,7 @@ export const UserManagementTab = () => {
     setIsLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080/api'}/admin/users`, { headers: { 'Authorization': `Bearer ${session?.access_token}` } });
+      const res = await fetch(`${API_BASE_URL}/admin/users`, { headers: { 'Authorization': `Bearer ${session?.access_token}` } });
       if (res.ok) setUsers(await res.json() || []);
     } catch (err) { console.error(err); } finally { setIsLoading(false); }
   };
@@ -50,7 +50,7 @@ export const UserManagementTab = () => {
     setDeleteModal(prev => ({ ...prev, isDeleting: true }));
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080/api'}/admin/users?id=${deleteModal.userId}&source=${encodeURIComponent(deleteModal.source)}`, {
+      const res = await fetch(`${API_BASE_URL}/admin/users?id=${deleteModal.userId}&source=${encodeURIComponent(deleteModal.source)}`, {
         method: 'DELETE', headers: { 'Authorization': `Bearer ${session?.access_token}` }
       });
       if (!res.ok) throw new Error("Failed");
@@ -64,7 +64,7 @@ export const UserManagementTab = () => {
     setIsSaving(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080/api'}/admin/users`, {
+      const res = await fetch(`${API_BASE_URL}/admin/users`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${session?.access_token}`,
