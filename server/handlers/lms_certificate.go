@@ -52,21 +52,17 @@ func GenerateCertificate(w http.ResponseWriter, r *http.Request) {
 	pdf.SetFont("Arial", "B", 24); pdf.SetTextColor(15, 23, 42); pdf.SetY(150)
 	pdf.CellFormat(277, 10, displayProgramName, "", 1, "C", false, 0, "")
 
-	pdf.SetY(175); pdf.SetX(30); pdf.SetFont("Arial", "B", 12); pdf.SetTextColor(15, 23, 42)
-	pdf.CellFormat(80, 8, "Date:", "", 2, "L", false, 0, "")
+	pdf.SetY(175); pdf.SetX(20); pdf.SetFont("Arial", "B", 12); pdf.SetTextColor(15, 23, 42)
+	pdf.CellFormat(80, 8, "Date:", "", 0, "L", false, 0, "")
+	pdf.SetX(35)
 	pdf.SetFont("Arial", "", 12)
-	pdf.CellFormat(80, 8, time.Now().Format("January 2, 2006"), "", 0, "L", false, 0, "")
+	pdf.CellFormat(80, 8, time.Now().Format("January 2, 2006"), "", 1, "L", false, 0, "")
 
-	pdf.SetY(175); pdf.SetX(187); pdf.SetFont("Arial", "B", 12); pdf.SetTextColor(15, 23, 42)
-	pdf.CellFormat(80, 8, "Name and Signature:", "", 2, "R", false, 0, "")
+	pdf.SetY(175); pdf.SetX(187); pdf.SetFont("Arial", "B", 14); pdf.SetTextColor(15, 23, 42)
+	pdf.CellFormat(80, 8, "Temitope Ayenigba", "", 2, "R", false, 0, "")
 
-	pdf.SetFont("Arial", "I", 22); pdf.SetTextColor(59, 130, 246)
-	pdf.CellFormat(80, 12, "T. Ayenigba", "", 2, "R", false, 0, "")
-
-	pdf.SetFont("Arial", "B", 12); pdf.SetTextColor(15, 23, 42)
-	pdf.CellFormat(80, 6, "Temitope Ayenigba", "", 2, "R", false, 0, "")
-	pdf.SetFont("Arial", "", 11); pdf.SetTextColor(100, 116, 139)
-	pdf.CellFormat(80, 6, "Lead Instructor", "", 0, "R", false, 0, "")
+	pdf.SetFont("Arial", "", 12); pdf.SetTextColor(100, 116, 139)
+	pdf.CellFormat(80, 8, "Conveyer", "", 0, "R", false, 0, "")
 
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("Content-Disposition", "attachment; filename=TAI_Certificate.pdf")
