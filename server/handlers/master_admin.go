@@ -576,9 +576,9 @@ func DeleteAdminLesson(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "Lesson deleted"})
 }
 func GetProgramSettings(w http.ResponseWriter, r *http.Request) {
+	settings := []map[string]interface{}{}
 	rows, _ := db.Pool.Query(r.Context(), "SELECT program_name, COALESCE(mid_checkpoint_video_id, '') FROM public.program_settings")
 	defer rows.Close()
-	var settings []map[string]interface{}
 	for rows.Next() {
 		var pName, vID string
 		rows.Scan(&pName, &vID)
