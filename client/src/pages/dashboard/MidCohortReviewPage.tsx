@@ -14,6 +14,7 @@ export const MidCohortReviewPage = () => {
     const fetchSettings = async () => {
       try {
         const data = await fetchLMS('/lms/dashboard');
+        console.log("🎥 Dashboard Data:", data);
         // The dashboard now returns the special video ID from our settings table
         setVideoId(data.checkpoint_video_id || '');
       } catch (err) {
