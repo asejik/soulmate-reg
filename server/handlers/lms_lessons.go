@@ -102,16 +102,18 @@ func SubmitAssignment(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"status": "success", "message": "Assignment submitted!"})
 }
 func ResetUserProgress(w http.ResponseWriter, r *http.Request) {
-	targetID := r.URL.Query().Get("user_id")
+	// 1. Inputs: This ID is from public.participants or couples_launchpad
+	targetParticipantID := r.URL.Query().Get("user_id") 
 	lessonID := r.URL.Query().Get("lesson_id")
 	moduleID := r.URL.Query().Get("module_id")
 
-	if targetID == "" {
-		http.Error(w, "Missing user_id", http.StatusBadRequest)
+	if targetParticipantID == "" {
+		http.Error(w, "Missing ID", http.StatusBadRequest)
 		return
 	}
 
-	// 1. Map the Participant/Launchpad ID to the Auth User ID
+	// 2. IMPORTANT: We MUST find the corresponding Auth User ID (UUID) 
+	// This ensures we clean up the tables linked to the actual login identity.
 	var authID string
 	err := db.Pool.QueryRow(r.Context(), `
 		SELECT id FROM auth.users WHERE email IN (
@@ -119,24 +121,31 @@ func ResetUserProgress(w http.ResponseWriter, r *http.Request) {
 			UNION
 			SELECT email FROM public.couples_launchpad WHERE id::text = $1
 		)
-	`, targetID).Scan(&authID)
+	`, targetParticipantID).Scan(&authID)
 
 	if err != nil {
-		fmt.Println("💥 RESET ERROR (User Mapping Failed):", err)
-		http.Error(w, "User not found", http.StatusNotFound)
+		fmt.Printf("⚠️  Admin Reset Attempt: User ID %s not found in auth.users. Reset aborted.\n", targetParticipantID)
+		http.Error(w, "No active login found for this user to reset.", http.StatusNotFound)
 		return
 	}
 
-	// 2. Perform deletions using the correct Auth ID
+	// 3. Selective Deletions
 	if lessonID != "" {
+		// Reset a single lesson
 		db.Pool.Exec(r.Context(), "DELETE FROM public.lesson_progress WHERE user_id = $1 AND lesson_id = $2", authID, lessonID)
+		db.Pool.Exec(r.Context(), "DELETE FROM public.assignment_submissions WHERE user_id = $1 AND lesson_id = $2", authID, lessonID)
 	} else if moduleID != "" {
+		// Reset a whole module
 		db.Pool.Exec(r.Context(), `
 			DELETE FROM public.lesson_progress 
 			WHERE user_id = $1 AND lesson_id IN (SELECT id FROM public.lessons WHERE module_id = $2)
 		`, authID, moduleID)
+		db.Pool.Exec(r.Context(), `
+			DELETE FROM public.assignment_submissions
+			WHERE user_id = $1 AND lesson_id IN (SELECT id FROM public.lessons WHERE module_id = $2)
+		`, authID, moduleID)
 	} else {
-		// Complete Reset
+		// FULL RESET: Clear EVERYTHING to give a blank slate
 		db.Pool.Exec(r.Context(), "DELETE FROM public.lesson_progress WHERE user_id = $1", authID)
 		db.Pool.Exec(r.Context(), "DELETE FROM public.program_reviews WHERE user_id = $1", authID)
 		db.Pool.Exec(r.Context(), "DELETE FROM public.assignment_submissions WHERE user_id = $1", authID)
