@@ -2,19 +2,23 @@ import React, { useState } from 'react';
 import { Star, Video, FileText, CheckCircle2, PlayCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { postLMS } from '../../../lib/api';
+import { StatusModal } from './StatusModal';
 
 export const DashboardGateways = ({ data, isFullyCompleted, requiresMidReview, hasCompletedFinalReview, setHasCompletedFinalReview }: any) => {
   const navigate = useNavigate();
   const [reviewType, setReviewType] = useState<'video' | 'text'>('video');
   const [reviewContent, setReviewContent] = useState('');
   const [isReviewSubmitting, setIsReviewSubmitting] = useState(false);
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
 
   const submitFinalReview = async (e: React.FormEvent) => {
     e.preventDefault(); setIsReviewSubmitting(true);
     try {
       await postLMS(`/lms/reviews?program=${localStorage.getItem('tai_active_program') || ''}`, { reviewType, content: reviewContent });
       setHasCompletedFinalReview(true);
-    } catch (err) { alert("Failed to submit review."); } finally { setIsReviewSubmitting(false); }
+    } catch (err) { 
+      setIsErrorModalOpen(true);
+    } finally { setIsReviewSubmitting(false); }
   };
 
   if (isFullyCompleted) {
@@ -55,6 +59,14 @@ export const DashboardGateways = ({ data, isFullyCompleted, requiresMidReview, h
       <div className="w-16 h-16 rounded-2xl bg-blue-500/20 text-blue-500 flex items-center justify-center shrink-0"><PlayCircle size={32} /></div>
       <div className="flex-1 space-y-2"><div className="text-xs font-bold uppercase tracking-wider text-blue-400">Up Next For You</div><h3 className="text-xl font-bold text-white">{data.next_lesson.title}</h3></div>
       <button onClick={() => navigate(`/dashboard/lessons/${data.next_lesson.id}`)} className="w-full md:w-auto px-6 py-3 bg-white text-black font-bold rounded-xl hover:bg-slate-200 transition-colors">Resume Learning</button>
+
+      <StatusModal
+        isOpen={isErrorModalOpen}
+        onClose={() => setIsErrorModalOpen(false)}
+        type="error"
+        title="Review Not Submitted"
+        message="We encountered an issue while saving your final review. Please try again or check your internet connection."
+      />
     </div>
   );
 };

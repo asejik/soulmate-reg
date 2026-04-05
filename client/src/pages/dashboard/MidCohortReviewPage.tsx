@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Star, ShieldAlert, ChevronLeft, Send, CheckCircle2, Play, Pause, RotateCcw, Volume2, VolumeX } from 'lucide-react';
 import { postLMS, fetchLMS } from '../../lib/api';
 import { useYouTubePlayer } from '../../hooks/useYouTubePlayer';
+import { StatusModal } from '../../pages/dashboard/components/StatusModal';
 
 export const MidCohortReviewPage = () => {
   const navigate = useNavigate();
@@ -11,6 +12,10 @@ export const MidCohortReviewPage = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [videoId, setVideoId] = useState('');
   const [isUnlocked, setIsUnlocked] = useState(false);
+  
+  // Custom Modal States
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -47,25 +52,36 @@ export const MidCohortReviewPage = () => {
       setIsSuccess(true);
       setTimeout(() => navigate('/dashboard'), 3000);
     } catch (err) {
-      alert("Failed to submit review. Please try again.");
+      setErrorMessage("We encountered an issue while saving your review. Please double-check your connection and try again.");
+      setIsErrorModalOpen(true);
       setIsSubmitting(false);
     }
   };
 
   if (isSuccess) {
     return (
-      <div className="max-w-2xl mx-auto mt-20 text-center space-y-6 bg-[#111827] border border-white/5 p-12 rounded-3xl shadow-2xl">
-        <div className="w-20 h-20 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center mx-auto">
-          <CheckCircle2 size={40} />
+      <div className="max-w-2xl mx-auto mt-20 text-center space-y-6 bg-[#111827] border border-white/5 p-12 rounded-3xl shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-green-500/0 via-green-500 to-green-500/0" />
+        <div className="w-20 h-20 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center mx-auto shadow-[0_0_20px_rgba(34,197,94,0.1)]">
+          <CheckCircle2 size={40} className="animate-in zoom-in-0 duration-500" />
         </div>
-        <h2 className="text-3xl font-bold text-white">Checkpoint Cleared!</h2>
-        <p className="text-slate-400">Thank you for your feedback. Your next module has been officially unlocked. Redirecting you back to the curriculum...</p>
+        <h2 className="text-3xl font-bold text-white tracking-tight">Checkpoint Cleared!</h2>
+        <p className="text-slate-400 text-sm leading-relaxed">Thank you for your valuable feedback. Your next module has been officially unlocked. Redirecting you back to the curriculum...</p>
       </div>
     );
   }
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-20">
+      
+      {/* Pop up alerts */}
+      <StatusModal 
+        isOpen={isErrorModalOpen} 
+        onClose={() => setIsErrorModalOpen(false)}
+        type="error"
+        title="Submission Failed"
+        message={errorMessage}
+      />
 
       {/* Header */}
       <div className="space-y-4">
