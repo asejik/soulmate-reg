@@ -20,7 +20,8 @@ export const MidCohortReviewPage = () => {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const data = await fetchLMS('/lms/dashboard');
+        const activeProgram = localStorage.getItem('tai_active_program') || '';
+        const data = await fetchLMS(`/lms/dashboard?program=${activeProgram}`);
         // The dashboard now returns the special video ID from our settings table
         setVideoId(data.checkpoint_video_id || '');
       } catch (err) {
@@ -44,7 +45,8 @@ export const MidCohortReviewPage = () => {
 
     setIsSubmitting(true);
     try {
-      await postLMS('/lms/reviews', {
+      const activeProgram = localStorage.getItem('tai_active_program') || '';
+      await postLMS(`/lms/reviews?program=${activeProgram}`, {
         reviewType: 'mid_cohort',
         content: reviewContent
       });
