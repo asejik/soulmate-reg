@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -83,8 +84,9 @@ func GenerateCertificate(w http.ResponseWriter, r *http.Request) {
 	pdf.CellFormat(277, 25, userName, "", 1, "C", false, 0, "")
 
 	if pdf.Error() != nil {
-		log.Printf("Final PDF processing error: %v", pdf.Error())
-		http.Error(w, "Failed to generate certificate: " + pdf.Error().Error(), http.StatusInternalServerError)
+		cwd, _ := os.Getwd()
+		log.Printf("Final PDF processing error: %v (CWD: %s)", pdf.Error(), cwd)
+		http.Error(w, fmt.Sprintf("Failed (CWD: %s): %v", cwd, pdf.Error()), http.StatusInternalServerError)
 		return
 	}
 

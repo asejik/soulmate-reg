@@ -19,6 +19,8 @@ export const DashboardHeader = ({ data, progressPercentage, isFullyCompleted, ha
     window.location.reload();
   };
 
+  const [errorMessage, setErrorMessage] = useState('Something went wrong while generating your certificate. Please try again or contact support if the issue persists.');
+
   const handleDownloadCertificate = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -26,15 +28,19 @@ export const DashboardHeader = ({ data, progressPercentage, isFullyCompleted, ha
       const response = await fetch(`${API_BASE_URL}/lms/certificate?program=${activeProg}`, {
         headers: { 'Authorization': `Bearer ${session?.access_token}` }
       });
-      if (!response.ok) throw new Error('Failed');
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || 'Failed');
+      }
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = 'Record.pdf';
       a.click();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Certificate error:', err);
+      setErrorMessage(err.message);
       setIsErrorModalOpen(true);
     }
   };
@@ -85,7 +91,7 @@ export const DashboardHeader = ({ data, progressPercentage, isFullyCompleted, ha
         onClose={() => setIsErrorModalOpen(false)} 
         type="error" 
         title="Download Error" 
-        message="Something went wrong while generating your certificate. Please try again or contact support if the issue persists." 
+        message={errorMessage} 
       />
     </div>
   );
