@@ -84,7 +84,11 @@ export const DashboardHeader = ({ data, progressPercentage, isFullyCompleted, ha
           </div>
         </div>
         {isFullyCompleted && hasCompletedFinalReview && (
-          <button onClick={handleDownloadCertificate} className="w-full md:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-lg transition-colors shrink-0">
+          <button 
+            id="tai-main-cert-btn"
+            onClick={handleDownloadCertificate} 
+            className="w-full md:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-lg transition-colors shrink-0"
+          >
             Download Certificate
           </button>
         )}

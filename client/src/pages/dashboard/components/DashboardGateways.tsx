@@ -40,7 +40,7 @@ export const DashboardGateways = ({ data, isFullyCompleted, requiresMidReview, h
             <div className="shrink-0 w-full md:w-auto">
                <button 
                   onClick={() => {
-                     const btn = document.querySelector('button[onClick*="handleDownloadCertificate"]') as HTMLButtonElement;
+                     const btn = document.getElementById('tai-main-cert-btn') as HTMLButtonElement;
                      if (btn) btn.click();
                   }}
                   className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-white text-black font-extrabold rounded-2xl hover:bg-slate-200 transition-all shadow-xl shadow-white/5 active:scale-95"
