@@ -83,10 +83,6 @@ func GenerateCertificate(w http.ResponseWriter, r *http.Request) {
 	pdf.SetFont("Arial", "I", 12); pdf.SetTextColor(100, 116, 139)
 	pdf.CellFormat(70, 6, "Convener", "", 1, "C", false, 0, "")
 
-	w.Header().Set("Content-Type", "application/pdf")
-	w.Header().Set("Content-Disposition", "attachment; filename=TAI_Certificate.pdf")
-	pdf.Output(w)
-}
 
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("Content-Disposition", "attachment; filename=TAI_Certificate.pdf")
