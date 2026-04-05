@@ -37,7 +37,7 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 
 	programNameDisplay := "Ready for a Soulmate"
 	if programName == "launchpad" {
-		programNameDisplay = "Couples' Launchpad 5.0"
+		programNameDisplay = "Couples Launchpad"
 	}
 
 	// PARALLEL EXECUTION: Run independent count/exists queries in parallel
