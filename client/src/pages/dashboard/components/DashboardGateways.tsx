@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Star, Video, FileText, CheckCircle2, PlayCircle } from 'lucide-react';
+import { Star, Video, CheckCircle2, PlayCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { postLMS } from '../../../lib/api';
 import { StatusModal } from './StatusModal';
