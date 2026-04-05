@@ -33,8 +33,6 @@ export const MidCohortReviewPage = () => {
       onComplete: () => setIsUnlocked(true),
   });
 
-  const formatTime = (s: number) => `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reviewContent.trim()) return;
