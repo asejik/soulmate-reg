@@ -8,13 +8,10 @@ import (
 	"time"
 
 	"github.com/asejik/soulmate-reg/server/db"
-	"github.com/jung-kurt/gofpdf"
+	"github.com/go-pdf/fpdf"
 )
 
 func GenerateCertificate(w http.ResponseWriter, r *http.Request) {
-	cwd, _ := os.Getwd()
-	log.Printf("Generating Certificate. CWD: %s", cwd)
-
 	userID := r.Context().Value(userIDKey).(string)
 	requestedProgram := r.URL.Query().Get("program")
 	programName, _, _ := resolveActiveProgram(r.Context(), userID, requestedProgram)
@@ -84,9 +81,8 @@ func GenerateCertificate(w http.ResponseWriter, r *http.Request) {
 	pdf.CellFormat(277, 25, userName, "", 1, "C", false, 0, "")
 
 	if pdf.Error() != nil {
-		cwd, _ := os.Getwd()
-		log.Printf("Final PDF processing error: %v (CWD: %s)", pdf.Error(), cwd)
-		http.Error(w, fmt.Sprintf("Failed (CWD: %s): %v", cwd, pdf.Error()), http.StatusInternalServerError)
+		log.Printf("Final PDF processing error: %v", pdf.Error())
+		http.Error(w, "Failed to generate certificate: " + pdf.Error().Error(), http.StatusInternalServerError)
 		return
 	}
 
