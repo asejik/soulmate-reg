@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -26,7 +25,7 @@ func GenerateCertificate(w http.ResponseWriter, r *http.Request) {
 		WHERE au.id = $1 LIMIT 1
 	`, userID).Scan(&userName)
 
-	pdf := gofpdf.New("L", "mm", "A4", "")
+	pdf := fpdf.New("L", "mm", "A4", "")
 	pdf.AddPage()
 
 	// 1. Subtle Texture Background (Cream/Off-white with very faint grain)
@@ -58,7 +57,7 @@ func GenerateCertificate(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Logo not found at %s: %v", logoPath, err)
 		logoPath = "../client/public/logo2.png" // Try fallback
 	}
-	pdf.ImageOptions(logoPath, 136, 20, 25, 0, false, gofpdf.ImageOptions{ReadDpi: true}, 0, "")
+	pdf.ImageOptions(logoPath, 136, 20, 25, 0, false, fpdf.ImageOptions{ReadDpi: true}, 0, "")
 
 	pdf.SetFont("Arial", "B", 36); pdf.SetTextColor(15, 23, 42); pdf.SetY(65)
 	pdf.CellFormat(277, 20, "CERTIFICATE OF COMPLETION", "", 1, "C", false, 0, "")
