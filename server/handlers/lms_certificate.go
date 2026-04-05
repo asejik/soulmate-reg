@@ -112,6 +112,6 @@ func GenerateCertificate(w http.ResponseWriter, r *http.Request) {
 
 
 	w.Header().Set("Content-Type", "application/pdf")
-	w.Header().Set("Content-Disposition", "attachment; filename=TAI_Certificate.pdf")
+	w.Header().Set("Content-Disposition", "attachment; filename=Record.pdf")
 	pdf.Output(w)
 }

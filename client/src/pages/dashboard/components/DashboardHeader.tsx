@@ -1,6 +1,8 @@
+import React, { useState } from 'react';
 import { BookOpen, Award } from 'lucide-react';
 import { supabase, API_BASE_URL } from '../../../config';
 import { type DashboardData } from '../DashboardPage';
+import { StatusModal } from './StatusModal';
 
 interface Props {
   data: DashboardData;
@@ -10,24 +12,30 @@ interface Props {
 }
 
 export const DashboardHeader = ({ data, progressPercentage, isFullyCompleted, hasCompletedFinalReview }: Props) => {
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+
   const handleSwitchProgram = (newProgram: string) => {
     localStorage.setItem('tai_active_program', newProgram);
     window.location.reload();
   };
 
   const handleDownloadCertificate = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const activeProg = localStorage.getItem('tai_active_program') || '';
-    const response = await fetch(`${API_BASE_URL}/lms/certificate?program=${activeProg}`, {
-      headers: { 'Authorization': `Bearer ${session?.access_token}` }
-    });
-    if (response.ok) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const activeProg = localStorage.getItem('tai_active_program') || '';
+      const response = await fetch(`${API_BASE_URL}/lms/certificate?program=${activeProg}`, {
+        headers: { 'Authorization': `Bearer ${session?.access_token}` }
+      });
+      if (!response.ok) throw new Error('Failed');
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'TAI_Certificate.pdf';
+      a.download = 'Record.pdf';
       a.click();
+    } catch (err) {
+      console.error('Certificate error:', err);
+      setIsErrorModalOpen(true);
     }
   };
 
@@ -71,6 +79,14 @@ export const DashboardHeader = ({ data, progressPercentage, isFullyCompleted, ha
           </button>
         )}
       </div>
+
+      <StatusModal 
+        isOpen={isErrorModalOpen} 
+        onClose={() => setIsErrorModalOpen(false)} 
+        type="error" 
+        title="Download Error" 
+        message="Something went wrong while generating your certificate. Please try again or contact support if the issue persists." 
+      />
     </div>
   );
 };
