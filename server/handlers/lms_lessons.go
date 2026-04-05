@@ -99,27 +99,44 @@ func SubmitAssignment(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"status": "success", "message": "Assignment submitted!"})
 }
 func ResetUserProgress(w http.ResponseWriter, r *http.Request) {
-	targetUID := r.URL.Query().Get("user_id")
+	targetID := r.URL.Query().Get("user_id")
 	lessonID := r.URL.Query().Get("lesson_id")
 	moduleID := r.URL.Query().Get("module_id")
 
-	if targetUID == "" {
+	if targetID == "" {
 		http.Error(w, "Missing user_id", http.StatusBadRequest)
 		return
 	}
 
+	// 1. Map the Participant/Launchpad ID to the Auth User ID
+	var authID string
+	err := db.Pool.QueryRow(r.Context(), `
+		SELECT id FROM auth.users WHERE email IN (
+			SELECT email FROM public.participants WHERE id::text = $1
+			UNION
+			SELECT email FROM public.couples_launchpad WHERE id::text = $1
+		)
+	`, targetID).Scan(&authID)
+
+	if err != nil {
+		fmt.Println("💥 RESET ERROR (User Mapping Failed):", err)
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	// 2. Perform deletions using the correct Auth ID
 	if lessonID != "" {
-		// Reset specific lesson
-		db.Pool.Exec(r.Context(), "DELETE FROM public.lesson_progress WHERE user_id =  AND lesson_id = ", targetUID, lessonID)
+		db.Pool.Exec(r.Context(), "DELETE FROM public.lesson_progress WHERE user_id = $1 AND lesson_id = $2", authID, lessonID)
 	} else if moduleID != "" {
-		// Reset entire module
 		db.Pool.Exec(r.Context(), `
 			DELETE FROM public.lesson_progress 
-			WHERE user_id =  AND lesson_id IN (SELECT id FROM public.lessons WHERE module_id = )
-		`, targetUID, moduleID)
+			WHERE user_id = $1 AND lesson_id IN (SELECT id FROM public.lessons WHERE module_id = $2)
+		`, authID, moduleID)
 	} else {
-		// Reset ALL progress for this user
-		db.Pool.Exec(r.Context(), "DELETE FROM public.lesson_progress WHERE user_id = ", targetUID)
+		// Complete Reset
+		db.Pool.Exec(r.Context(), "DELETE FROM public.lesson_progress WHERE user_id = $1", authID)
+		db.Pool.Exec(r.Context(), "DELETE FROM public.program_reviews WHERE user_id = $1", authID)
+		db.Pool.Exec(r.Context(), "DELETE FROM public.assignment_submissions WHERE user_id = $1", authID)
 	}
 
 	w.WriteHeader(http.StatusOK)
