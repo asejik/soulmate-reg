@@ -98,3 +98,29 @@ func SubmitAssignment(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"status": "success", "message": "Assignment submitted!"})
 }
+func ResetUserProgress(w http.ResponseWriter, r *http.Request) {
+	targetUID := r.URL.Query().Get("user_id")
+	lessonID := r.URL.Query().Get("lesson_id")
+	moduleID := r.URL.Query().Get("module_id")
+
+	if targetUID == "" {
+		http.Error(w, "Missing user_id", http.StatusBadRequest)
+		return
+	}
+
+	if lessonID != "" {
+		// Reset specific lesson
+		db.Pool.Exec(r.Context(), "DELETE FROM public.lesson_progress WHERE user_id =  AND lesson_id = ", targetUID, lessonID)
+	} else if moduleID != "" {
+		// Reset entire module
+		db.Pool.Exec(r.Context(), `
+			DELETE FROM public.lesson_progress 
+			WHERE user_id =  AND lesson_id IN (SELECT id FROM public.lessons WHERE module_id = )
+		`, targetUID, moduleID)
+	} else {
+		// Reset ALL progress for this user
+		db.Pool.Exec(r.Context(), "DELETE FROM public.lesson_progress WHERE user_id = ", targetUID)
+	}
+
+	w.WriteHeader(http.StatusOK)
+}

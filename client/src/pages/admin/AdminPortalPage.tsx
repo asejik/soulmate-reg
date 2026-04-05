@@ -7,8 +7,9 @@ import { supabase } from '../../config';
 import { UserManagementTab } from '../../components/admin/UserManagementTab';
 import { ProgressTab } from '../../components/admin/ProgressTab';
 import { CurriculumTab } from '../../components/admin/CurriculumTab';
+import { DiscussionsTab } from '../../components/admin/DiscussionsTab';
 
-type AdminTab = 'users' | 'progress' | 'curriculum';
+type AdminTab = 'users' | 'progress' | 'curriculum' | 'discussions';
 
 export default function AdminPortalPage() {
   const navigate = useNavigate();
@@ -24,7 +25,12 @@ export default function AdminPortalPage() {
     const checkAdmin = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return navigate('/login');
-      if (session.user.email !== 'asejik@gmail.com') return navigate('/dashboard');
+      
+      const allowedAdmins = ['asejik@gmail.com', 'temitopeayenigba@gmail.com'];
+      if (!allowedAdmins.includes(session.user.email || '')) {
+        return navigate('/dashboard');
+      }
+      
       setAdminEmail(session.user.email || '');
       setIsAdmin(true);
     };
@@ -51,6 +57,7 @@ export default function AdminPortalPage() {
           <button onClick={() => handleTabChange('users')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'users' ? 'bg-pink-500/10 text-pink-400 font-bold' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}><Users size={18} />User Management</button>
           <button onClick={() => handleTabChange('progress')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'progress' ? 'bg-pink-500/10 text-pink-400 font-bold' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}><GraduationCap size={18} />LMS Progress</button>
           <button onClick={() => handleTabChange('curriculum')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'curriculum' ? 'bg-pink-500/10 text-pink-400 font-bold' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}><BookOpen size={18} />Curriculum Data</button>
+          <button onClick={() => handleTabChange('discussions')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'discussions' ? 'bg-pink-500/10 text-pink-400 font-bold' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}><ShieldAlert size={18} />Discussions</button>
         </nav>
         <div className="p-4 border-t border-white/5">
           <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all"><LogOut size={18} />Log Out</button>
@@ -63,6 +70,7 @@ export default function AdminPortalPage() {
           {activeTab === 'users' && <UserManagementTab />}
           {activeTab === 'progress' && <ProgressTab />}
           {activeTab === 'curriculum' && <CurriculumTab />}
+          {activeTab === 'discussions' && <DiscussionsTab />}
         </div>
       </div>
     </div>

@@ -84,6 +84,10 @@ func main() {
 		r.Get("/api/lms/lessons/{id}/comments", handlers.GetLessonComments)
 		r.Post("/api/lms/lessons/{id}/comments", handlers.PostLessonComment)
 		r.Post("/api/lms/lessons/{id}/progress", handlers.UpdateProgress)
+		
+		// Admin Moderation / Reset
+		r.Delete("/api/admin/comments", handlers.DeleteLessonComment)
+		r.Delete("/api/admin/progress", handlers.ResetUserProgress)
 
 	})
 

@@ -92,3 +92,12 @@ func SubmitReview(w http.ResponseWriter, r *http.Request) {
 	db.Pool.Exec(r.Context(), "INSERT INTO public.program_reviews (user_id, program_name, review_type, content) VALUES ($1, $2, $3, $4) ON CONFLICT (user_id, program_name) DO NOTHING", userID, programName, req.ReviewType, req.Content)
 	w.WriteHeader(http.StatusOK)
 }
+func DeleteLessonComment(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		http.Error(w, "Missing ID", http.StatusNoContent)
+		return
+	}
+	db.Pool.Exec(r.Context(), "DELETE FROM public.lesson_comments WHERE id = ", id)
+	w.WriteHeader(http.StatusOK)
+}

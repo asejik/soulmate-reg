@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, AlertTriangle, Filter, ChevronLeft, ChevronRight, UserPlus, X, Save, LogIn, Mail, Phone, Instagram, Users, Search } from 'lucide-react';
+import { Trash2, AlertTriangle, Filter, ChevronLeft, ChevronRight, UserPlus, X, Save, LogIn, Mail, Phone, Instagram, Users, Search, RotateCcw, Book } from 'lucide-react';
 import { supabase, API_BASE_URL } from '../../config';
 import { CustomDropdown } from './CustomDropdown';
 
@@ -31,6 +31,8 @@ export const UserManagementTab = () => {
     partner_registered: 'No'
   });
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
+  const [modules, setModules] = useState<any[]>([]);
+  const [resetModal, setResetModal] = useState({ isOpen: false, type: 'all', moduleId: '', isResetting: false });
 
   useEffect(() => { setCurrentPage(1); }, [userFilter, itemsPerPage, searchTerm]);
 
@@ -43,8 +45,19 @@ export const UserManagementTab = () => {
     } catch (err) { console.error(err); } finally { setIsLoading(false); }
   };
 
+  const fetchModules = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${API_BASE_URL}/admin/modules`, { 
+        headers: { 'Authorization': `Bearer ${session?.access_token}` } 
+      });
+      if (res.ok) setModules(await res.json() || []);
+    } catch (err) { console.error(err); }
+  };
+
   useEffect(() => {
     fetchUsers();
+    fetchModules();
   }, []);
 
   const confirmDelete = async () => {
@@ -99,6 +112,31 @@ export const UserManagementTab = () => {
     }
   };
 
+  const handleResetProgress = async () => {
+    setResetModal(prev => ({ ...prev, isResetting: true }));
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      let url = `${API_BASE_URL}/admin/progress?user_id=${selectedUser.id}`;
+      if (resetModal.type === 'module' && resetModal.moduleId) {
+        url += `&module_id=${resetModal.moduleId}`;
+      }
+      
+      const res = await fetch(url, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${session?.access_token}` }
+      });
+      
+      if (res.ok) {
+        alert("Progress reset successfully.");
+        setResetModal({ isOpen: false, type: 'all', moduleId: '', isResetting: false });
+      }
+    } catch (err) {
+      alert("Error resetting progress.");
+    } finally {
+      setResetModal(prev => ({ ...prev, isResetting: false }));
+    }
+  };
+
   const processedUsers = useMemo(() => {
     let filtered = users.filter(u => userFilter === 'All' || u.source === userFilter);
     
@@ -120,13 +158,29 @@ export const UserManagementTab = () => {
       {/* Delete Modal */}
       <AnimatePresence>
         {deleteModal.isOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-[#13132b] border border-white/10 rounded-2xl p-6 max-w-md w-full shadow-2xl">
               <div className="flex items-center gap-4 mb-4 text-red-400"><div className="p-3 bg-red-500/10 rounded-full"><AlertTriangle size={24} /></div><h3 className="text-xl font-bold text-white">Delete User?</h3></div>
               <p className="text-slate-300 mb-6">Delete <strong className="text-white">{deleteModal.userName}</strong>? This action cannot be undone.</p>
               <div className="flex gap-3 justify-end">
                 <button onClick={() => setDeleteModal({ isOpen: false, userId: '', source: '', userName: '', isDeleting: false })} className="px-5 py-2.5 rounded-xl text-sm font-bold text-slate-300 hover:bg-white/5">Cancel</button>
                 <button onClick={confirmDelete} disabled={deleteModal.isDeleting} className="px-5 py-2.5 rounded-xl text-sm font-bold bg-red-500 hover:bg-red-600 text-white">{deleteModal.isDeleting ? "Deleting..." : "Yes, Delete"}</button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Reset Progress Modal */}
+      <AnimatePresence>
+        {resetModal.isOpen && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-[#13132b] border border-white/10 rounded-2xl p-6 max-w-md w-full shadow-2xl">
+              <div className="flex items-center gap-4 mb-4 text-amber-400"><div className="p-3 bg-amber-500/10 rounded-full"><RotateCcw size={24} /></div><h3 className="text-xl font-bold text-white">Reset Progress?</h3></div>
+              <p className="text-slate-300 mb-6">Reset {resetModal.type === 'all' ? 'ALL lesson progress' : 'module progress'} for <strong className="text-white">{selectedUser.full_name}</strong>? This will set completion to 0%.</p>
+              <div className="flex gap-3 justify-end">
+                <button onClick={() => setResetModal({ isOpen: false, type: 'all', moduleId: '', isResetting: false })} className="px-5 py-2.5 rounded-xl text-sm font-bold text-slate-300 hover:bg-white/5">Cancel</button>
+                <button onClick={handleResetProgress} disabled={resetModal.isResetting} className="px-5 py-2.5 rounded-xl text-sm font-bold bg-amber-600 hover:bg-amber-500 text-white">{resetModal.isResetting ? "Resetting..." : "Confirm Reset"}</button>
               </div>
             </motion.div>
           </div>
@@ -299,7 +353,7 @@ export const UserManagementTab = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-white/[0.03] rounded-3xl border border-white/5 transition-all">
                     <div className="space-y-4">
                        <div className="flex items-center gap-3">
-                         <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center"><Trash2 size={14} className="rotate-45" /> <LogIn size={14} className="hidden" /> <Save size={14} className="hidden" /> <Mail size={16} /> </div>
+                         <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center font-bold text-lg leading-none">@</div>
                          <div className="flex flex-col">
                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Email</span>
                            <span className="text-sm text-slate-200">{selectedUser.email}</span>
@@ -332,7 +386,7 @@ export const UserManagementTab = () => {
                   </div>
 
                   {/* Secondary Details Section */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 px-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 px-4 pb-4">
                      {/* Dynamic Fields based on Source */}
                      {selectedUser.source === 'Ready for a Soulmate' ? (
                         <>
@@ -360,6 +414,41 @@ export const UserManagementTab = () => {
                         </div>
                      )}
                   </div>
+
+                   {/* Progress Management Section */}
+                   <div className="mt-4 pt-8 border-t border-white/5 space-y-4">
+                      <div className="flex items-center gap-4 text-amber-500 mb-2">
+                        <div className="p-2 bg-amber-500/10 rounded-xl"><RotateCcw size={20} /></div>
+                        <div>
+                          <h4 className="font-bold text-white">Learning Progress</h4>
+                          <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black">Manage participant advancement</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <button 
+                          onClick={() => setResetModal({ isOpen: true, type: 'all', moduleId: '', isResetting: false })}
+                          className="flex items-center justify-center gap-3 p-4 rounded-3xl bg-white/5 border border-white/5 hover:bg-amber-500/10 hover:border-amber-500/20 text-slate-300 hover:text-amber-400 font-bold transition-all"
+                        >
+                          <RotateCcw size={18} /> Reset All Progress
+                        </button>
+                        
+                        <div className="relative group">
+                          <CustomDropdown 
+                            icon={Book}
+                            value=""
+                            onChange={(id) => {
+                              if (!id) return;
+                              setResetModal({ isOpen: true, type: 'module', moduleId: id, isResetting: false });
+                            }}
+                            options={[
+                              { label: 'Reset by Module...', value: '' },
+                              ...modules.filter(m => m.program_name === (selectedUser.source === 'Couples Launchpad' ? 'launchpad' : 'soulmate'))
+                                .map(m => ({ label: m.title, value: m.id }))
+                            ]}
+                          />
+                        </div>
+                      </div>
+                   </div>
                 </div>
               </div>
             </motion.div>
@@ -387,7 +476,7 @@ export const UserManagementTab = () => {
             />
             {searchTerm && (
               <button 
-                onClick={() => setSearchTerm('')}
+                onClick={() => setSearchTerm('') }
                 className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-500 hover:text-white transition-colors"
               >
                 <X size={14} />
