@@ -30,11 +30,11 @@ func GenerateCertificate(w http.ResponseWriter, r *http.Request) {
 	pdf.SetFillColor(254, 253, 250)
 	pdf.Rect(0, 0, 297, 210, "F")
 	
-	// Add very faint "texture" dots
-	pdf.SetDrawColor(240, 235, 220)
-	for i := 5; i < 290; i += 8 {
-		for j := 5; j < 205; j += 8 {
-			pdf.Circle(float64(i), float64(j), 0.1, "D")
+	// Add "texture" dots (made slightly darker for visibility)
+	pdf.SetDrawColor(220, 215, 200)
+	for i := 5; i < 290; i += 6 {
+		for j := 5; j < 205; j += 6 {
+			pdf.Circle(float64(i), float64(j), 0.15, "D")
 		}
 	}
 
@@ -49,10 +49,8 @@ func GenerateCertificate(w http.ResponseWriter, r *http.Request) {
 	pdf.Line(18, 192, 30, 192); pdf.Line(18, 192, 18, 180)
 	pdf.Line(279, 192, 267, 192); pdf.Line(279, 192, 279, 180)
 
-	// 3. Logo Background Plate (To make white logo visible)
-	pdf.SetFillColor(15, 23, 42) // Dark Navy
-	pdf.RoundedRect(128, 18, 41, 20, 3, "1234", "F")
-	pdf.ImageOptions("../client/public/logo.png", 130, 20, 37, 0, false, gofpdf.ImageOptions{ReadDpi: true}, 0, "")
+	// 3. Logo (logo2.png is black, smaller and centered)
+	pdf.ImageOptions("../client/public/logo2.png", 136, 20, 25, 0, false, gofpdf.ImageOptions{ReadDpi: true}, 0, "")
 
 	pdf.SetFont("Arial", "B", 36); pdf.SetTextColor(15, 23, 42); pdf.SetY(65)
 	pdf.CellFormat(277, 20, "CERTIFICATE OF COMPLETION", "", 1, "C", false, 0, "")
@@ -69,20 +67,26 @@ func GenerateCertificate(w http.ResponseWriter, r *http.Request) {
 	pdf.SetFont("Arial", "B", 24); pdf.SetTextColor(15, 23, 42); pdf.SetY(150)
 	pdf.CellFormat(277, 10, displayProgramName, "", 1, "C", false, 0, "")
 
-	// 4. Footer Section - Fixed Alignment
+	// 4. Footer Section
 	pdf.SetY(175); pdf.SetX(30); pdf.SetFont("Arial", "B", 12); pdf.SetTextColor(15, 23, 42)
 	pdf.CellFormat(15, 8, "Date:", "", 0, "L", false, 0, "")
 	pdf.SetFont("Arial", "", 12)
 	pdf.CellFormat(60, 8, time.Now().Format("January 2, 2006"), "", 0, "L", false, 0, "")
 
-	// Move X for Signature
-	pdf.SetX(187)
+	// Shared X for Signature block to ensure center alignment relative to each other
+	sigX := 195.0
+	pdf.SetY(175); pdf.SetX(sigX)
 	pdf.SetFont("Arial", "B", 14); pdf.SetTextColor(15, 23, 42)
-	pdf.CellFormat(80, 8, "Temitope Ayenigba", "", 1, "R", false, 0, "") // ln=1 to move down
+	pdf.CellFormat(70, 8, "Temitope Ayenigba", "", 1, "C", false, 0, "")
 	
-	pdf.SetX(187) // Reset X for the next row
+	pdf.SetX(sigX)
 	pdf.SetFont("Arial", "I", 12); pdf.SetTextColor(100, 116, 139)
-	pdf.CellFormat(80, 6, "Convener", "", 1, "R", false, 0, "")
+	pdf.CellFormat(70, 6, "Convener", "", 1, "C", false, 0, "")
+
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", "attachment; filename=TAI_Certificate.pdf")
+	pdf.Output(w)
+}
 
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("Content-Disposition", "attachment; filename=TAI_Certificate.pdf")
