@@ -499,6 +499,12 @@ export const CurriculumTab = () => {
             >
               <PlusCircle size={15} /> Lesson
             </button>
+            <button
+               onClick={() => setPanel({ type: 'edit-settings' })}
+               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-600/20 border border-amber-500/30 text-amber-300 text-sm font-semibold hover:bg-amber-600/30 transition-colors"
+            >
+              <RotateCcw size={15} /> Special
+            </button>
           </div>
         </div>
 
@@ -638,6 +644,9 @@ export const CurriculumTab = () => {
                       onSave={() => { fetchAll(); setPanel({ type: 'create-lesson' }); }}
                       onCancel={() => setPanel({ type: 'create-lesson' })}
                     />
+                  )}
+                  {panel.type === 'edit-settings' && (
+                    <SettingsForm onSave={fetchAll} />
                   )}
                 </motion.div>
               </AnimatePresence>
