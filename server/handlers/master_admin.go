@@ -608,11 +608,13 @@ func UpdateProgramSettings(w http.ResponseWriter, r *http.Request) {
 
 	_, err := db.Pool.Exec(r.Context(), `
 		INSERT INTO public.program_settings (program_name, mid_checkpoint_video_id) 
-		VALUES ($1, $2) ON CONFLICT (program_name) DO UPDATE SET mid_checkpoint_video_id = $2
+		VALUES ($1, $2) ON CONFLICT (program_name) 
+		DO UPDATE SET mid_checkpoint_video_id = EXCLUDED.mid_checkpoint_video_id
 	`, req.ProgramName, req.MidCheckpointVideoID)
 
 	if err != nil {
-		http.Error(w, "Failed to update settings", http.StatusInternalServerError)
+		fmt.Printf("💥 PROGRAM SETTINGS SAVE ERROR [%s]: %v\n", req.ProgramName, err)
+		http.Error(w, "DB SAVE FAILED: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
