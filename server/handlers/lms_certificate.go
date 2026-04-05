@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/asejik/soulmate-reg/server/db"
@@ -9,6 +11,9 @@ import (
 )
 
 func GenerateCertificate(w http.ResponseWriter, r *http.Request) {
+	cwd, _ := os.Getwd()
+	log.Printf("Generating Certificate. CWD: %s", cwd)
+
 	userID := r.Context().Value(userIDKey).(string)
 	requestedProgram := r.URL.Query().Get("program")
 	programName, _, _ := resolveActiveProgram(r.Context(), userID, requestedProgram)
