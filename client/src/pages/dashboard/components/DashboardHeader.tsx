@@ -40,9 +40,10 @@ export const DashboardHeader = ({ data, progressPercentage, isFullyCompleted, ha
       a.click();
     } catch (err: any) {
       console.error('Certificate error:', err);
-      // Only show modal if it's NOT a generic fetch error (which often happens even on success due to adblockers)
-      if (err.message !== 'Failed to fetch') {
-        setErrorMessage(err.message);
+      // Ignore generic fetch errors which are often false positives due to adblockers/network reporting
+      const isFetchError = err.message?.toLowerCase().includes('fetch');
+      if (!isFetchError) {
+        setErrorMessage(err.message || 'Something went wrong while generating your certificate.');
         setIsErrorModalOpen(true);
       }
     }

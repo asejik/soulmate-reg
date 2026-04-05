@@ -68,7 +68,13 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		var exists bool
-		err := db.Pool.QueryRow(r.Context(), "SELECT EXISTS(SELECT 1 FROM public.program_reviews WHERE user_id = $1 AND program_name = $2 AND review_type = 'final')", userID, programName).Scan(&exists)
+		err := db.Pool.QueryRow(r.Context(), `
+			SELECT EXISTS(
+				SELECT 1 FROM public.program_reviews 
+				WHERE user_id = $1 AND program_name = $2 
+				AND review_type IN ('final', 'final_video', 'final_google')
+			)
+		`, userID, programName).Scan(&exists)
 		finalReviewChan <- result{exists, err}
 	}()
 
