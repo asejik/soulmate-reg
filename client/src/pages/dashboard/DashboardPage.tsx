@@ -81,7 +81,13 @@ export const DashboardPage = () => {
     <div className="max-w-4xl mx-auto space-y-8 pb-20">
       <DashboardHeader data={data} progressPercentage={progressPercentage} isFullyCompleted={isFullyCompleted} hasCompletedFinalReview={hasCompletedFinalReview} />
       <DashboardGateways data={data} isFullyCompleted={isFullyCompleted} requiresMidReview={requiresMidReview} hasCompletedFinalReview={hasCompletedFinalReview} setHasCompletedFinalReview={setHasCompletedFinalReview} />
-      <ModuleAccordion curriculum={data.curriculum} nextLessonId={data.next_lesson?.id} currentTime={currentTime} />
+      <ModuleAccordion
+        curriculum={data.curriculum}
+        nextLessonId={data.next_lesson?.id}
+        currentTime={currentTime}
+        requiresMidReview={requiresMidReview}
+        totalLessons={data.cohort.total_lessons}
+      />
     </div>
   );
 };

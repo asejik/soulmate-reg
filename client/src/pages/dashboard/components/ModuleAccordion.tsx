@@ -8,9 +8,11 @@ interface Props {
   curriculum: DashboardModule[];
   nextLessonId: string;
   currentTime: Date;
+  requiresMidReview: boolean;
+  totalLessons: number;
 }
 
-export const ModuleAccordion = ({ curriculum, nextLessonId, currentTime }: Props) => {
+export const ModuleAccordion = ({ curriculum, nextLessonId, currentTime, requiresMidReview, totalLessons }: Props) => {
   const navigate = useNavigate();
   const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
@@ -21,6 +23,9 @@ export const ModuleAccordion = ({ curriculum, nextLessonId, currentTime }: Props
   });
 
   const toggleModule = (id: string) => setExpandedModules(prev => ({ ...prev, [id]: !prev[id] }));
+
+  // TRACK GLOBAL LESSON INDEX TO FIND MID-POINT
+  let currentGlobalIdx = 0;
 
   return (
     <div className="space-y-4">
@@ -50,7 +55,10 @@ export const ModuleAccordion = ({ curriculum, nextLessonId, currentTime }: Props
                   <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-white/5 bg-[#0b0f19]/50">
                     <div className="flex flex-col divide-y divide-white/5">
                       {module.lessons.map((lesson) => {
+                        currentGlobalIdx++;
                         const isNextLesson = lesson.id === nextLessonId;
+                        const isPostCheckpoint = currentGlobalIdx > Math.ceil(totalLessons / 2);
+                        const isLockedByCheckpoint = requiresMidReview && isPostCheckpoint && !lesson.is_completed;
 
                         const startTime = lesson.scheduled_start_time ? new Date(lesson.scheduled_start_time) : null;
                         const isTimeLocked = startTime ? startTime > currentTime : false;
@@ -62,11 +70,13 @@ export const ModuleAccordion = ({ curriculum, nextLessonId, currentTime }: Props
                         const formattedTime = startTime ? startTime.toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
 
                         return (
-                          <div key={lesson.id} className={`flex flex-col md:flex-row md:items-center justify-between p-5 gap-4 transition-colors ${!isTimeLocked && isNextLesson ? 'bg-blue-500/[0.03]' : isTimeLocked ? 'opacity-90' : 'hover:bg-white/[0.02]'}`}>
+                          <div key={lesson.id} className={`flex flex-col md:flex-row md:items-center justify-between p-5 gap-4 transition-colors ${isLockedByCheckpoint ? 'opacity-50 grayscale select-none' : !isTimeLocked && isNextLesson ? 'bg-blue-500/[0.03]' : isTimeLocked ? 'opacity-90' : 'hover:bg-white/[0.02]'}`}>
                             <div className="flex items-start md:items-center gap-4">
                               <div className="mt-0.5 md:mt-0 shrink-0">
                                 {lesson.is_completed ? (
                                   <CheckCircle2 size={20} className="text-green-500" />
+                                ) : isLockedByCheckpoint ? (
+                                  <div className="w-6 h-6 rounded-full bg-slate-500/10 flex items-center justify-center text-slate-600"><Star size={14} /></div>
                                 ) : isTimeLocked ? (
                                   <div className="w-6 h-6 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500"><Timer size={14} /></div>
                                 ) : isNextLesson ? (
@@ -76,21 +86,28 @@ export const ModuleAccordion = ({ curriculum, nextLessonId, currentTime }: Props
                                 )}
                               </div>
                               <div>
-                                <h4 className={`font-medium ${lesson.is_completed ? 'text-slate-300' : !isTimeLocked ? 'text-white font-bold' : 'text-slate-500'}`}>{lesson.title}</h4>
-                                <div className={`flex items-center gap-1.5 text-xs mt-1 ${isTimeLocked ? 'text-slate-700' : 'text-slate-500'}`}><Clock size={12} /> {lesson.estimated_time} • Video</div>
+                                <h4 className={`font-medium ${lesson.is_completed ? 'text-slate-300' : !isTimeLocked && !isLockedByCheckpoint ? 'text-white font-bold' : 'text-slate-500'}`}>{lesson.title}</h4>
+                                <div className={`flex items-center gap-1.5 text-xs mt-1 ${isTimeLocked || isLockedByCheckpoint ? 'text-slate-700' : 'text-slate-500'}`}><Clock size={12} /> {lesson.estimated_time} • Video</div>
                               </div>
                             </div>
                             <div className="pl-9 md:pl-0 shrink-0">
                               <button
-                                onClick={() => navigate(`/dashboard/lessons/${lesson.id}`)}
+                                onClick={() => {
+                                  if (isLockedByCheckpoint) {
+                                    alert("Checkpoint Required: Please complete the Mid-Program Checkpoint review to unlock the rest of the curriculum.");
+                                    return;
+                                  }
+                                  navigate(`/dashboard/lessons/${lesson.id}`);
+                                }}
                                 className={`px-5 py-2 text-sm font-bold rounded-lg transition-all ${
-                                  isTimeLocked ? 'bg-amber-600/10 hover:bg-amber-600/20 text-amber-500 border border-amber-500/20'
+                                  isLockedByCheckpoint ? 'bg-slate-800 text-slate-500 border border-white/5 cursor-not-allowed'
+                                  : isTimeLocked ? 'bg-amber-600/10 hover:bg-amber-600/20 text-amber-500 border border-amber-500/20'
                                   : isNowLive ? 'bg-red-600 hover:bg-red-500 text-white shadow-md shadow-red-900/20'
                                   : isNextLesson ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-900/20'
                                   : 'bg-white/5 hover:bg-white/10 text-slate-300'
                                 }`}
                               >
-                                {isTimeLocked ? `Premieres ${formattedTime}` : lesson.is_completed ? 'Review' : isNowLive ? 'NOW LIVE' : hasStarted ? 'Continue' : 'Start'}
+                                {isLockedByCheckpoint ? 'Checkpoint Required' : isTimeLocked ? `Premieres ${formattedTime}` : lesson.is_completed ? 'Review' : isNowLive ? 'NOW LIVE' : hasStarted ? 'Continue' : 'Start'}
                               </button>
                             </div>
                           </div>

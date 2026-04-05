@@ -49,6 +49,29 @@ func GetLesson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Mid-Program Checkpoint Enforcement
+	var totalLessons, lessonPosition int
+	db.Pool.QueryRow(r.Context(), `
+		WITH AllLessons AS (
+			SELECT l.id, ROW_NUMBER() OVER (ORDER BY m.sort_order ASC, l.sort_order ASC) as pos
+			FROM public.lessons l
+			JOIN public.modules m ON l.module_id = m.id
+			WHERE m.program_name = $1
+		)
+		SELECT (SELECT count(*) FROM AllLessons), pos
+		FROM AllLessons WHERE id = $2
+	`, programName, lessonID).Scan(&totalLessons, &lessonPosition)
+
+	if lessonPosition > (totalLessons+1)/2 {
+		// Post-checkpoint lesson: Check if review is submitted
+		var hasReviewed bool
+		db.Pool.QueryRow(r.Context(), "SELECT EXISTS(SELECT 1 FROM public.program_reviews WHERE user_id = $1 AND program_name = $2 AND review_type = 'mid_cohort')", userID, programName).Scan(&hasReviewed)
+		if !hasReviewed {
+			http.Error(w, "Checkpoint Required. Please complete your Mid-Program Review to unlock the second half of the curriculum.", http.StatusForbidden)
+			return
+		}
+	}
+
 	// All valid lessons are now unlocked to allow access to waitrooms and countdowns
 	lesson.IsLocked = false
 
