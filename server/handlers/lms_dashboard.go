@@ -45,6 +45,7 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 	completedLessonsChan := make(chan result, 1)
 	finalReviewChan := make(chan result, 1)
 	midReviewChan := make(chan result, 1)
+	checkpointVideoChan := make(chan result, 1)
 
 	go func() {
 		var count int
@@ -65,7 +66,7 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		var exists bool
-		err := db.Pool.QueryRow(r.Context(), "SELECT EXISTS(SELECT 1 FROM public.program_reviews WHERE user_id = $1 AND program_name = $2)", userID, programName).Scan(&exists)
+		err := db.Pool.QueryRow(r.Context(), "SELECT EXISTS(SELECT 1 FROM public.program_reviews WHERE user_id = $1 AND program_name = $2 AND review_type = 'final')", userID, programName).Scan(&exists)
 		finalReviewChan <- result{exists, err}
 	}()
 
@@ -73,6 +74,16 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 		var exists bool
 		err := db.Pool.QueryRow(r.Context(), "SELECT EXISTS(SELECT 1 FROM public.program_reviews WHERE user_id = $1 AND program_name = $2 AND review_type = 'mid_cohort')", userID, programName).Scan(&exists)
 		midReviewChan <- result{exists, err}
+	}()
+
+	go func() {
+		var videoID string
+		db.Pool.QueryRow(r.Context(), "SELECT COALESCE(mid_checkpoint_video_id, '') FROM public.program_settings WHERE program_name = $1", programNameDisplay).Scan(&videoID)
+		if videoID == "" {
+			// Fallback if the full name find fails
+			db.Pool.QueryRow(r.Context(), "SELECT COALESCE(mid_checkpoint_video_id, '') FROM public.program_settings WHERE program_name ILIKE $1 LIMIT 1", "%"+programName+"%").Scan(&videoID)
+		}
+		checkpointVideoChan <- result{videoID, nil}
 	}()
 
 	// Continue with the main module query while others run
@@ -121,9 +132,11 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 	resCompleted := <-completedLessonsChan
 	resFinal := <-finalReviewChan
 	resMid := <-midReviewChan
+	resVideo := <-checkpointVideoChan
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"user_id": userID, "has_completed_final_review": resFinal.val, "has_completed_mid_review": resMid.val,
+		"checkpoint_video_id": resVideo.val,
 		"active_program": programName, "enrolled_programs": enrolledPrograms,
 		"cohort": map[string]interface{}{"name": programNameDisplay, "total_lessons": resTotal.val, "completed_lessons": resCompleted.val},
 		"curriculum": modules, "next_lesson": map[string]interface{}{"id": nextLessonID},

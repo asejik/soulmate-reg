@@ -1,13 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Star, ShieldAlert, ChevronLeft, Send, CheckCircle2 } from 'lucide-react';
-import { postLMS } from '../../lib/api';
+import { postLMS, fetchLMS } from '../../lib/api';
 
 export const MidCohortReviewPage = () => {
   const navigate = useNavigate();
   const [reviewContent, setReviewContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [videoId, setVideoId] = useState('');
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const data = await fetchLMS('/lms/dashboard');
+        // The dashboard now returns the special video ID from our settings table
+        setVideoId(data.checkpoint_video_id || '');
+      } catch (err) {
+        console.error("Failed to load checkpoint video ID");
+      }
+    };
+    fetchSettings();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -15,14 +29,12 @@ export const MidCohortReviewPage = () => {
 
     setIsSubmitting(true);
     try {
-      // Send the review to the Go backend with the 'mid_cohort' tag
       await postLMS('/lms/reviews', {
         reviewType: 'mid_cohort',
         content: reviewContent
       });
 
       setIsSuccess(true);
-      // Auto-redirect back to dashboard after 3 seconds to unlock their next lesson!
       setTimeout(() => navigate('/dashboard'), 3000);
     } catch (err) {
       alert("Failed to submit review. Please try again.");
@@ -58,9 +70,8 @@ export const MidCohortReviewPage = () => {
 
       {/* Facilitator Check-in Video */}
       <div className="w-full bg-black rounded-2xl overflow-hidden shadow-2xl border border-white/5 relative aspect-video">
-        {/* Note: Replace this YouTube ID with your actual unlisted Facilitator Check-in video ID */}
         <iframe
-          src={`https://www.youtube.com/embed/YOUR_VIDEO_ID_HERE?rel=0&modestbranding=1`}
+          src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`}
           title="Mid-Cohort Check-in"
           className="absolute top-0 left-0 w-full h-full border-0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

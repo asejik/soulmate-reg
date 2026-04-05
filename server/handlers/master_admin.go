@@ -555,7 +555,7 @@ func DeleteAdminLesson(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(userIDKey).(string)
 	var adminEmail string
 	db.Pool.QueryRow(r.Context(), "SELECT email FROM auth.users WHERE id = $1", userID).Scan(&adminEmail)
-	if adminEmail != "asejik@gmail.com" {
+	if !isAdminEmail(adminEmail) {
 		http.Error(w, "Unauthorized", http.StatusForbidden)
 		return
 	}
@@ -574,4 +574,47 @@ func DeleteAdminLesson(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"message": "Lesson deleted"})
+}
+func GetProgramSettings(w http.ResponseWriter, r *http.Request) {
+	rows, _ := db.Pool.Query(r.Context(), "SELECT program_name, COALESCE(mid_checkpoint_video_id, '') FROM public.program_settings")
+	defer rows.Close()
+	var settings []map[string]interface{}
+	for rows.Next() {
+		var pName, vID string
+		rows.Scan(&pName, &vID)
+		settings = append(settings, map[string]interface{}{"program_name": pName, "mid_checkpoint_video_id": vID})
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(settings)
+}
+
+func UpdateProgramSettings(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(userIDKey).(string)
+	var adminEmail string
+	db.Pool.QueryRow(r.Context(), "SELECT email FROM auth.users WHERE id = $1", userID).Scan(&adminEmail)
+	if !isAdminEmail(adminEmail) {
+		http.Error(w, "Unauthorized", http.StatusForbidden)
+		return
+	}
+
+	var req struct {
+		ProgramName           string `json:"program_name"`
+		MidCheckpointVideoID string `json:"mid_checkpoint_video_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+
+	_, err := db.Pool.Exec(r.Context(), `
+		INSERT INTO public.program_settings (program_name, mid_checkpoint_video_id) 
+		VALUES ($1, $2) ON CONFLICT (program_name) DO UPDATE SET mid_checkpoint_video_id = $2
+	`, req.ProgramName, req.MidCheckpointVideoID)
+
+	if err != nil {
+		http.Error(w, "Failed to update settings", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

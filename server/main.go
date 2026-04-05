@@ -88,6 +88,8 @@ func main() {
 		// Admin Moderation / Reset
 		r.Delete("/api/admin/comments", handlers.DeleteLessonComment)
 		r.Delete("/api/admin/progress", handlers.ResetUserProgress)
+		r.Get("/api/admin/settings", handlers.GetProgramSettings)
+		r.Post("/api/admin/settings", handlers.UpdateProgramSettings)
 
 	})
 

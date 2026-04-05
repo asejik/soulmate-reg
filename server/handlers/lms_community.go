@@ -86,18 +86,38 @@ func SubmitReview(w http.ResponseWriter, r *http.Request) {
 	requestedProgram := r.URL.Query().Get("program")
 	programName, _, _ := resolveActiveProgram(r.Context(), userID, requestedProgram)
 
-	var req struct { ReviewType string `json:"reviewType"`; Content string `json:"content"` }
-	json.NewDecoder(r.Body).Decode(&req)
+	var req struct { 
+		ReviewType string `json:"reviewType"`
+		Content    string `json:"content"` 
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
 
-	db.Pool.Exec(r.Context(), "INSERT INTO public.program_reviews (user_id, program_name, review_type, content) VALUES ($1, $2, $3, $4) ON CONFLICT (user_id, program_name) DO NOTHING", userID, programName, req.ReviewType, req.Content)
+	if req.ReviewType == "" { req.ReviewType = "final" }
+
+	// Allow multiple reviews if types are different (mid_cohort vs final)
+	_, err := db.Pool.Exec(r.Context(), `
+		INSERT INTO public.program_reviews (user_id, program_name, review_type, content) 
+		VALUES ($1, $2, $3, $4)
+		ON CONFLICT (user_id, program_name, review_type) 
+		DO UPDATE SET content = $4
+	`, userID, programName, req.ReviewType, req.Content)
+
+	if err != nil {
+		http.Error(w, "Failed to submit review", http.StatusInternalServerError)
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 }
+
 func DeleteLessonComment(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 	if id == "" {
-		http.Error(w, "Missing ID", http.StatusNoContent)
+		http.Error(w, "Missing ID", http.StatusBadRequest)
 		return
 	}
-	db.Pool.Exec(r.Context(), "DELETE FROM public.lesson_comments WHERE id = ", id)
+	db.Pool.Exec(r.Context(), "DELETE FROM public.lesson_comments WHERE id::text = $1", id)
 	w.WriteHeader(http.StatusOK)
 }

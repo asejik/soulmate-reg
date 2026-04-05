@@ -35,7 +35,8 @@ type PanelMode =
   | { type: 'create-module' }
   | { type: 'edit-module'; item: Module }
   | { type: 'create-lesson' }
-  | { type: 'edit-lesson'; item: Lesson };
+  | { type: 'edit-lesson'; item: Lesson }
+  | { type: 'edit-settings' };
 
 interface DeleteTarget {
   kind: 'module' | 'lesson';
@@ -50,16 +51,99 @@ async function authHeaders() {
   return { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` };
 }
 
-const PROGRAMS = ['Ready for a Soulmate', 'launchpad'];
+const PROGRAMS = ['Ready for a Soulmate', 'Couples Launchpad'];
 
 const LABEL: Record<string, string> = {
   'Ready for a Soulmate': 'RFASM',
-  launchpad: 'CLP',
+  'Couples Launchpad': 'CLP',
 };
 
 const PILL_COLOR: Record<string, string> = {
   'Ready for a Soulmate': 'bg-indigo-500/15 text-indigo-300 border-indigo-500/20',
-  launchpad: 'bg-pink-500/15 text-pink-300 border-pink-500/20',
+  'Couples Launchpad': 'bg-pink-500/15 text-pink-300 border-pink-500/20',
+};
+
+// ─── Settings Form ────────────────────────────────────────────────────────────
+
+const SettingsForm = ({
+  onSave,
+}: {
+  onSave: () => void;
+}) => {
+  const { toasts, dismiss, toast } = useToast();
+  const [settings, setSettings] = useState<any[]>([]);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const headers = await authHeaders();
+      const res = await fetch(`${API_BASE_URL}/admin/settings`, { headers });
+      if (res.ok) setSettings(await res.json());
+    };
+    fetchSettings();
+  }, []);
+
+  const update = async (pName: string, vID: string) => {
+    setSaving(true);
+    try {
+      const headers = await authHeaders();
+      const res = await fetch(`${API_BASE_URL}/admin/settings`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ program_name: pName, mid_checkpoint_video_id: vID })
+      });
+      if (res.ok) {
+        toast.success(`Settings updated for ${pName}`);
+        onSave();
+      }
+    } catch {
+      toast.error('Failed to update settings.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <>
+      <ToastContainer toasts={toasts} onDismiss={dismiss} />
+      <div className="space-y-6">
+        {PROGRAMS.map(p => {
+          const s = settings.find(st => st.program_name === p) || { mid_checkpoint_video_id: '' };
+          return (
+            <div key={p} className="p-4 bg-white/3 rounded-2xl border border-white/5 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className={`text-[10px] font-bold px-3 py-1 rounded-full border ${PILL_COLOR[p]}`}>{p}</span>
+              </div>
+              <Field label="Mid-Program Checkpoint Video ID">
+                <div className="flex gap-2">
+                  <input 
+                    type="text" 
+                    className={inputCls} 
+                    value={s.mid_checkpoint_video_id} 
+                    onChange={e => {
+                      const ns = [...settings];
+                      const idx = ns.findIndex(st => st.program_name === p);
+                      if (idx >= 0) ns[idx].mid_checkpoint_video_id = e.target.value;
+                      else ns.push({ program_name: p, mid_checkpoint_video_id: e.target.value });
+                      setSettings(ns);
+                    }}
+                    placeholder="YouTube ID (e.g. dQw4w9WgXcQ)"
+                  />
+                  <button 
+                    onClick={() => update(p, s.mid_checkpoint_video_id)}
+                    disabled={saving}
+                    className="p-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-all"
+                  >
+                    <Save size={16} />
+                  </button>
+                </div>
+              </Field>
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
 };
 
 // ─── Field component ──────────────────────────────────────────────────────────
@@ -371,6 +455,7 @@ export const CurriculumTab = () => {
     'edit-module': 'Edit Module',
     'create-lesson': 'New Lesson',
     'edit-lesson': 'Edit Lesson',
+    'edit-settings': 'Special Content',
   };
 
   const panelIcon: Record<PanelMode['type'], React.ReactNode> = {
@@ -378,6 +463,7 @@ export const CurriculumTab = () => {
     'edit-module': <Pencil size={16} className="text-indigo-400" />,
     'create-lesson': <FileVideo size={16} className="text-pink-400" />,
     'edit-lesson': <Pencil size={16} className="text-pink-400" />,
+    'edit-settings': <Save size={16} className="text-amber-400" />,
   };
 
   return (
