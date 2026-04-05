@@ -442,7 +442,7 @@ export const UserManagementTab = () => {
                             }}
                             options={[
                               { label: 'Reset by Module...', value: '' },
-                              ...modules.filter(m => m.program_name === (selectedUser.source === 'Couples Launchpad' ? 'launchpad' : 'soulmate'))
+                              ...modules.filter(m => m.program_name === selectedUser.source)
                                 .map(m => ({ label: m.title, value: m.id }))
                             ]}
                           />
