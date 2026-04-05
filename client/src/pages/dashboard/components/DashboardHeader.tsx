@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { BookOpen, Award } from 'lucide-react';
 import { supabase, API_BASE_URL } from '../../../config';
 import { type DashboardData } from '../DashboardPage';
