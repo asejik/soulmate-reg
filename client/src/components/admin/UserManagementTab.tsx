@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, AlertTriangle, Filter, ChevronLeft, ChevronRight, UserPlus, X, Save, LogIn, Mail, Phone, Instagram, Users } from 'lucide-react';
+import { Trash2, AlertTriangle, Filter, ChevronLeft, ChevronRight, UserPlus, X, Save, LogIn, Mail, Phone, Instagram, Users, Search } from 'lucide-react';
 import { supabase, API_BASE_URL } from '../../config';
 import { CustomDropdown } from './CustomDropdown';
 
 export const UserManagementTab = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(50);
   const [userFilter, setUserFilter] = useState('All');
@@ -31,7 +32,7 @@ export const UserManagementTab = () => {
   });
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
 
-  useEffect(() => { setCurrentPage(1); }, [userFilter, itemsPerPage]);
+  useEffect(() => { setCurrentPage(1); }, [userFilter, itemsPerPage, searchTerm]);
 
   const fetchUsers = async () => {
     setIsLoading(true);
@@ -99,11 +100,20 @@ export const UserManagementTab = () => {
   };
 
   const processedUsers = useMemo(() => {
-    const filtered = users.filter(u => userFilter === 'All' || u.source === userFilter);
+    let filtered = users.filter(u => userFilter === 'All' || u.source === userFilter);
+    
+    if (searchTerm) {
+      const lowerSearch = searchTerm.toLowerCase();
+      filtered = filtered.filter(u => 
+        u.full_name?.toLowerCase().includes(lowerSearch) || 
+        u.email?.toLowerCase().includes(lowerSearch)
+      );
+    }
+
     const limit = itemsPerPage === -1 ? filtered.length : itemsPerPage;
     const paginated = filtered.slice((currentPage - 1) * limit, currentPage * limit);
     return { data: paginated, total: filtered.length, totalPages: Math.ceil(filtered.length / limit) || 1 };
-  }, [users, userFilter, currentPage, itemsPerPage]);
+  }, [users, userFilter, currentPage, itemsPerPage, searchTerm]);
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
@@ -362,7 +372,29 @@ export const UserManagementTab = () => {
           <h2 className="text-3xl font-bold mb-2">User Management</h2>
           <p className="text-slate-400">View, filter, and verify all registered participants.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          {/* Search Bar */}
+          <div className="relative flex-1 min-w-[200px] md:w-64 group">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-400 transition-colors">
+              <Search size={18} />
+            </div>
+            <input 
+              type="text" 
+              placeholder="Search by name or email..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-11 pr-4 text-sm text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all placeholder:text-slate-600"
+            />
+            {searchTerm && (
+              <button 
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-500 hover:text-white transition-colors"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
           <button 
             onClick={() => setIsAddModalOpen(true)}
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold shadow-lg shadow-blue-500/20 transition-all active:scale-95"
@@ -370,7 +402,7 @@ export const UserManagementTab = () => {
             <UserPlus size={18} /> <span className="hidden sm:inline">Add User</span>
           </button>
           <CustomDropdown icon={Filter} value={userFilter} onChange={setUserFilter} align="right" options={[{ label: 'All Cohorts', value: 'All' }, { label: 'Ready for a Soulmate', value: 'Ready for a Soulmate' }, { label: 'Couples Launchpad', value: 'Couples Launchpad' }]} />
-          <div className="text-sm font-bold text-pink-400 bg-pink-500/10 px-4 py-2.5 rounded-xl border border-pink-500/20">Showing: {processedUsers.total}</div>
+          <div className="text-sm font-bold text-pink-400 bg-pink-500/10 px-4 py-2.5 rounded-xl border border-pink-500/20">Total: {processedUsers.total}</div>
         </div>
       </div>
 
