@@ -58,8 +58,10 @@ func GenerateCertificate(w http.ResponseWriter, r *http.Request) {
 	pdf.SetFont("Arial", "I", 16); pdf.SetTextColor(100, 116, 139); pdf.SetY(90)
 	pdf.CellFormat(277, 10, "This proudly certifies that", "", 1, "C", false, 0, "")
 
-	pdf.SetFont("Arial", "B", 36); pdf.SetTextColor(59, 130, 246); pdf.SetY(110)
-	pdf.CellFormat(277, 15, userName, "", 1, "C", false, 0, "")
+	// 4. Student Name (Handwritten & Gold)
+	pdf.AddUTF8Font("DancingScript", "", "fonts/DancingScript-Bold.ttf")
+	pdf.SetFont("DancingScript", "", 48); pdf.SetTextColor(212, 175, 55); pdf.SetY(105)
+	pdf.CellFormat(277, 25, userName, "", 1, "C", false, 0, "")
 
 	pdf.SetFont("Arial", "I", 16); pdf.SetTextColor(100, 116, 139); pdf.SetY(135)
 	pdf.CellFormat(277, 10, "has successfully completed the curriculum for", "", 1, "C", false, 0, "")
