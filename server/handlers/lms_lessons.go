@@ -69,17 +69,13 @@ func UpdateProgress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Automate completion if watched over 85%
-	isCompleted := req.Percent >= 85
-
 	_, err := db.Pool.Exec(r.Context(), `
-		INSERT INTO public.lesson_progress (user_id, lesson_id, last_watched_seconds, highest_watched_pct, is_completed)
-		VALUES ($1, $2, $3, $4, $5) ON CONFLICT (user_id, lesson_id)
+		INSERT INTO public.lesson_progress (user_id, lesson_id, last_watched_seconds, highest_watched_pct)
+		VALUES ($1, $2, $3, $4) ON CONFLICT (user_id, lesson_id)
 		DO UPDATE SET 
 			last_watched_seconds = $3, 
-			highest_watched_pct = GREATEST(lesson_progress.highest_watched_pct, $4),
-			is_completed = (lesson_progress.is_completed OR $5)
-	`, userID, lessonID, req.Seconds, req.Percent, isCompleted)
+			highest_watched_pct = GREATEST(lesson_progress.highest_watched_pct, $4)
+	`, userID, lessonID, req.Seconds, req.Percent)
 
 	if err != nil {
 		fmt.Println("💥 PROGRESS SAVE ERROR:", err)
