@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronUp, Clock, Timer, CheckCircle2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Clock, Timer, CheckCircle2, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { DashboardModule } from '../DashboardPage';
 
