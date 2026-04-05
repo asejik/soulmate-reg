@@ -55,7 +55,12 @@ func GenerateCertificate(w http.ResponseWriter, r *http.Request) {
 	pdf.Line(279, 192, 267, 192); pdf.Line(279, 192, 279, 180)
 
 	// 3. Logo (logo2.png is black, smaller and centered)
-	pdf.ImageOptions("client/public/logo2.png", 136, 20, 25, 0, false, gofpdf.ImageOptions{ReadDpi: true}, 0, "")
+	logoPath := "client/public/logo2.png"
+	if _, err := os.Stat(logoPath); err != nil {
+		log.Printf("Logo not found at %s: %v", logoPath, err)
+		logoPath = "../client/public/logo2.png" // Try fallback
+	}
+	pdf.ImageOptions(logoPath, 136, 20, 25, 0, false, gofpdf.ImageOptions{ReadDpi: true}, 0, "")
 
 	pdf.SetFont("Arial", "B", 36); pdf.SetTextColor(15, 23, 42); pdf.SetY(65)
 	pdf.CellFormat(277, 20, "CERTIFICATE OF COMPLETION", "", 1, "C", false, 0, "")
@@ -64,9 +69,24 @@ func GenerateCertificate(w http.ResponseWriter, r *http.Request) {
 	pdf.CellFormat(277, 10, "This proudly certifies that", "", 1, "C", false, 0, "")
 
 	// 4. Student Name (Handwritten & Gold)
-	pdf.AddUTF8Font("DancingScript", "", "server/fonts/DancingScript-Bold.ttf")
+	fontPath := "server/fonts/DancingScript-Bold.ttf"
+	if _, err := os.Stat(fontPath); err != nil {
+		log.Printf("Font not found at %s: %v", fontPath, err)
+		fontPath = "fonts/DancingScript-Bold.ttf" // Try fallback
+	}
+	
+	pdf.AddUTF8Font("DancingScript", "", fontPath)
+	if pdf.Error() != nil {
+		log.Printf("PDF Error after AddUTF8Font: %v", pdf.Error())
+	}
 	pdf.SetFont("DancingScript", "", 48); pdf.SetTextColor(212, 175, 55); pdf.SetY(105)
 	pdf.CellFormat(277, 25, userName, "", 1, "C", false, 0, "")
+
+	if pdf.Error() != nil {
+		log.Printf("Final PDF processing error: %v", pdf.Error())
+		http.Error(w, "Failed to generate certificate: " + pdf.Error().Error(), http.StatusInternalServerError)
+		return
+	}
 
 	pdf.SetFont("Arial", "I", 16); pdf.SetTextColor(100, 116, 139); pdf.SetY(135)
 	pdf.CellFormat(277, 10, "has successfully completed the curriculum for", "", 1, "C", false, 0, "")
