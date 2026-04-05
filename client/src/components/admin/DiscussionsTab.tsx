@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, MessageSquare, Filter, AlertTriangle, X, Search } from 'lucide-react';
+import { Trash2, MessageSquare, Filter, AlertTriangle, Search } from 'lucide-react';
 import { supabase, API_BASE_URL } from '../../config';
 import { CustomDropdown } from './CustomDropdown';
 

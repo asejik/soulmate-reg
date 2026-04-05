@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, AlertTriangle, Filter, ChevronLeft, ChevronRight, UserPlus, X, Save, LogIn, Mail, Phone, Instagram, Users, Search, RotateCcw, Book } from 'lucide-react';
+import { Trash2, AlertTriangle, Filter, ChevronLeft, ChevronRight, UserPlus, X, Save, Phone, Instagram, Users, Search, RotateCcw, Book } from 'lucide-react';
 import { supabase, API_BASE_URL } from '../../config';
 import { CustomDropdown } from './CustomDropdown';
 
