@@ -50,7 +50,7 @@ func GenerateCertificate(w http.ResponseWriter, r *http.Request) {
 	pdf.Line(279, 192, 267, 192); pdf.Line(279, 192, 279, 180)
 
 	// 3. Logo (logo2.png is black, smaller and centered)
-	pdf.ImageOptions("../client/public/logo2.png", 136, 20, 25, 0, false, gofpdf.ImageOptions{ReadDpi: true}, 0, "")
+	pdf.ImageOptions("client/public/logo2.png", 136, 20, 25, 0, false, gofpdf.ImageOptions{ReadDpi: true}, 0, "")
 
 	pdf.SetFont("Arial", "B", 36); pdf.SetTextColor(15, 23, 42); pdf.SetY(65)
 	pdf.CellFormat(277, 20, "CERTIFICATE OF COMPLETION", "", 1, "C", false, 0, "")
@@ -59,7 +59,7 @@ func GenerateCertificate(w http.ResponseWriter, r *http.Request) {
 	pdf.CellFormat(277, 10, "This proudly certifies that", "", 1, "C", false, 0, "")
 
 	// 4. Student Name (Handwritten & Gold)
-	pdf.AddUTF8Font("DancingScript", "", "fonts/DancingScript-Bold.ttf")
+	pdf.AddUTF8Font("DancingScript", "", "server/fonts/DancingScript-Bold.ttf")
 	pdf.SetFont("DancingScript", "", 48); pdf.SetTextColor(212, 175, 55); pdf.SetY(105)
 	pdf.CellFormat(277, 25, userName, "", 1, "C", false, 0, "")
 
