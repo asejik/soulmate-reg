@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Star, Video, CheckCircle2, PlayCircle } from 'lucide-react';
+import { Star, Video, PlayCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { postLMS } from '../../../lib/api';
 import { StatusModal } from './StatusModal';
@@ -25,43 +25,68 @@ export const DashboardGateways = ({ data, isFullyCompleted, requiresMidReview, h
   };
 
   if (isFullyCompleted) {
+    if (hasCompletedFinalReview) {
+      return (
+        <div className="relative group overflow-hidden rounded-3xl border border-white/10 bg-[#111827] p-8 shadow-2xl transition-all duration-500 hover:border-blue-500/30">
+          <div className="absolute inset-x-0 -top-px h-px w-full bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
+          <div className="relative flex flex-col md:flex-row items-center gap-8">
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20 ring-8 ring-blue-500/10">
+              <Star size={40} className="animate-pulse" />
+            </div>
+            <div className="flex-1 text-center md:text-left space-y-2">
+              <h3 className="text-3xl font-extrabold text-white tracking-tight leading-none">Graduation Complete!</h3>
+              <p className="text-slate-400 text-lg leading-relaxed max-w-xl">Congratulations on successfully finishing your journey. Your commitment and growth are truly inspiring. Your official certificate is ready for you below!</p>
+            </div>
+            <div className="shrink-0 w-full md:w-auto">
+               <button 
+                  onClick={() => {
+                     const btn = document.querySelector('button[onClick*="handleDownloadCertificate"]') as HTMLButtonElement;
+                     if (btn) btn.click();
+                  }}
+                  className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-white text-black font-extrabold rounded-2xl hover:bg-slate-200 transition-all shadow-xl shadow-white/5 active:scale-95"
+               >
+                  <Star className="fill-black" size={18} />
+                  Download Certificate
+               </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="bg-[#111827] border border-blue-500/30 rounded-2xl overflow-hidden shadow-[0_0_30px_-10px_rgba(59,130,246,0.2)]">
-        {!hasCompletedFinalReview ? (
-          <div className="p-8 space-y-8">
-            <div className="text-center space-y-3"><div className="w-16 h-16 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center mx-auto"><Star size={32} /></div><h2 className="text-2xl font-bold text-white tracking-tight">Final Step: Share Your Experience</h2></div>
-            <div className="flex gap-4 max-w-sm mx-auto p-1 bg-white/5 rounded-2xl">
-              <button onClick={() => setReviewType('video')} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${reviewType === 'video' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}><Video size={16} /> Video</button>
-              <button onClick={() => setReviewType('google')} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${reviewType === 'google' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}><Star size={16} /> Google Review</button>
-            </div>
-            
-            <form onSubmit={submitFinalReview} className="space-y-6 max-w-2xl mx-auto pt-4 border-t border-white/5">
-              {reviewType === 'video' ? (
-                <div className="space-y-4">
-                  <label className="block text-sm font-bold text-slate-300">Share your Video Review (Paste link below)</label>
-                  <input type="url" required placeholder="Loom, YouTube, or Drive link..." value={reviewContent} onChange={e => setReviewContent(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500/50 transition-colors" />
-                  <button type="submit" disabled={isReviewSubmitting || !reviewContent} className="w-full py-4 bg-white text-black font-extrabold rounded-xl hover:bg-slate-200 transition-all">{isReviewSubmitting ? 'Verifying...' : 'Submit Video & Unlock Certificate'}</button>
-                </div>
-              ) : (
-                <div className="space-y-6 text-center">
-                  <p className="text-slate-400 text-sm leading-relaxed">Please click the button below to leave us a 5-star review on Google! Once done, come back here to finalize your graduation.</p>
-                  <a 
-                    href="https://g.page/r/CUshM1sWqjCoEAE/review" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    onClick={() => setReviewContent('Google Review Link Clicked')}
-                    className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 font-bold underline decoration-blue-500/30 underline-offset-4"
-                  >
-                    Soulmate Relationship Google Review Page
-                  </a>
-                  <button type="submit" disabled={isReviewSubmitting} className="w-full py-4 bg-blue-600 text-white font-extrabold rounded-xl hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/20">{isReviewSubmitting ? 'Verifying...' : 'I have submitted my Google Review'}</button>
-                </div>
-              )}
-            </form>
+        <div className="p-8 space-y-8">
+          <div className="text-center space-y-3"><div className="w-16 h-16 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center mx-auto"><Star size={32} /></div><h2 className="text-2xl font-bold text-white tracking-tight">Final Step: Share Your Experience</h2></div>
+          <div className="flex gap-4 max-w-sm mx-auto p-1 bg-white/5 rounded-2xl">
+            <button onClick={() => setReviewType('video')} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${reviewType === 'video' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}><Video size={16} /> Video</button>
+            <button onClick={() => setReviewType('google')} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${reviewType === 'google' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}><Star size={16} /> Google Review</button>
           </div>
-        ) : (
-          <div className="p-12 text-center space-y-6"><div className="w-20 h-20 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center mx-auto"><CheckCircle2 size={40} /></div><h3 className="text-3xl font-bold text-white">Review Verified</h3></div>
-        )}
+          
+          <form onSubmit={submitFinalReview} className="space-y-6 max-w-2xl mx-auto pt-4 border-t border-white/5">
+            {reviewType === 'video' ? (
+              <div className="space-y-4">
+                <label className="block text-sm font-bold text-slate-300">Share your Video Review (Paste link below)</label>
+                <input type="url" required placeholder="Loom, YouTube, or Drive link..." value={reviewContent} onChange={e => setReviewContent(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500/50 transition-colors" />
+                <button type="submit" disabled={isReviewSubmitting || !reviewContent} className="w-full py-4 bg-white text-black font-extrabold rounded-xl hover:bg-slate-200 transition-all">{isReviewSubmitting ? 'Verifying...' : 'Submit Video & Unlock Certificate'}</button>
+              </div>
+            ) : (
+              <div className="space-y-6 text-center">
+                <p className="text-slate-400 text-sm leading-relaxed">Please click the button below to leave us a 5-star review on Google! Once done, come back here to finalize your graduation.</p>
+                <a 
+                  href="https://g.page/r/CUshM1sWqjCoEAE/review" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  onClick={() => setReviewContent('Google Review Link Clicked')}
+                  className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 font-bold underline decoration-blue-500/30 underline-offset-4"
+                >
+                  Soulmate Relationship Google Review Page
+                </a>
+                <button type="submit" disabled={isReviewSubmitting} className="w-full py-4 bg-blue-600 text-white font-extrabold rounded-xl hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/20">{isReviewSubmitting ? 'Verifying...' : 'I have submitted my Google Review'}</button>
+              </div>
+            )}
+          </form>
+        </div>
       </div>
     );
   }
