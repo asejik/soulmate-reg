@@ -103,13 +103,13 @@ export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false }: Props) =>
         <div className="p-6 md:p-8 flex-1">
           <AnimatePresence mode="wait">
             {activeTab === 'overview' && (
-              <motion.div key="overview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+              <motion.div key="overview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-3xl mx-auto space-y-4">
                 <h3 className="text-lg font-bold text-white">About this lesson</h3><p className="text-slate-300 whitespace-pre-wrap">{lesson.description}</p>
               </motion.div>
             )}
 
             {activeTab === 'assignment' && (
-              <motion.div key="assignment" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-3xl space-y-6">
+              <motion.div key="assignment" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-3xl mx-auto space-y-6">
                 {lesson.is_completed ? (
                   <div className="flex flex-col items-center py-8 text-center space-y-4"><div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center text-green-500"><CheckCircle2 size={32} /></div><h3 className="text-xl font-bold text-white">Assignment Completed</h3></div>
                 ) : !isUnlocked ? (
@@ -118,12 +118,12 @@ export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false }: Props) =>
                   <div className="space-y-6">
                     <div className="p-5 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-100 whitespace-pre-wrap">{lesson.assignmentPrompt}</div>
                     <form onSubmit={handleSubmit} className="space-y-6 pt-4 border-t border-white/5">
-                      <div className="flex gap-4">
-                        <button type="button" onClick={() => setSubmissionType('link')} className={`flex gap-2 px-6 py-3 rounded-xl text-sm font-bold ${submissionType === 'link' ? 'bg-blue-600 text-white' : 'bg-white/5 text-slate-400'}`}><LinkIcon size={16} /> Link</button>
-                        <button type="button" onClick={() => setSubmissionType('text')} className={`flex gap-2 px-6 py-3 rounded-xl text-sm font-bold ${submissionType === 'text' ? 'bg-blue-600 text-white' : 'bg-white/5 text-slate-400'}`}><FileText size={16} /> Text</button>
+                      <div className="flex items-center gap-4">
+                        <button type="button" onClick={() => setSubmissionType('link')} className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold ${submissionType === 'link' ? 'bg-blue-600 text-white' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}><LinkIcon size={16} /> Link</button>
+                        <button type="button" onClick={() => setSubmissionType('text')} className={`flex gap-2 px-6 py-3 rounded-xl text-sm font-bold ${submissionType === 'text' ? 'bg-blue-600 text-white' : 'bg-white/5 text-slate-400 hvoer:bg-white/10'}`}><FileText size={16} /> Text</button>
                       </div>
-                      {submissionType === 'link' ? <input type="url" required value={submissionValue} onChange={(e) => setSubmissionValue(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl py-4 px-4 text-white" /> : <textarea required rows={5} value={submissionValue} onChange={(e) => setSubmissionValue(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl py-4 px-4 text-white resize-none" />}
-                      <button type="submit" disabled={isSubmitting || !submissionValue} className="w-full py-4 bg-blue-600 text-white font-bold rounded-xl">{isSubmitting ? 'Submitting...' : 'Submit & Unlock'}</button>
+                      {submissionType === 'link' ? <input type="url" required value={submissionValue} onChange={(e) => setSubmissionValue(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl py-4 px-4 text-white focus:border-blue-500/50" /> : <textarea required rows={5} value={submissionValue} onChange={(e) => setSubmissionValue(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl py-4 px-4 text-white resize-none focus:border-blue-500/50" />}
+                      <button type="submit" disabled={isSubmitting || !submissionValue} className="w-full py-4 bg-white text-black font-bold rounded-xl hover:bg-slate-200 transition-all">{isSubmitting ? 'Submitting...' : 'Submit & Unlock'}</button>
                     </form>
                   </div>
                 )}
@@ -131,7 +131,7 @@ export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false }: Props) =>
             )}
 
             {activeTab === 'discussion' && (
-              <motion.div key="discussion" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-3xl space-y-6">
+              <motion.div key="discussion" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-3xl mx-auto space-y-6">
                 {/* Live banner */}
                 {isLiveMode && (
                   <div className="flex items-center gap-3 px-4 py-2.5 bg-red-500/10 border border-red-500/20 rounded-xl">
@@ -147,7 +147,7 @@ export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false }: Props) =>
                 )}
 
                 <form onSubmit={handlePostComment} className="flex gap-3">
-                  <input type="text" required placeholder={isLiveMode ? "Say something live..." : "Add a comment..."} value={newComment} onChange={(e) => setNewComment(e.target.value)} className="flex-1 bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-slate-500" />
+                  <input type="text" required placeholder={isLiveMode ? "Say something live..." : "Add a comment..."} value={newComment} onChange={(e) => setNewComment(e.target.value)} className="flex-1 bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:border-white/20" />
                   <button type="submit" disabled={isSubmittingComment || !newComment.trim()} className={`px-6 py-3 font-bold rounded-xl transition-colors ${isLiveMode ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-white text-black hover:bg-slate-200'}`}>
                     {isSubmittingComment ? '...' : isLiveMode ? '⚡ Send' : 'Post'}
                   </button>
