@@ -83,6 +83,7 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 			// Fallback if the full name find fails
 			db.Pool.QueryRow(r.Context(), "SELECT COALESCE(mid_checkpoint_video_id, '') FROM public.program_settings WHERE program_name ILIKE $1 LIMIT 1", "%"+programName+"%").Scan(&videoID)
 		}
+		fmt.Printf("📺 DASHBOARD: Fetched Checkpoint Video ID for [%s] -> [%s]\n", programNameDisplay, videoID)
 		checkpointVideoChan <- result{videoID, nil}
 	}()
 
