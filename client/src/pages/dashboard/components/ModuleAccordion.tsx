@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronUp, Clock, Timer, CheckCircle2, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { DashboardModule } from '../DashboardPage';
+import { CheckpointModal } from './CheckpointModal';
 
 interface Props {
   curriculum: DashboardModule[];
@@ -14,6 +15,7 @@ interface Props {
 
 export const ModuleAccordion = ({ curriculum, nextLessonId, currentTime, requiresMidReview, totalLessons }: Props) => {
   const navigate = useNavigate();
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
     (curriculum || []).forEach((module, index) => {
@@ -94,7 +96,7 @@ export const ModuleAccordion = ({ curriculum, nextLessonId, currentTime, require
                               <button
                                 onClick={() => {
                                   if (isLockedByCheckpoint) {
-                                    alert("Checkpoint Required: Please complete the Mid-Program Checkpoint review to unlock the rest of the curriculum.");
+                                    setIsModalOpen(true);
                                     return;
                                   }
                                   navigate(`/dashboard/lessons/${lesson.id}`);
@@ -121,6 +123,8 @@ export const ModuleAccordion = ({ curriculum, nextLessonId, currentTime, require
           );
         })}
       </div>
+
+      <CheckpointModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   );
 };
