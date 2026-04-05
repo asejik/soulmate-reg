@@ -36,7 +36,7 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	programNameDisplay := "Ready for a Soulmate"
-	if programName == "launchpad" {
+	if programName == "launchpad" || strings.Contains(strings.ToLower(programName), "launchpad") {
 		programNameDisplay = "Couples Launchpad"
 	}
 
