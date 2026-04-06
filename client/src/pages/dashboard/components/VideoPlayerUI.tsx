@@ -121,7 +121,7 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeCha
                 <div className="flex-1 relative ml-2 flex items-center h-2 group/progress cursor-pointer">
                   <input type="range" min="0" max="100" value={progress} onChange={(e) => handleSeek(Number(e.target.value))} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
                   <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-500 transition-all duration-75" style={{ width: `${progress}%` }} style={{ width: `${progress}%` }} />
+                    <div className="h-full bg-blue-500 transition-all duration-75" style={{ width: `${progress}%` }} />
                   </div>
                 </div>
               ) : (
