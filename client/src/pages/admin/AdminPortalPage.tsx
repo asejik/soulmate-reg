@@ -30,7 +30,7 @@ export default function AdminPortalPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return navigate('/login');
       
-      const allowedAdmins = ['asejik@gmail.com', 'temitopeayenigba@gmail.com'];
+      const allowedAdmins = ['asejik@gmail.com', 'temitopeayenigba@gmail.com', 'winneridigbe@gmail.com'];
       if (!allowedAdmins.includes(session.user.email || '')) {
         return navigate('/dashboard');
       }
