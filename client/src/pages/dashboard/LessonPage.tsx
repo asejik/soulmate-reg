@@ -69,8 +69,8 @@ export const LessonPage = () => {
         </button>
       </div>
       
-      {/* Sticky Video HUD - Ensure no background gap, offset by mobile header height */}
-      <div className="sticky top-[56px] md:top-0 z-40 bg-[#0b0f19] pt-0 pb-4 px-4 md:px-0 shadow-xl border-b border-white/5 md:border-none">
+      {/* Sticky Video HUD - Locks to the top of the scrollable main area */}
+      <div className="sticky top-0 z-40 bg-[#0b0f19] pt-2 pb-4 px-4 md:px-0 shadow-2xl border-b border-white/5 md:border-none">
         <VideoPlayerUI 
           lesson={lesson} 
           isUnlocked={isUnlocked} 
