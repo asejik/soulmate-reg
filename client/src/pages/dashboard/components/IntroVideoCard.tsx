@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RotateCcw, Volume2, VolumeX, PlayCircle } from 'lucide-react';
 import { useYouTubePlayer } from '../../../hooks/useYouTubePlayer';
 
@@ -7,6 +7,9 @@ interface Props {
 }
 
 const ActivePlayer = ({ videoId }: { videoId: string }) => {
+  const [showHUD, setShowHUD] = useState(true);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const {
     containerRef, isPlaying, isEnded, togglePlay, progress, volume, isMuted, handleVolumeChange, toggleMute, handleSeek
   } = useYouTubePlayer({
@@ -15,43 +18,69 @@ const ActivePlayer = ({ videoId }: { videoId: string }) => {
     onComplete: () => {},
   });
 
+  const resetHideTimer = () => {
+    setShowHUD(true);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (isPlaying) {
+      timeoutRef.current = setTimeout(() => setShowHUD(false), 3000);
+    }
+  };
+
+  useEffect(() => {
+    resetHideTimer();
+    return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
+  }, [isPlaying]);
+
+  const handleMaskClick = () => {
+    if (!showHUD) {
+      setShowHUD(true);
+      resetHideTimer();
+    } else {
+      togglePlay();
+    }
+  };
+
   return (
-    <div className="w-full bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/5 relative aspect-video group">
+    <div className="w-full bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/5 relative aspect-video group" onMouseMove={resetHideTimer}>
       <div ref={containerRef} className="absolute inset-0 w-full h-full" />
       
-      {/* Interaction Mask: Captures clicks to toggle play and prevents YouTube from showing its UI on hover */}
+      {/* Interaction Mask: Toggles HUD/Play and blocks YouTube UI */}
       <div 
         className="absolute inset-0 z-10 cursor-pointer" 
-        onClick={togglePlay} 
+        onClick={handleMaskClick} 
       />
       
       {/* Custom HUD */}
-      <div className="absolute inset-x-0 bottom-0 p-4 md:p-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-20">
+      <div className={`absolute inset-x-0 bottom-0 p-4 md:p-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent transition-opacity duration-500 z-20 ${showHUD ? 'opacity-100' : 'opacity-0'}`}>
         <div className="flex flex-col gap-4">
           {/* Progress bar */}
           <div className="relative h-1.5 w-full bg-white/20 rounded-full overflow-hidden cursor-pointer" onClick={(e) => {
+            e.stopPropagation(); // Don't trigger togglePlay
             const rect = e.currentTarget.getBoundingClientRect();
             const x = e.clientX - rect.left;
             handleSeek((x / rect.width) * 100);
+            resetHideTimer();
           }}>
             <div className="absolute top-0 left-0 h-full bg-blue-500 transition-all duration-300" style={{ width: `${progress}%` }} />
           </div>
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <button onClick={togglePlay} className="w-10 h-10 flex items-center justify-center bg-blue-500 hover:bg-blue-400 text-white rounded-full transition-all">
+              <button onClick={(e) => { e.stopPropagation(); togglePlay(); resetHideTimer(); }} className="w-10 h-10 flex items-center justify-center bg-blue-500 hover:bg-blue-400 text-white rounded-full transition-all">
                 {isEnded ? <RotateCcw size={20} /> : isPlaying ? <Pause size={20} /> : <Play size={20} className="ml-1" />}
               </button>
               
               <div className="flex items-center gap-2 group/volume">
-                <button onClick={toggleMute} className="text-white/80 hover:text-white transition-colors">
+                <button onClick={(e) => { e.stopPropagation(); toggleMute(); resetHideTimer(); }} className="text-white/80 hover:text-white transition-colors">
                   {isMuted || volume === 0 ? <VolumeX size={20} /> : <Volume2 size={20} />}
                 </button>
-                <input 
-                  type="range" min="0" max="100" value={isMuted ? 0 : volume} 
-                  onChange={(e) => handleVolumeChange(Number(e.target.value))}
-                  className="w-0 group-hover/volume:w-20 transition-all duration-300 h-1 bg-white/20 rounded-full appearance-none cursor-pointer accent-blue-500"
-                />
+                <div className="w-0 group-hover/volume:w-20 transition-all duration-300 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                  <input 
+                    type="range" min="0" max="100" value={isMuted ? 0 : volume} 
+                    onChange={(e) => handleVolumeChange(Number(e.target.value))}
+                    className="w-20 h-1 bg-white/20 rounded-full appearance-none cursor-pointer accent-blue-500"
+                  />
+                </div>
               </div>
             </div>
 
@@ -86,7 +115,6 @@ export const IntroVideoCard = ({ videoId }: Props) => {
           className="relative w-full aspect-video rounded-3xl overflow-hidden group cursor-pointer border border-white/5 hover:border-white/10 transition-all shadow-xl"
           onClick={() => setIsStarted(true)}
         >
-          {/* High-Impact Preview State */}
           <img src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`} alt="Course Intro" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
           <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors" />
           

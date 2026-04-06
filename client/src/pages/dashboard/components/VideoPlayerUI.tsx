@@ -1,5 +1,5 @@
+import { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RotateCcw, Volume2, VolumeX, Users } from 'lucide-react';
-import { useEffect } from 'react';
 import { useYouTubePlayer } from '../../../hooks/useYouTubePlayer';
 import { postLMS } from '../../../lib/api';
 import type { LessonData } from '../LessonPage';
@@ -13,6 +13,9 @@ interface Props {
 }
 
 export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeChange, participantCount = 0 }: Props) => {
+  const [showHUD, setShowHUD] = useState(true);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
 
   const {
@@ -31,6 +34,29 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeCha
     onComplete: () => setIsUnlocked(true),
   });
 
+  const resetHideTimer = () => {
+    setShowHUD(true);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (isPlaying && !isWaiting) {
+      timeoutRef.current = setTimeout(() => setShowHUD(false), 3000);
+    }
+  };
+
+  useEffect(() => {
+    resetHideTimer();
+    return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
+  }, [isPlaying, isWaiting]);
+
+  const handleMaskClick = () => {
+    if (isWaiting) return;
+    if (!showHUD) {
+      setShowHUD(true);
+      resetHideTimer();
+    } else {
+      togglePlay();
+    }
+  };
+
   const formatCountdown = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
@@ -38,15 +64,19 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeCha
     return `${h > 0 ? h + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  // Bubble isLiveMode up to the parent so LessonTabs can react
   useEffect(() => {
     onLiveModeChange?.(isLiveMode);
   }, [isLiveMode, onLiveModeChange]);
 
   return (
-    <div className="w-full bg-black rounded-2xl overflow-hidden shadow-2xl border border-white/5 relative aspect-video group">
+    <div className="w-full bg-black rounded-2xl overflow-hidden shadow-2xl border border-white/5 relative aspect-video group" onMouseMove={resetHideTimer}>
       <div ref={containerRef} className="absolute inset-0 w-full h-full" />
-      <div className="absolute inset-0 z-10" />
+      
+      {/* Interaction Mask: Toggles HUD/Play and blocks YouTube UI */}
+      <div 
+        className="absolute inset-0 z-10 cursor-pointer" 
+        onClick={handleMaskClick} 
+      />
 
       {isLiveMode && (
         <>
@@ -81,58 +111,69 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeCha
         </div>
       )}
 
-      <div className={`absolute inset-0 z-20 bg-black transition-opacity duration-300 ${(!isPlaying && progress > 0 && !isLiveMode && !isWaiting) ? 'opacity-100' : 'opacity-0'}`}>
+      {/* Completion Overlay */}
+      <div className={`absolute inset-0 z-20 bg-black transition-opacity duration-300 pointer-events-none ${(!isPlaying && progress > 0 && !isLiveMode && !isWaiting) ? 'opacity-100' : 'opacity-0'}`}>
         {isEnded && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center space-y-3">
               <div className="text-white/40 text-sm font-medium uppercase tracking-widest">Video Complete</div>
-              <div className="text-white/20 text-xs">Click play to rewatch</div>
+              <div className="text-white/20 text-xs text-center px-4">Great job! You can rewatch or complete your assessment below.</div>
             </div>
           </div>
         )}
       </div>
 
-      <div className={`absolute inset-0 z-30 transition-opacity flex flex-col justify-end p-6 pointer-events-none ${isPlaying ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'}`}>
-        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
-        <div className="relative flex items-center gap-4 pointer-events-auto">
-
+      {/* HUD Container */}
+      <div className={`absolute inset-x-0 bottom-0 z-40 transition-opacity duration-500 flex flex-col justify-end p-4 md:p-6 pb-4 sm:pb-6 ${showHUD ? 'opacity-100' : 'opacity-0'}`}>
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/90 to-transparent pointer-events-none" />
+        
+        <div className="relative flex flex-col gap-3 sm:gap-4">
+          {/* Progress Bar (Clickable) */}
           {!isLiveMode && (
-            <button onClick={togglePlay} className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white hover:scale-105 hover:bg-blue-500 transition-all shadow-lg flex-shrink-0">
-              {isEnded ? <RotateCcw size={20} /> : isPlaying ? <Pause size={24} className="fill-current" /> : <Play size={24} className="fill-current ml-1" />}
-            </button>
+            <div className="relative h-1.5 w-full bg-white/20 rounded-full overflow-hidden cursor-pointer" onClick={(e) => {
+              e.stopPropagation();
+              if (!isUnlocked) return;
+              const rect = e.currentTarget.getBoundingClientRect();
+              const x = e.clientX - rect.left;
+              handleSeek((x / rect.width) * 100);
+              resetHideTimer();
+            }}>
+              <div className="absolute top-0 left-0 h-full bg-blue-500 transition-all duration-300" style={{ width: `${progress}%` }} />
+              <input type="range" min="0" max="100" value={progress} readOnly className="absolute inset-0 w-full h-full opacity-0 cursor-pointer pointer-events-none" />
+            </div>
           )}
 
-          <div className="flex items-center gap-2 group/volume cursor-pointer bg-black/40 px-3 py-2 rounded-full border border-white/10 backdrop-blur-md">
-            <button onClick={toggleMute} className="text-white hover:text-blue-400 transition-colors flex-shrink-0">
-              {isMuted || volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
-            </button>
-            <input type="range" min="0" max="100" value={isMuted ? 0 : volume} onChange={(e) => handleVolumeChange(Number(e.target.value))} className="w-0 opacity-0 group-hover/volume:w-20 group-hover/volume:opacity-100 transition-all duration-300 accent-blue-500 h-1 cursor-pointer origin-left" />
-          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={(e) => { e.stopPropagation(); togglePlay(); resetHideTimer(); }} 
+                className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-600 rounded-full flex items-center justify-center text-white hover:scale-105 hover:bg-blue-500 transition-all shadow-lg flex-shrink-0"
+              >
+                {isEnded ? <RotateCcw size={20} /> : isPlaying ? <Pause size={24} className="fill-current" /> : <Play size={24} className="fill-current ml-1" />}
+              </button>
 
-          {isLiveMode ? (
-            <div className="flex-1 flex justify-end items-center">
-              <div className="text-white text-xs font-mono bg-red-500/20 text-red-100 px-3 py-2 rounded-full border border-red-500/20 backdrop-blur-md">
-                Live: {formatTime(progressInSeconds)}
+              <div className="flex items-center gap-2 group/volume bg-white/5 border border-white/10 rounded-full px-3 py-1.5 backdrop-blur-md">
+                <button onClick={(e) => { e.stopPropagation(); toggleMute(); resetHideTimer(); }} className="text-white/80 hover:text-white transition-colors flex-shrink-0">
+                  {isMuted || volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                </button>
+                <div className="w-0 group-hover/volume:w-20 transition-all duration-300 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                  <input type="range" min="0" max="100" value={isMuted ? 0 : volume} onChange={(e) => handleVolumeChange(Number(e.target.value))} className="w-20 accent-blue-500 h-1 cursor-pointer" />
+                </div>
               </div>
             </div>
-          ) : (
-            <>
-              {isUnlocked ? (
-                <div className="flex-1 relative ml-2 flex items-center h-2 group/progress cursor-pointer">
-                  <input type="range" min="0" max="100" value={progress} onChange={(e) => handleSeek(Number(e.target.value))} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                  <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-500 transition-all duration-75" style={{ width: `${progress}%` }} />
-                  </div>
+
+            <div className="flex items-center gap-3">
+              {isLiveMode ? (
+                <div className="text-white text-[10px] sm:text-xs font-bold bg-red-600/20 text-red-100 px-3 py-1.5 border border-red-600/30 rounded-full backdrop-blur-md uppercase tracking-widest flex items-center gap-2">
+                  <div className="w-1 h-1 bg-red-500 rounded-full animate-pulse" /> Live HUD
                 </div>
               ) : (
-                <div className="flex-1 h-2 bg-white/20 rounded-full overflow-hidden ml-2">
-                  <div className="h-full bg-blue-500 transition-all duration-300 ease-out" style={{ width: `${progress}%` }} />
+                <div className="text-white/60 text-xs sm:text-sm font-bold bg-white/5 px-3 py-1.5 rounded-full border border-white/10 backdrop-blur-md">
+                  {Math.round(progress)}%
                 </div>
               )}
-              <span className="text-white text-sm font-bold w-12 text-right flex-shrink-0">{progress}%</span>
-            </>
-          )}
-
+            </div>
+          </div>
         </div>
       </div>
     </div>
