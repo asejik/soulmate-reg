@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileText, PenTool, MessageSquare, CheckCircle2, Lock, Link as LinkIcon, Radio } from 'lucide-react';
+import { FileText, PenTool, MessageSquare, CheckCircle2, Lock, Link as LinkIcon, Radio, Users } from 'lucide-react';
 import { fetchLMS, postLMS } from '../../../lib/api';
 import { useNavigate } from 'react-router-dom';
 import { type LessonData } from '../LessonPage';
@@ -11,9 +11,10 @@ interface Props { lesson: LessonData; isUnlocked: boolean; isLiveMode?: boolean;
 export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false }: Props) => {
   const navigate = useNavigate();
   const { toasts, dismiss, toast } = useToast();
-  const [activeTab, setActiveTab] = useState<'overview' | 'assignment' | 'discussion'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'assignment' | 'discussion' | 'participants'>('overview');
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState('');
+  const [activity, setActivity] = useState<{ count: number, participants: string[] }>({ count: 0, participants: [] });
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [submissionType, setSubmissionType] = useState<'text' | 'link'>('link');
   const [submissionValue, setSubmissionValue] = useState('');
@@ -73,6 +74,22 @@ export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false }: Props) =>
     };
   }, [isLiveMode, activeTab, lesson.id, mergeComments]);
 
+  // Activity polling: count and specific names
+  useEffect(() => {
+    if (!isLiveMode) {
+       setActivity({ count: 0, participants: [] });
+       return;
+    }
+    const fetchActivity = () => {
+      fetchLMS(`/lms/lessons/${lesson.id}/activity`)
+        .then(data => setActivity(data || { count: 0, participants: [] }))
+        .catch(console.error);
+    };
+    fetchActivity();
+    const inv = setInterval(fetchActivity, 10_000);
+    return () => clearInterval(inv);
+  }, [isLiveMode, lesson.id]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setIsSubmitting(true);
     try {
@@ -102,11 +119,28 @@ export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false }: Props) =>
           <button onClick={() => setActiveTab('discussion')} className={`flex-1 min-w-[110px] sm:min-w-[140px] flex items-center justify-center gap-2 px-3 sm:px-6 py-4 text-xs sm:text-sm font-bold border-b-2 transition-all ${activeTab === 'discussion' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-slate-400'}`}>
             <MessageSquare size={16} className="sm:w-[18px] sm:h-[18px]" /> Discussion
             {isLiveMode && (
-              <span className="flex items-center gap-0.5 sm:gap-1 ml-0.5 sm:ml-1 px-1 sm:px-1.5 py-0.5 bg-red-600 text-white text-[8px] sm:text-[9px] font-black rounded tracking-widest animate-pulse">
-                <Radio size={7} className="sm:w-2 sm:h-2" /> LIVE
-              </span>
+              <div className="flex items-center gap-1 ml-1 sm:ml-2">
+                <span className="flex items-center gap-0.5 sm:gap-1 px-1 sm:px-1.5 py-0.5 bg-red-600 text-white text-[8px] sm:text-[9px] font-black rounded tracking-widest animate-pulse">
+                  <Radio size={7} className="sm:w-2 sm:h-2" /> LIVE
+                </span>
+                {activity.count > 0 && (
+                   <div className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-500/20 text-blue-400 text-[10px] rounded-md border border-blue-500/20">
+                     <Users size={10} /> {activity.count}
+                   </div>
+                )}
+              </div>
             )}
           </button>
+          {isLiveMode && (
+            <button onClick={() => setActiveTab('participants')} className={`flex-1 min-w-[120px] sm:min-w-[150px] flex items-center justify-center gap-2 px-3 sm:px-6 py-4 text-xs sm:text-sm font-bold border-b-2 transition-all ${activeTab === 'participants' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-slate-400'}`}>
+              <Users size={16} className="sm:w-[18px] sm:h-[18px]" /> Active 
+              {activity.count > 0 && (
+                 <span className="ml-1 px-1.5 py-0.5 bg-blue-500 text-white text-[10px] font-black rounded-full">
+                   {activity.count}
+                 </span>
+              )}
+            </button>
+          )}
         </div>
 
         <div className="p-4 sm:p-6 md:p-8 flex-1">
@@ -184,6 +218,40 @@ export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false }: Props) =>
                   {/* Scroll anchor */}
                   <div ref={commentsEndRef} />
                 </div>
+              </motion.div>
+            )}
+            {activeTab === 'participants' && (
+              <motion.div key="participants" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-3xl mx-auto space-y-6">
+                <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-white">Live Participants</h3>
+                    <p className="text-xs text-slate-500 uppercase tracking-widest font-bold mt-1">Currently attending the premiere</p>
+                  </div>
+                  <div className="flex items-center gap-2 px-4 py-2 bg-blue-500/10 rounded-xl border border-blue-500/20 text-blue-400">
+                    <Users size={18} />
+                    <span className="font-black text-sm">{activity.count} online</span>
+                  </div>
+                </div>
+
+                {activity.participants.length === 0 ? (
+                  <div className="py-12 text-center text-slate-500 italic">No activity recorded yet. Keep watching!</div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {activity.participants.map((name, i) => (
+                      <motion.div 
+                        key={name + i} 
+                        initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
+                        className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/5"
+                      >
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-pink-500 flex items-center justify-center text-[10px] font-black text-white shadow-lg">
+                          {name.charAt(0)}
+                        </div>
+                        <span className="text-sm font-medium text-slate-200">{name}</span>
+                        <div className="ml-auto w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
