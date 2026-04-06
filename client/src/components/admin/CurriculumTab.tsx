@@ -99,9 +99,12 @@ const SettingsForm = ({
       if (res.ok) {
         toast.success(`Settings updated for ${pName}`);
         onSave();
+      } else {
+        const errorText = await res.text();
+        toast.error(`Update failed: ${errorText || res.statusText}`);
       }
-    } catch {
-      toast.error('Failed to update settings.');
+    } catch (err) {
+      toast.error('Failed to update settings. Please check your connection.');
     } finally {
       setSaving(false);
     }

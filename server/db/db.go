@@ -49,6 +49,9 @@ func InitTables() {
 		VALUES ('Ready for a Soulmate'), ('Couples Launchpad')
 		ON CONFLICT (program_name) DO NOTHING;
 
+		-- Ensure columns exist in program_settings
+		ALTER TABLE public.program_settings ADD COLUMN IF NOT EXISTS intro_video_id TEXT;
+
 		-- Ensure updated_at exists in lesson_progress
 		ALTER TABLE public.lesson_progress ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 	`)
