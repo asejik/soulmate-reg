@@ -19,8 +19,14 @@ const ActivePlayer = ({ videoId }: { videoId: string }) => {
     <div className="w-full bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/5 relative aspect-video group">
       <div ref={containerRef} className="absolute inset-0 w-full h-full" />
       
+      {/* Interaction Mask: Captures clicks to toggle play and prevents YouTube from showing its UI on hover */}
+      <div 
+        className="absolute inset-0 z-10 cursor-pointer" 
+        onClick={togglePlay} 
+      />
+      
       {/* Custom HUD */}
-      <div className="absolute inset-x-0 bottom-0 p-4 md:p-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute inset-x-0 bottom-0 p-4 md:p-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-20">
         <div className="flex flex-col gap-4">
           {/* Progress bar */}
           <div className="relative h-1.5 w-full bg-white/20 rounded-full overflow-hidden cursor-pointer" onClick={(e) => {
