@@ -110,7 +110,8 @@ const SettingsForm = ({
   return (
     <>
       <ToastContainer toasts={toasts} onDismiss={dismiss} />
-          {PROGRAMS.map(p => {
+    <div className="space-y-6">
+        {PROGRAMS.map(p => {
           const s = (settings || []).find(st => st.program_name === p) || { mid_checkpoint_video_id: '', intro_video_id: '' };
           return (
             <div key={p} className="p-4 bg-white/3 rounded-2xl border border-white/5 space-y-4">
