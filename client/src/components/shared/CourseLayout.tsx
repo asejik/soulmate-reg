@@ -116,7 +116,7 @@ export const CourseLayout = () => {
         </header>
 
         {/* DYNAMIC PAGE CONTENT GOES HERE */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
+        <main className="flex-1 overflow-y-auto p-0 md:p-8">
           <Outlet />
         </main>
 

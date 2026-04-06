@@ -23,7 +23,7 @@ import { Skeleton } from '../../components/shared/Skeleton';
 
 // --- Dashboard Skeleton Layout ---
 const DashboardSkeleton = () => (
-  <div className="max-w-4xl mx-auto space-y-8 pb-20 animate-in fade-in duration-500">
+  <div className="max-w-4xl mx-auto space-y-8 pb-20 px-4 md:px-0 animate-in fade-in duration-500">
     {/* Header Skeleton */}
     <div className="bg-[#111827] border border-white/5 rounded-3xl p-8 space-y-4">
       <Skeleton className="h-6 w-32" />
@@ -78,7 +78,7 @@ export const DashboardPage = () => {
   const requiresMidReview = progressPercentage >= 50 && !data.has_completed_mid_review;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-20">
+    <div className="max-w-4xl mx-auto space-y-8 pb-20 px-4 md:px-0">
       <DashboardHeader data={data} progressPercentage={progressPercentage} isFullyCompleted={isFullyCompleted} hasCompletedFinalReview={hasCompletedFinalReview} />
       <DashboardGateways data={data} isFullyCompleted={isFullyCompleted} requiresMidReview={requiresMidReview} hasCompletedFinalReview={hasCompletedFinalReview} setHasCompletedFinalReview={setHasCompletedFinalReview} />
       <ModuleAccordion

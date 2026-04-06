@@ -1,4 +1,4 @@
-import { Play, Pause, RotateCcw, Volume2, VolumeX } from 'lucide-react';
+import { Play, Pause, RotateCcw, Volume2, VolumeX, Users } from 'lucide-react';
 import { useEffect } from 'react';
 import { useYouTubePlayer } from '../../../hooks/useYouTubePlayer';
 import { postLMS } from '../../../lib/api';
@@ -9,9 +9,10 @@ interface Props {
   isUnlocked: boolean;
   setIsUnlocked: (v: boolean) => void;
   onLiveModeChange?: (live: boolean) => void;
+  participantCount?: number;
 }
 
-export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeChange }: Props) => {
+export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeChange, participantCount = 0 }: Props) => {
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
 
   const {
@@ -48,9 +49,16 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeCha
       <div className="absolute inset-0 z-10" />
 
       {isLiveMode && (
-        <div className="absolute top-6 left-6 z-50 flex items-center gap-2 px-3 py-1.5 bg-red-600 text-white rounded-md font-bold text-[10px] tracking-widest shadow-xl animate-pulse">
-          <div className="w-1.5 h-1.5 bg-white rounded-full" /> LIVE SESSION
-        </div>
+        <>
+          <div className="absolute top-3 left-3 sm:top-5 sm:left-5 z-50 flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-red-600 text-white rounded font-bold text-[8px] sm:text-[10px] tracking-widest shadow-xl animate-pulse uppercase">
+            <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-white rounded-full" /> LIVE SESSION
+          </div>
+          {participantCount > 0 && (
+            <div className="absolute top-3 right-3 sm:top-5 sm:right-5 z-50 flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 bg-black/60 backdrop-blur-md text-white rounded border border-white/10 font-bold text-[8px] sm:text-[10px] shadow-xl">
+               <Users size={12} className="text-blue-400 sm:w-4 sm:h-4" /> {participantCount} ONLINE
+            </div>
+          )}
+        </>
       )}
 
       {isWaiting && (
@@ -113,7 +121,7 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeCha
                 <div className="flex-1 relative ml-2 flex items-center h-2 group/progress cursor-pointer">
                   <input type="range" min="0" max="100" value={progress} onChange={(e) => handleSeek(Number(e.target.value))} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
                   <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-500 transition-all duration-75" style={{ width: `${progress}%` }} />
+                    <div className="h-full bg-blue-500 transition-all duration-75" style={{ width: `${progress}%` }} style={{ width: `${progress}%` }} />
                   </div>
                 </div>
               ) : (

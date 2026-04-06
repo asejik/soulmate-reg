@@ -19,6 +19,7 @@ export const LessonPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [isLiveMode, setIsLiveMode] = useState(false);
+  const [activity, setActivity] = useState<{ count: number, participants: string[] }>({ count: 0, participants: [] });
 
   const handleLiveModeChange = useCallback((live: boolean) => setIsLiveMode(live), []);
 
@@ -26,11 +27,26 @@ export const LessonPage = () => {
     if (!id) return;
     fetchLMS(`/lms/lessons/${id}`).then((data) => {
       setLesson(data);
-      // 2. CHANGE THIS LINE: Unlocks if completed OR if previously watched > 80%
       setIsUnlocked(data.is_completed || data.progress >= 80);
       setIsLoading(false);
     }).catch(() => setIsLoading(false));
   }, [id]);
+
+  // Activity polling: count and specific names
+  useEffect(() => {
+    if (!id || !isLiveMode) {
+       setActivity({ count: 0, participants: [] });
+       return;
+    }
+    const fetchActivity = () => {
+      fetchLMS(`/lms/lessons/${id}/activity`)
+        .then(data => setActivity(data || { count: 0, participants: [] }))
+        .catch(console.error);
+    };
+    fetchActivity();
+    const inv = setInterval(fetchActivity, 10_000);
+    return () => clearInterval(inv);
+  }, [id, isLiveMode]);
 
   if (isLoading) return <div className="flex items-center justify-center min-h-[50vh]"><div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" /></div>;
   if (!lesson) return <div className="flex flex-col items-center justify-center min-h-[50vh]"><button onClick={() => navigate('/dashboard')} className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg">Back</button></div>;
@@ -53,14 +69,20 @@ export const LessonPage = () => {
         </button>
       </div>
       
-      {/* Sticky Video HUD */}
-      <div className="sticky top-0 z-40 bg-[#0b0f19] pt-2 pb-6 px-4 md:px-0">
-        <VideoPlayerUI lesson={lesson} isUnlocked={isUnlocked} setIsUnlocked={setIsUnlocked} onLiveModeChange={handleLiveModeChange} />
+      {/* Sticky Video HUD - Ensure no background gap, offset by mobile header height */}
+      <div className="sticky top-[56px] md:top-0 z-40 bg-[#0b0f19] pt-0 pb-4 px-4 md:px-0 shadow-xl border-b border-white/5 md:border-none">
+        <VideoPlayerUI 
+          lesson={lesson} 
+          isUnlocked={isUnlocked} 
+          setIsUnlocked={setIsUnlocked} 
+          onLiveModeChange={handleLiveModeChange} 
+          participantCount={activity.count}
+        />
       </div>
 
       <div className="space-y-6 px-4 md:px-0 pt-6">
         <div><h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{lesson.title}</h1></div>
-        <LessonTabs lesson={lesson} isUnlocked={isUnlocked} isLiveMode={isLiveMode} />
+        <LessonTabs lesson={lesson} isUnlocked={isUnlocked} isLiveMode={isLiveMode} activity={activity} />
       </div>
     </div>
   );

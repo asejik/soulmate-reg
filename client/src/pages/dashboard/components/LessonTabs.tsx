@@ -6,15 +6,19 @@ import { useNavigate } from 'react-router-dom';
 import { type LessonData } from '../LessonPage';
 import { useToast, ToastContainer } from '../../../components/shared/Toast';
 
-interface Props { lesson: LessonData; isUnlocked: boolean; isLiveMode?: boolean; }
+interface Props { 
+  lesson: LessonData; 
+  isUnlocked: boolean; 
+  isLiveMode?: boolean; 
+  activity: { count: number, participants: string[] };
+}
 
-export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false }: Props) => {
+export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false, activity }: Props) => {
   const navigate = useNavigate();
   const { toasts, dismiss, toast } = useToast();
   const [activeTab, setActiveTab] = useState<'overview' | 'assignment' | 'discussion' | 'participants'>('overview');
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState('');
-  const [activity, setActivity] = useState<{ count: number, participants: string[] }>({ count: 0, participants: [] });
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [submissionType, setSubmissionType] = useState<'text' | 'link'>('link');
   const [submissionValue, setSubmissionValue] = useState('');
@@ -28,25 +32,19 @@ export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false }: Props) =>
     const newOnes = fetched.filter(c => !knownIdsRef.current.has(c.id));
     if (newOnes.length > 0) {
       newOnes.forEach(c => knownIdsRef.current.add(c.id));
-      // fetched is DESC order from backend; reverse for chronological display
       setComments([...fetched].reverse());
       
-      // Auto-scroll to newest during live (only scroll the container, not the window)
       if (isLiveMode) {
         setTimeout(() => {
           if (commentsEndRef.current && commentsEndRef.current.parentElement) {
             const container = commentsEndRef.current.parentElement;
-            container.scrollTo({
-              top: container.scrollHeight,
-              behavior: 'smooth'
-            });
+            container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
           }
         }, 100);
       }
     }
   }, [isLiveMode]);
 
-  // Initial load when switching to Discussion tab
   useEffect(() => {
     if (activeTab === 'discussion') {
       knownIdsRef.current = new Set();
@@ -54,9 +52,8 @@ export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false }: Props) =>
         .then(data => mergeComments(data || []))
         .catch(console.error);
     }
-  }, [activeTab, lesson.id]);
+  }, [activeTab, lesson.id, mergeComments]);
 
-  // Live polling: start/stop based on isLiveMode + activeTab
   useEffect(() => {
     const shouldPoll = isLiveMode && activeTab === 'discussion';
     if (shouldPoll) {
@@ -73,22 +70,6 @@ export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false }: Props) =>
       }
     };
   }, [isLiveMode, activeTab, lesson.id, mergeComments]);
-
-  // Activity polling: count and specific names
-  useEffect(() => {
-    if (!isLiveMode) {
-       setActivity({ count: 0, participants: [] });
-       return;
-    }
-    const fetchActivity = () => {
-      fetchLMS(`/lms/lessons/${lesson.id}/activity`)
-        .then(data => setActivity(data || { count: 0, participants: [] }))
-        .catch(console.error);
-    };
-    fetchActivity();
-    const inv = setInterval(fetchActivity, 10_000);
-    return () => clearInterval(inv);
-  }, [isLiveMode, lesson.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setIsSubmitting(true);
@@ -113,32 +94,34 @@ export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false }: Props) =>
     <>
       <ToastContainer toasts={toasts} onDismiss={dismiss} />
       <div className="flex-1 bg-[#111827] border border-white/5 rounded-2xl overflow-hidden flex flex-col shadow-lg mt-4">
-        <div className="flex border-b border-white/5 bg-black/20 overflow-x-auto selection:bg-blue-500/30 custom-scrollbar">
-          <button onClick={() => setActiveTab('overview')} className={`flex-1 min-w-[90px] sm:min-w-[120px] flex items-center justify-center gap-2 px-3 sm:px-6 py-4 text-xs sm:text-sm font-bold border-b-2 transition-all ${activeTab === 'overview' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-slate-400'}`}><FileText size={16} className="sm:w-[18px] sm:h-[18px]" /> Overview</button>
-          <button onClick={() => setActiveTab('assignment')} className={`flex-1 min-w-[110px] sm:min-w-[140px] flex items-center justify-center gap-2 px-3 sm:px-6 py-4 text-xs sm:text-sm font-bold border-b-2 transition-all ${activeTab === 'assignment' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-slate-400'}`}><PenTool size={16} className="sm:w-[18px] sm:h-[18px]" /> Assignment {isUnlocked && !lesson.is_completed && <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-blue-500 ml-0.5 sm:ml-1 animate-pulse"></span>}</button>
-          <button onClick={() => setActiveTab('discussion')} className={`flex-1 min-w-[110px] sm:min-w-[140px] flex items-center justify-center gap-2 px-3 sm:px-6 py-4 text-xs sm:text-sm font-bold border-b-2 transition-all ${activeTab === 'discussion' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-slate-400'}`}>
-            <MessageSquare size={16} className="sm:w-[18px] sm:h-[18px]" /> Discussion
+        {/* Optimized Tab Bar to prevent overlapping on mobile */}
+        <div className="flex border-b border-white/5 bg-black/20 overflow-x-auto custom-scrollbar no-scrollbar-mobile">
+          <button onClick={() => setActiveTab('overview')} className={`flex-1 min-w-[80px] sm:min-w-[120px] flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-6 py-4 text-[10px] sm:text-xs md:text-sm font-bold border-b-2 transition-all ${activeTab === 'overview' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-slate-400'}`}>
+            <FileText size={14} className="sm:w-[18px] sm:h-[18px]" /> 
+            <span>Overview</span>
+          </button>
+          
+          <button onClick={() => setActiveTab('assignment')} className={`flex-1 min-w-[80px] sm:min-w-[140px] flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-6 py-4 text-[10px] sm:text-xs md:text-sm font-bold border-b-2 transition-all ${activeTab === 'assignment' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-slate-400'}`}>
+            <PenTool size={14} className="sm:w-[18px] sm:h-[18px]" /> 
+            <span>Assignment</span>
+            {isUnlocked && !lesson.is_completed && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse hidden sm:block"></span>}
+          </button>
+
+          <button onClick={() => setActiveTab('discussion')} className={`flex-1 min-w-[80px] sm:min-w-[140px] flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-6 py-4 text-[10px] sm:text-xs md:text-sm font-bold border-b-2 transition-all ${activeTab === 'discussion' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-slate-400'}`}>
+            <MessageSquare size={14} className="sm:w-[18px] sm:h-[18px]" /> 
+            <span>Discussion</span>
             {isLiveMode && (
-              <div className="flex items-center gap-1 ml-1 sm:ml-2">
-                <span className="flex items-center gap-0.5 sm:gap-1 px-1 sm:px-1.5 py-0.5 bg-red-600 text-white text-[8px] sm:text-[9px] font-black rounded tracking-widest animate-pulse">
-                  <Radio size={7} className="sm:w-2 sm:h-2" /> LIVE
-                </span>
-                {activity.count > 0 && (
-                   <div className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-500/20 text-blue-400 text-[10px] rounded-md border border-blue-500/20">
-                     <Users size={10} /> {activity.count}
-                   </div>
-                )}
-              </div>
+              <span className="flex items-center gap-0.5 px-1 py-0.5 bg-red-600 text-white text-[7px] sm:text-[9px] font-black rounded tracking-widest animate-pulse uppercase">
+                <Radio size={6} className="sm:w-2 sm:h-2" /> LIVE
+              </span>
             )}
           </button>
+
           {isLiveMode && (
-            <button onClick={() => setActiveTab('participants')} className={`flex-1 min-w-[120px] sm:min-w-[150px] flex items-center justify-center gap-2 px-3 sm:px-6 py-4 text-xs sm:text-sm font-bold border-b-2 transition-all ${activeTab === 'participants' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-slate-400'}`}>
-              <Users size={16} className="sm:w-[18px] sm:h-[18px]" /> Active 
-              {activity.count > 0 && (
-                 <span className="ml-1 px-1.5 py-0.5 bg-blue-500 text-white text-[10px] font-black rounded-full">
-                   {activity.count}
-                 </span>
-              )}
+            <button onClick={() => setActiveTab('participants')} className={`flex-1 min-w-[80px] sm:min-w-[150px] flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-6 py-4 text-[10px] sm:text-xs md:text-sm font-bold border-b-2 transition-all ${activeTab === 'participants' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-slate-400'}`}>
+              <Users size={14} className="sm:w-[18px] sm:h-[18px]" /> 
+              <span>Active</span>
+              {activity.count > 0 && <span className="px-1.5 py-0.5 bg-blue-500 text-white text-[8px] sm:text-[10px] font-black rounded-full leading-none">{activity.count}</span>}
             </button>
           )}
         </div>
@@ -175,7 +158,6 @@ export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false }: Props) =>
 
             {activeTab === 'discussion' && (
               <motion.div key="discussion" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-3xl mx-auto space-y-5">
-                {/* Live banner */}
                 {isLiveMode && (
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl">
                     <div className="flex items-center gap-2 text-red-500 font-bold text-[10px] sm:text-xs tracking-wider">
@@ -215,11 +197,11 @@ export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false }: Props) =>
                       </motion.div>
                     ))
                   }
-                  {/* Scroll anchor */}
                   <div ref={commentsEndRef} />
                 </div>
               </motion.div>
             )}
+
             {activeTab === 'participants' && (
               <motion.div key="participants" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-3xl mx-auto space-y-6">
                 <div className="flex items-center justify-between border-b border-white/5 pb-4">
@@ -233,7 +215,7 @@ export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false }: Props) =>
                   </div>
                 </div>
 
-                {activity.participants.length === 0 ? (
+                {!activity.participants || activity.participants.length === 0 ? (
                   <div className="py-12 text-center text-slate-500 italic">No activity recorded yet. Keep watching!</div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
