@@ -191,7 +191,7 @@ export const UserManagementTab = () => {
       <AnimatePresence>
         {isAddModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-[#0f0f1e] border border-white/10 rounded-3xl p-8 max-w-2xl w-full shadow-2xl my-8 relative">
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-[#0f0f1e] border border-white/10 rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl my-8 relative">
               <button 
                 onClick={() => setIsAddModalOpen(false)}
                 className="absolute top-6 right-6 text-slate-500 hover:text-white transition-colors"
@@ -317,7 +317,7 @@ export const UserManagementTab = () => {
               initial={{ scale: 0.95, opacity: 0 }} 
               animate={{ scale: 1, opacity: 1 }} 
               exit={{ scale: 0.95, opacity: 0 }} 
-              className="bg-[#0f0f1e] border border-white/10 rounded-[2.5rem] max-w-2xl w-full shadow-2xl relative overflow-hidden my-8"
+              className="bg-[#0f0f1e] border border-white/10 rounded-[2.5rem] max-w-2xl w-full shadow-2xl relative overflow-hidden my-8 mx-auto"
             >
               {/* Header Decorative Background */}
               <div className={`absolute top-0 left-0 right-0 h-32 bg-gradient-to-r ${selectedUser.source === 'Couples Launchpad' ? 'from-blue-600/20 to-indigo-600/10' : 'from-purple-600/20 to-pink-600/10'} opacity-50`} />
@@ -456,14 +456,14 @@ export const UserManagementTab = () => {
         )}
       </AnimatePresence>
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
-        <div>
-          <h2 className="text-3xl font-bold mb-2">User Management</h2>
-          <p className="text-slate-400">View, filter, and verify all registered participants.</p>
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end mb-8 gap-6">
+        <div className="max-w-md">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-2">User Management</h2>
+          <p className="text-slate-400 text-sm">View, filter, and verify all registered participants.</p>
         </div>
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full lg:w-auto">
           {/* Search Bar */}
-          <div className="relative flex-1 min-w-[200px] md:w-64 group">
+          <div className="relative flex-1 sm:w-64 group">
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-400 transition-colors">
               <Search size={18} />
             </div>
@@ -484,14 +484,23 @@ export const UserManagementTab = () => {
             )}
           </div>
 
-          <button 
-            onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold shadow-lg shadow-blue-500/20 transition-all active:scale-95"
-          >
-            <UserPlus size={18} /> <span className="hidden sm:inline">Add User</span>
-          </button>
-          <CustomDropdown icon={Filter} value={userFilter} onChange={setUserFilter} align="right" options={[{ label: 'All Cohorts', value: 'All' }, { label: 'Ready for a Soulmate', value: 'Ready for a Soulmate' }, { label: 'Couples Launchpad', value: 'Couples Launchpad' }]} />
-          <div className="text-sm font-bold text-pink-400 bg-pink-500/10 px-4 py-2.5 rounded-xl border border-pink-500/20">Total: {processedUsers.total}</div>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setIsAddModalOpen(true)}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold shadow-lg shadow-blue-500/20 transition-all active:scale-95"
+            >
+              <UserPlus size={18} /> <span>Add User</span>
+            </button>
+            <div className="block lg:hidden flex-1 sm:flex-none">
+              <CustomDropdown icon={Filter} value={userFilter} onChange={setUserFilter} align="right" options={[{ label: 'All Cohorts', value: 'All' }, { label: 'Ready for a Soulmate', value: 'Ready for a Soulmate' }, { label: 'Couples Launchpad', value: 'Couples Launchpad' }]} />
+            </div>
+          </div>
+
+          <div className="hidden lg:block">
+            <CustomDropdown icon={Filter} value={userFilter} onChange={setUserFilter} align="right" options={[{ label: 'All Cohorts', value: 'All' }, { label: 'Ready for a Soulmate', value: 'Ready for a Soulmate' }, { label: 'Couples Launchpad', value: 'Couples Launchpad' }]} />
+          </div>
+
+          <div className="text-sm font-bold text-pink-400 bg-pink-500/10 px-4 py-2.5 rounded-xl border border-pink-500/20 text-center">Total: {processedUsers.total}</div>
         </div>
       </div>
 

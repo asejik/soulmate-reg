@@ -481,29 +481,29 @@ export const CurriculumTab = () => {
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
 
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-white">Curriculum Manager</h2>
-            <p className="text-slate-500 text-sm mt-0.5">{modules.length} modules · {lessons.length} lessons</p>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+          <div className="max-w-md">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white leading-tight">Curriculum Manager</h2>
+            <p className="text-slate-500 text-sm mt-1">{modules.length} modules · {lessons.length} lessons</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
             <button
               onClick={() => setPanel({ type: 'create-module' })}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 text-sm font-semibold hover:bg-indigo-600/30 transition-colors"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 text-xs sm:text-sm font-bold hover:bg-indigo-600/30 transition-colors"
             >
-              <PlusCircle size={15} /> Module
+              <PlusCircle size={15} /> <span className="sm:inline">Module</span>
             </button>
             <button
               onClick={() => setPanel({ type: 'create-lesson' })}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-pink-600/20 border border-pink-500/30 text-pink-300 text-sm font-semibold hover:bg-pink-600/30 transition-colors"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-pink-600/20 border border-pink-500/30 text-pink-300 text-xs sm:text-sm font-bold hover:bg-pink-600/30 transition-colors"
             >
-              <PlusCircle size={15} /> Lesson
+              <PlusCircle size={15} /> <span className="sm:inline">Lesson</span>
             </button>
             <button
                onClick={() => setPanel({ type: 'edit-settings' })}
-               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-600/20 border border-amber-500/30 text-amber-300 text-sm font-semibold hover:bg-amber-600/30 transition-colors"
+               className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600/20 border border-amber-500/30 text-amber-300 text-xs sm:text-sm font-bold hover:bg-amber-600/30 transition-colors"
             >
-              <RotateCcw size={15} /> Special
+              <RotateCcw size={15} /> <span className="sm:inline">Special</span>
             </button>
           </div>
         </div>

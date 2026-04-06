@@ -83,13 +83,13 @@ export const DiscussionsTab = () => {
         )}
       </AnimatePresence>
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-        <div>
-          <h2 className="text-3xl font-bold mb-2">Discussion Management</h2>
-          <p className="text-slate-400">Moderate and manage all lesson comments.</p>
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
+        <div className="max-w-md">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-2 leading-tight">Discussion Management</h2>
+          <p className="text-slate-400 text-sm">Moderate and manage all lesson comments.</p>
         </div>
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          <div className="relative group flex-1 md:w-64">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
+          <div className="relative group flex-1 sm:w-64">
              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
              <input 
                placeholder="Search comments..." 
@@ -98,13 +98,15 @@ export const DiscussionsTab = () => {
                className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-11 pr-4 text-sm focus:outline-none focus:border-pink-500/50 transition-all font-medium"
              />
           </div>
-          <CustomDropdown 
-            icon={Filter} 
-            value={programFilter} 
-            onChange={setProgramFilter} 
-            align="right"
-            options={[{ label: 'Soulmate Cohort', value: 'soulmate' }, { label: 'Launchpad Cohort', value: 'launchpad' }]} 
-          />
+          <div className="flex-1 sm:flex-none">
+            <CustomDropdown 
+              icon={Filter} 
+              value={programFilter} 
+              onChange={setProgramFilter} 
+              align="right"
+              options={[{ label: 'Soulmate Cohort', value: 'soulmate' }, { label: 'Launchpad Cohort', value: 'launchpad' }]} 
+            />
+          </div>
         </div>
       </div>
 

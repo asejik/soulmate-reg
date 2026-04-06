@@ -87,43 +87,43 @@ export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false }: Props) =>
     <>
       <ToastContainer toasts={toasts} onDismiss={dismiss} />
       <div className="flex-1 bg-[#111827] border border-white/5 rounded-2xl overflow-hidden flex flex-col shadow-lg mt-4">
-        <div className="flex border-b border-white/5 bg-black/20 overflow-x-auto custom-scrollbar">
-          <button onClick={() => setActiveTab('overview')} className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 px-6 py-4 text-sm font-bold border-b-2 ${activeTab === 'overview' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-slate-400'}`}><FileText size={18} /> Overview</button>
-          <button onClick={() => setActiveTab('assignment')} className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-4 text-sm font-bold border-b-2 ${activeTab === 'assignment' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-slate-400'}`}><PenTool size={18} /> Assignment {isUnlocked && !lesson.is_completed && <span className="w-2 h-2 rounded-full bg-blue-500 ml-1 animate-pulse"></span>}</button>
-          <button onClick={() => setActiveTab('discussion')} className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-4 text-sm font-bold border-b-2 ${activeTab === 'discussion' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-slate-400'}`}>
-            <MessageSquare size={18} /> Discussion
+        <div className="flex border-b border-white/5 bg-black/20 overflow-x-auto selection:bg-blue-500/30 custom-scrollbar">
+          <button onClick={() => setActiveTab('overview')} className={`flex-1 min-w-[90px] sm:min-w-[120px] flex items-center justify-center gap-2 px-3 sm:px-6 py-4 text-xs sm:text-sm font-bold border-b-2 transition-all ${activeTab === 'overview' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-slate-400'}`}><FileText size={16} className="sm:w-[18px] sm:h-[18px]" /> Overview</button>
+          <button onClick={() => setActiveTab('assignment')} className={`flex-1 min-w-[110px] sm:min-w-[140px] flex items-center justify-center gap-2 px-3 sm:px-6 py-4 text-xs sm:text-sm font-bold border-b-2 transition-all ${activeTab === 'assignment' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-slate-400'}`}><PenTool size={16} className="sm:w-[18px] sm:h-[18px]" /> Assignment {isUnlocked && !lesson.is_completed && <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-blue-500 ml-0.5 sm:ml-1 animate-pulse"></span>}</button>
+          <button onClick={() => setActiveTab('discussion')} className={`flex-1 min-w-[110px] sm:min-w-[140px] flex items-center justify-center gap-2 px-3 sm:px-6 py-4 text-xs sm:text-sm font-bold border-b-2 transition-all ${activeTab === 'discussion' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-slate-400'}`}>
+            <MessageSquare size={16} className="sm:w-[18px] sm:h-[18px]" /> Discussion
             {isLiveMode && (
-              <span className="flex items-center gap-1 ml-1 px-1.5 py-0.5 bg-red-600 text-white text-[9px] font-black rounded tracking-widest animate-pulse">
-                <Radio size={8} /> LIVE
+              <span className="flex items-center gap-0.5 sm:gap-1 ml-0.5 sm:ml-1 px-1 sm:px-1.5 py-0.5 bg-red-600 text-white text-[8px] sm:text-[9px] font-black rounded tracking-widest animate-pulse">
+                <Radio size={7} className="sm:w-2 sm:h-2" /> LIVE
               </span>
             )}
           </button>
         </div>
 
-        <div className="p-6 md:p-8 flex-1">
+        <div className="p-4 sm:p-6 md:p-8 flex-1">
           <AnimatePresence mode="wait">
             {activeTab === 'overview' && (
               <motion.div key="overview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-3xl mx-auto space-y-4">
-                <h3 className="text-lg font-bold text-white">About this lesson</h3><p className="text-slate-300 whitespace-pre-wrap">{lesson.description}</p>
+                <h3 className="text-base sm:text-lg font-bold text-white">About this lesson</h3><p className="text-sm sm:text-base text-slate-300 whitespace-pre-wrap">{lesson.description}</p>
               </motion.div>
             )}
 
             {activeTab === 'assignment' && (
               <motion.div key="assignment" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-3xl mx-auto space-y-6">
                 {lesson.is_completed ? (
-                  <div className="flex flex-col items-center py-8 text-center space-y-4"><div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center text-green-500"><CheckCircle2 size={32} /></div><h3 className="text-xl font-bold text-white">Assignment Completed</h3></div>
+                  <div className="flex flex-col items-center py-8 text-center space-y-4"><div className="w-12 h-12 sm:w-16 sm:h-16 bg-green-500/10 rounded-full flex items-center justify-center text-green-500"><CheckCircle2 size={24} className="sm:w-8 sm:h-8" /></div><h3 className="text-lg sm:text-xl font-bold text-white">Assignment Completed</h3></div>
                 ) : !isUnlocked ? (
-                  <div className="flex flex-col items-center py-12 text-center space-y-4"><div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center text-slate-500"><Lock size={32} /></div><h3 className="text-xl font-bold text-white">Assignment Locked</h3><p className="text-slate-400">Please watch at least 80% of the video to unlock.</p></div>
+                  <div className="flex flex-col items-center py-10 sm:py-12 text-center space-y-4"><div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/5 rounded-full flex items-center justify-center text-slate-500"><Lock size={24} className="sm:w-8 sm:h-8" /></div><h3 className="text-lg sm:text-xl font-bold text-white">Assignment Locked</h3><p className="text-sm sm:text-base text-slate-400">Please watch at least 80% of the video to unlock.</p></div>
                 ) : (
                   <div className="space-y-6">
-                    <div className="p-5 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-100 whitespace-pre-wrap">{lesson.assignmentPrompt}</div>
+                    <div className="p-4 sm:p-5 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-100 text-sm sm:text-base whitespace-pre-wrap">{lesson.assignmentPrompt}</div>
                     <form onSubmit={handleSubmit} className="space-y-6 pt-4 border-t border-white/5">
-                      <div className="flex items-center gap-4">
-                        <button type="button" onClick={() => setSubmissionType('link')} className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold ${submissionType === 'link' ? 'bg-blue-600 text-white' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}><LinkIcon size={16} /> Link</button>
-                        <button type="button" onClick={() => setSubmissionType('text')} className={`flex gap-2 px-6 py-3 rounded-xl text-sm font-bold ${submissionType === 'text' ? 'bg-blue-600 text-white' : 'bg-white/5 text-slate-400 hvoer:bg-white/10'}`}><FileText size={16} /> Text</button>
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        <button type="button" onClick={() => setSubmissionType('link')} className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold transition-all ${submissionType === 'link' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}><LinkIcon size={14} className="sm:w-4 sm:h-4" /> Link</button>
+                        <button type="button" onClick={() => setSubmissionType('text')} className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold transition-all ${submissionType === 'text' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}><FileText size={14} className="sm:w-4 sm:h-4" /> Text</button>
                       </div>
-                      {submissionType === 'link' ? <input type="url" required value={submissionValue} onChange={(e) => setSubmissionValue(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl py-4 px-4 text-white focus:border-blue-500/50" /> : <textarea required rows={5} value={submissionValue} onChange={(e) => setSubmissionValue(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl py-4 px-4 text-white resize-none focus:border-blue-500/50" />}
-                      <button type="submit" disabled={isSubmitting || !submissionValue} className="w-full py-4 bg-white text-black font-bold rounded-xl hover:bg-slate-200 transition-all">{isSubmitting ? 'Submitting...' : 'Submit & Unlock'}</button>
+                      {submissionType === 'link' ? <input type="url" required value={submissionValue} onChange={(e) => setSubmissionValue(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl py-3 px-4 text-sm text-white focus:border-blue-500/50 transition-colors" placeholder="https://..." /> : <textarea required rows={4} value={submissionValue} onChange={(e) => setSubmissionValue(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl py-3 px-4 text-sm text-white resize-none focus:border-blue-500/50 transition-colors" placeholder="Write your submission here..." />}
+                      <button type="submit" disabled={isSubmitting || !submissionValue} className="w-full py-3.5 sm:py-4 bg-white text-black font-bold rounded-xl hover:bg-slate-200 active:scale-[0.98] transition-all text-sm sm:text-base">{isSubmitting ? 'Submitting...' : 'Submit & Unlock'}</button>
                     </form>
                   </div>
                 )}
@@ -131,24 +131,24 @@ export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false }: Props) =>
             )}
 
             {activeTab === 'discussion' && (
-              <motion.div key="discussion" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-3xl mx-auto space-y-6">
+              <motion.div key="discussion" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-3xl mx-auto space-y-5">
                 {/* Live banner */}
                 {isLiveMode && (
-                  <div className="flex items-center gap-3 px-4 py-2.5 bg-red-500/10 border border-red-500/20 rounded-xl">
-                    <div className="flex items-center gap-2 text-red-400 font-bold text-xs">
-                      <span className="relative flex h-2.5 w-2.5">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+                    <div className="flex items-center gap-2 text-red-500 font-bold text-[10px] sm:text-xs tracking-wider">
+                      <span className="relative flex h-2 w-2">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600" />
                       </span>
                       LIVE SESSION IN PROGRESS
                     </div>
-                    <span className="text-slate-400 text-xs ml-auto">Chat refreshes automatically every 10s</span>
+                    <span className="text-slate-500 text-[10px] sm:ml-auto">Chat refreshes every 10s</span>
                   </div>
                 )}
 
-                <form onSubmit={handlePostComment} className="flex gap-3">
-                  <input type="text" required placeholder={isLiveMode ? "Say something live..." : "Add a comment..."} value={newComment} onChange={(e) => setNewComment(e.target.value)} className="flex-1 bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:border-white/20" />
-                  <button type="submit" disabled={isSubmittingComment || !newComment.trim()} className={`px-6 py-3 font-bold rounded-xl transition-colors ${isLiveMode ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-white text-black hover:bg-slate-200'}`}>
+                <form onSubmit={handlePostComment} className="flex gap-2 sm:gap-3">
+                  <input type="text" required placeholder={isLiveMode ? "Say something..." : "Add a comment..."} value={newComment} onChange={(e) => setNewComment(e.target.value)} className="flex-1 bg-black/20 border border-white/10 rounded-xl px-4 py-2.5 sm:py-3 text-sm text-white placeholder:text-slate-600 focus:border-blue-500/30 transition-all" />
+                  <button type="submit" disabled={isSubmittingComment || !newComment.trim()} className={`px-4 sm:px-6 py-2.5 sm:py-3 font-bold rounded-xl transition-all text-sm active:scale-95 flex-shrink-0 ${isLiveMode ? 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-900/20' : 'bg-white text-black hover:bg-slate-200 shadow-lg shadow-black/20'}`}>
                     {isSubmittingComment ? '...' : isLiveMode ? '⚡ Send' : 'Post'}
                   </button>
                 </form>

@@ -34,14 +34,16 @@ export const ProgressTab = () => {
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
-        <div>
-          <h2 className="text-3xl font-bold mb-2">Instructor Dashboard</h2>
-          <p className="text-slate-400">Review student progress and submitted assignment links.</p>
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end mb-8 gap-6">
+        <div className="max-w-md">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-2">Instructor Dashboard</h2>
+          <p className="text-slate-400 text-sm">Review student progress and submitted assignment links.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <CustomDropdown icon={Filter} value={progressFilter} onChange={setProgressFilter} align="right" options={[{ label: 'All Lessons', value: 'All' }, ...Array.from(new Set(submissions.map(s => s.lesson_title))).map(title => ({ label: title as string, value: title as string }))]} />
-          <div className="text-sm font-bold text-pink-400 bg-pink-500/10 px-4 py-2.5 rounded-xl border border-pink-500/20">Submissions: {processedSubmissions.total}</div>
+        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+          <div className="flex-1 lg:flex-none">
+            <CustomDropdown icon={Filter} value={progressFilter} onChange={setProgressFilter} align="right" options={[{ label: 'All Lessons', value: 'All' }, ...Array.from(new Set(submissions.map(s => s.lesson_title))).map(title => ({ label: title as string, value: title as string }))]} />
+          </div>
+          <div className="text-sm font-bold text-pink-400 bg-pink-500/10 px-4 py-2.5 rounded-xl border border-pink-500/20 text-center flex-1 lg:flex-none whitespace-nowrap">Submissions: {processedSubmissions.total}</div>
         </div>
       </div>
       <div className="bg-[#13132b] border border-white/5 rounded-3xl overflow-hidden shadow-xl flex flex-col">

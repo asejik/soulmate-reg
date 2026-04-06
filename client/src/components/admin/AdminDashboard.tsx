@@ -171,7 +171,7 @@ export const AdminDashboard = () => {
         </div>
 
         <div className="glass-card rounded-2xl overflow-hidden overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-300">
+          <table className="w-full text-left text-sm text-slate-300 min-w-[800px]">
             <thead className="bg-white/5 text-white uppercase tracking-wider font-semibold">
               <tr>
                 <th className="p-4">Full Name</th>
