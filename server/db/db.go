@@ -47,6 +47,9 @@ func InitTables() {
 		INSERT INTO public.program_settings (program_name) 
 		VALUES ('Ready for a Soulmate'), ('Couples Launchpad')
 		ON CONFLICT (program_name) DO NOTHING;
+
+		-- Ensure updated_at exists in lesson_progress
+		ALTER TABLE public.lesson_progress ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 	`)
 	if err != nil {
 		fmt.Printf("⚠️  Table Init Failed: %v\n", err)

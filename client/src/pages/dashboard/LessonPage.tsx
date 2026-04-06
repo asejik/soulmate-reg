@@ -46,13 +46,22 @@ export const LessonPage = () => {
   }
 
   return (
-    <div className="max-w-5xl mx-auto flex flex-col pb-20 space-y-6">
-      <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-sm font-medium text-slate-400 hover:text-white transition-colors w-max">
-        <ChevronLeft size={16} /> Back to Course Material
-      </button>
-      <VideoPlayerUI lesson={lesson} isUnlocked={isUnlocked} setIsUnlocked={setIsUnlocked} onLiveModeChange={handleLiveModeChange} />
-      <div><h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{lesson.title}</h1></div>
-      <LessonTabs lesson={lesson} isUnlocked={isUnlocked} isLiveMode={isLiveMode} />
+    <div className="max-w-5xl mx-auto flex flex-col pb-20">
+      <div className="py-6 px-4 md:px-0">
+        <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-sm font-medium text-slate-400 hover:text-white transition-colors w-max">
+          <ChevronLeft size={16} /> Back to Course Material
+        </button>
+      </div>
+      
+      {/* Sticky Video HUD */}
+      <div className="sticky top-0 z-40 bg-[#0b0f19] pt-2 pb-6 px-4 md:px-0">
+        <VideoPlayerUI lesson={lesson} isUnlocked={isUnlocked} setIsUnlocked={setIsUnlocked} onLiveModeChange={handleLiveModeChange} />
+      </div>
+
+      <div className="space-y-6 px-4 md:px-0 pt-6">
+        <div><h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{lesson.title}</h1></div>
+        <LessonTabs lesson={lesson} isUnlocked={isUnlocked} isLiveMode={isLiveMode} />
+      </div>
     </div>
   );
 };

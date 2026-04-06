@@ -46,7 +46,7 @@ func main() {
 	}))
 
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Soulmate Backend is Ready!"))
+		w.Write([]byte("Soulmate Backend is Ready! v1.1"))
 	})
 
 	// --- ROUTES ---
@@ -84,6 +84,7 @@ func main() {
 		r.Get("/api/lms/lessons/{id}/comments", handlers.GetLessonComments)
 		r.Post("/api/lms/lessons/{id}/comments", handlers.PostLessonComment)
 		r.Post("/api/lms/lessons/{id}/progress", handlers.UpdateProgress)
+		r.Get("/api/lms/lessons/{id}/activity", handlers.GetLessonActivity)
 		
 		// Admin Moderation / Reset
 		r.Delete("/api/admin/comments", handlers.DeleteLessonComment)

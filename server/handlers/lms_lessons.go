@@ -93,11 +93,12 @@ func UpdateProgress(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, err := db.Pool.Exec(r.Context(), `
-		INSERT INTO public.lesson_progress (user_id, lesson_id, last_watched_seconds, highest_watched_pct)
-		VALUES ($1, $2, $3, $4) ON CONFLICT (user_id, lesson_id)
+		INSERT INTO public.lesson_progress (user_id, lesson_id, last_watched_seconds, highest_watched_pct, updated_at)
+		VALUES ($1, $2, $3, $4, NOW()) ON CONFLICT (user_id, lesson_id)
 		DO UPDATE SET 
 			last_watched_seconds = $3, 
-			highest_watched_pct = GREATEST(lesson_progress.highest_watched_pct, $4)
+			highest_watched_pct = GREATEST(lesson_progress.highest_watched_pct, $4),
+			updated_at = NOW()
 	`, userID, lessonID, req.Seconds, req.Percent)
 
 	if err != nil {
@@ -175,4 +176,39 @@ func ResetUserProgress(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func GetLessonActivity(w http.ResponseWriter, r *http.Request) {
+	lessonID := chi.URLParam(r, "id")
+
+	rows, err := db.Pool.Query(r.Context(), `
+		SELECT DISTINCT COALESCE(cl.full_name, p.full_name, 'Participant') as name
+		FROM public.lesson_progress lp
+		JOIN auth.users au ON lp.user_id = au.id
+		LEFT JOIN public.couples_launchpad cl ON au.email = cl.email
+		LEFT JOIN public.participants p ON au.email = p.email
+		WHERE lp.lesson_id = $1 AND lp.updated_at > NOW() - INTERVAL '1 minute'
+		ORDER BY name ASC
+	`, lessonID)
+
+	if err != nil {
+		fmt.Printf("⚠️  Activity Fetch Failed: %v\n", err)
+		http.Error(w, "Failed to fetch activity", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	names := []string{}
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err == nil {
+			names = append(names, name)
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"count": len(names),
+		"participants": names,
+	})
 }
