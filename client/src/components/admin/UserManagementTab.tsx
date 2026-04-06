@@ -11,6 +11,7 @@ export const UserManagementTab = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(50);
   const [userFilter, setUserFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState('All');
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, userId: '', source: '', userName: '', isDeleting: false });
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -34,7 +35,7 @@ export const UserManagementTab = () => {
   const [modules, setModules] = useState<any[]>([]);
   const [resetModal, setResetModal] = useState({ isOpen: false, type: 'all', moduleId: '', isResetting: false });
 
-  useEffect(() => { setCurrentPage(1); }, [userFilter, itemsPerPage, searchTerm]);
+  useEffect(() => { setCurrentPage(1); }, [userFilter, statusFilter, itemsPerPage, searchTerm]);
 
   const fetchUsers = async () => {
     setIsLoading(true);
@@ -139,6 +140,11 @@ export const UserManagementTab = () => {
 
   const processedUsers = useMemo(() => {
     let filtered = users.filter(u => userFilter === 'All' || u.source === userFilter);
+    
+    if (statusFilter !== 'All') {
+      const isActivatedDesired = statusFilter === 'Activated';
+      filtered = filtered.filter(u => u.is_activated === isActivatedDesired);
+    }
     
     if (searchTerm) {
       const lowerSearch = searchTerm.toLowerCase();
@@ -498,12 +504,16 @@ export const UserManagementTab = () => {
               <UserPlus size={18} /> <span>Add User</span>
             </button>
             <div className="block lg:hidden flex-1 sm:flex-none">
-              <CustomDropdown icon={Filter} value={userFilter} onChange={setUserFilter} align="right" options={[{ label: 'All Cohorts', value: 'All' }, { label: 'Ready for a Soulmate', value: 'Ready for a Soulmate' }, { label: 'Couples Launchpad', value: 'Couples Launchpad' }]} />
+              <div className="flex gap-2">
+                <CustomDropdown icon={Filter} value={userFilter} onChange={setUserFilter} align="right" options={[{ label: 'All Cohorts', value: 'All' }, { label: 'Ready for a Soulmate', value: 'Ready for a Soulmate' }, { label: 'Couples Launchpad', value: 'Couples Launchpad' }]} />
+                <CustomDropdown icon={Users} value={statusFilter} onChange={setStatusFilter} align="right" options={[{ label: 'Status: All', value: 'All' }, { label: 'Activated', value: 'Activated' }, { label: 'Pending', value: 'Pending' }]} />
+              </div>
             </div>
           </div>
 
-          <div className="hidden lg:block">
+          <div className="hidden lg:flex items-center gap-2">
             <CustomDropdown icon={Filter} value={userFilter} onChange={setUserFilter} align="right" options={[{ label: 'All Cohorts', value: 'All' }, { label: 'Ready for a Soulmate', value: 'Ready for a Soulmate' }, { label: 'Couples Launchpad', value: 'Couples Launchpad' }]} />
+            <CustomDropdown icon={Users} value={statusFilter} onChange={setStatusFilter} align="right" options={[{ label: 'Status: All', value: 'All' }, { label: 'Activated', value: 'Activated' }, { label: 'Pending', value: 'Pending' }]} />
           </div>
 
           <div className="text-sm font-bold text-pink-400 bg-pink-500/10 px-4 py-2.5 rounded-xl border border-pink-500/20 text-center">Total: {processedUsers.total}</div>
