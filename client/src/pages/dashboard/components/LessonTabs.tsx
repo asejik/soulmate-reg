@@ -29,9 +29,18 @@ export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false }: Props) =>
       newOnes.forEach(c => knownIdsRef.current.add(c.id));
       // fetched is DESC order from backend; reverse for chronological display
       setComments([...fetched].reverse());
-      // Auto-scroll to newest during live
+      
+      // Auto-scroll to newest during live (only scroll the container, not the window)
       if (isLiveMode) {
-        setTimeout(() => commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+        setTimeout(() => {
+          if (commentsEndRef.current && commentsEndRef.current.parentElement) {
+            const container = commentsEndRef.current.parentElement;
+            container.scrollTo({
+              top: container.scrollHeight,
+              behavior: 'smooth'
+            });
+          }
+        }, 100);
       }
     }
   }, [isLiveMode]);
