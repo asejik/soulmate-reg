@@ -42,7 +42,8 @@ func InitTables() {
 	_, err := Pool.Exec(context.Background(), `
 		CREATE TABLE IF NOT EXISTS public.program_settings (
 			program_name TEXT PRIMARY KEY,
-			mid_checkpoint_video_id TEXT
+			mid_checkpoint_video_id TEXT,
+			intro_video_id TEXT
 		);
 		INSERT INTO public.program_settings (program_name) 
 		VALUES ('Ready for a Soulmate'), ('Couples Launchpad')

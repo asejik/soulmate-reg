@@ -577,12 +577,16 @@ func DeleteAdminLesson(w http.ResponseWriter, r *http.Request) {
 }
 func GetProgramSettings(w http.ResponseWriter, r *http.Request) {
 	settings := []map[string]interface{}{}
-	rows, _ := db.Pool.Query(r.Context(), "SELECT program_name, COALESCE(mid_checkpoint_video_id, '') FROM public.program_settings")
+	rows, _ := db.Pool.Query(r.Context(), "SELECT program_name, COALESCE(mid_checkpoint_video_id, ''), COALESCE(intro_video_id, '') FROM public.program_settings")
 	defer rows.Close()
 	for rows.Next() {
-		var pName, vID string
-		rows.Scan(&pName, &vID)
-		settings = append(settings, map[string]interface{}{"program_name": pName, "mid_checkpoint_video_id": vID})
+		var pName, checkpointID, introID string
+		rows.Scan(&pName, &checkpointID, &introID)
+		settings = append(settings, map[string]interface{}{
+			"program_name": pName, 
+			"mid_checkpoint_video_id": checkpointID,
+			"intro_video_id": introID,
+		})
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(settings)
@@ -600,6 +604,7 @@ func UpdateProgramSettings(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		ProgramName           string `json:"program_name"`
 		MidCheckpointVideoID string `json:"mid_checkpoint_video_id"`
+		IntroVideoID         string `json:"intro_video_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -607,10 +612,12 @@ func UpdateProgramSettings(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, err := db.Pool.Exec(r.Context(), `
-		INSERT INTO public.program_settings (program_name, mid_checkpoint_video_id) 
-		VALUES ($1, $2) ON CONFLICT (program_name) 
-		DO UPDATE SET mid_checkpoint_video_id = EXCLUDED.mid_checkpoint_video_id
-	`, req.ProgramName, req.MidCheckpointVideoID)
+		INSERT INTO public.program_settings (program_name, mid_checkpoint_video_id, intro_video_id) 
+		VALUES ($1, $2, $3) ON CONFLICT (program_name) 
+		DO UPDATE SET 
+			mid_checkpoint_video_id = EXCLUDED.mid_checkpoint_video_id,
+			intro_video_id = EXCLUDED.intro_video_id
+	`, req.ProgramName, req.MidCheckpointVideoID, req.IntroVideoID)
 
 	if err != nil {
 		fmt.Printf("💥 PROGRAM SETTINGS SAVE ERROR [%s]: %v\n", req.ProgramName, err)
