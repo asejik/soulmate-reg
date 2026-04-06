@@ -70,22 +70,22 @@ func GetMasterAdminUsers(w http.ResponseWriter, r *http.Request) {
 	// 2. Query BOTH tables with all fields mapped correctly (using COALESCE to handle legacy NULLs)
 	rows, err := db.Pool.Query(r.Context(), `
 		SELECT 
-			id::text, full_name, email, COALESCE(whatsapp_number, ''), COALESCE(gender, ''), COALESCE(country, ''), 
-			COALESCE(religion, ''), COALESCE(instagram_handle, ''), 'Ready for a Soulmate' as source, created_at,
-			COALESCE(state, ''), COALESCE(age_group, ''), COALESCE(church_name, ''), COALESCE(relationship_status, ''), COALESCE(clan_id::text, ''),
+			p.id::text, p.full_name, p.email, COALESCE(p.whatsapp_number, ''), COALESCE(p.gender, ''), COALESCE(p.country, ''), 
+			COALESCE(p.religion, ''), COALESCE(p.instagram_handle, ''), 'Ready for a Soulmate' as source, p.created_at,
+			COALESCE(p.state, ''), COALESCE(p.age_group, ''), COALESCE(p.church_name, ''), COALESCE(p.relationship_status, ''), COALESCE(p.clan_id::text, ''),
 			'' as denomination, '' as referral_source, '' as wedding_date, '' as partner_registered,
 			'' as spouse_name, '' as spouse_whatsapp, false as attended_before, false as agreed_to_feedback, false as agreed_to_participation,
-			EXISTS (SELECT 1 FROM auth.users u WHERE u.email = email) as is_activated
-		FROM public.participants
+			EXISTS (SELECT 1 FROM auth.users u WHERE u.email = p.email) as is_activated
+		FROM public.participants p
 		UNION ALL
 		SELECT 
-			id::text, full_name, email, COALESCE(whatsapp_number, ''), COALESCE(gender, ''), COALESCE(country_city, ''),
-			COALESCE(religion, ''), COALESCE(instagram_handle, ''), 'Couples Launchpad' as source, created_at,
+			c.id::text, c.full_name, c.email, COALESCE(c.whatsapp_number, ''), COALESCE(c.gender, ''), COALESCE(c.country_city, ''),
+			COALESCE(c.religion, ''), COALESCE(c.instagram_handle, ''), 'Couples Launchpad' as source, c.created_at,
 			'' as state, '' as age_group, '' as church_name, '' as relationship_status, '' as clan_id,
-			COALESCE(denomination, ''), COALESCE(referral_source, ''), COALESCE(wedding_date::text, ''), COALESCE(partner_registered, ''),
-			COALESCE(spouse_name, ''), COALESCE(spouse_whatsapp, ''), COALESCE(attended_before, false), COALESCE(agreed_to_feedback, false), COALESCE(agreed_to_participation, false),
-			EXISTS (SELECT 1 FROM auth.users u WHERE u.email = email) as is_activated
-		FROM public.couples_launchpad
+			COALESCE(c.denomination, ''), COALESCE(referral_source, ''), COALESCE(c.wedding_date::text, ''), COALESCE(c.partner_registered, ''),
+			COALESCE(c.spouse_name, ''), COALESCE(c.spouse_whatsapp, ''), COALESCE(c.attended_before, false), COALESCE(c.agreed_to_feedback, false), COALESCE(c.agreed_to_participation, false),
+			EXISTS (SELECT 1 FROM auth.users u WHERE u.email = c.email) as is_activated
+		FROM public.couples_launchpad c
 		ORDER BY created_at DESC
 	`)
 
