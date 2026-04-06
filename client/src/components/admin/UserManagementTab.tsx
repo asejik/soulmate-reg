@@ -345,6 +345,9 @@ export const UserManagementTab = () => {
                         Clan: {selectedUser.clan_id}
                        </span>
                     )}
+                    <span className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border ${selectedUser.is_activated ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'}`}>
+                      {selectedUser.is_activated ? 'Portal Activated' : 'Pending Activation'}
+                    </span>
                   </div>
                 </div>
 
@@ -406,13 +409,16 @@ export const UserManagementTab = () => {
                         </>
                      )}
                      <DetailItem label="Registration Date" value={new Date(selectedUser.created_at).toLocaleString()} />
-                     {selectedUser.source === 'Couples Launchpad' && (
-                        <div className="md:col-span-2 grid grid-cols-3 gap-2">
-                           <StatusBadge label="Attended Before" active={selectedUser.attended_before} />
-                           <StatusBadge label="Gave Feedback" active={selectedUser.agreed_to_feedback} />
-                           <StatusBadge label="Agreed Term" active={selectedUser.agreed_to_participation} />
-                        </div>
-                     )}
+                      <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                         <StatusBadge label="Portal Active" active={selectedUser.is_activated} />
+                         {selectedUser.source === 'Couples Launchpad' && (
+                            <>
+                               <StatusBadge label="Attended Before" active={selectedUser.attended_before} />
+                               <StatusBadge label="Gave Feedback" active={selectedUser.agreed_to_feedback} />
+                               <StatusBadge label="Agreed Term" active={selectedUser.agreed_to_participation} />
+                            </>
+                         )}
+                      </div>
                   </div>
 
                    {/* Progress Management Section */}
@@ -512,9 +518,10 @@ export const UserManagementTab = () => {
                 <thead>
                   <tr className="bg-black/20 border-b border-white/5 text-xs uppercase tracking-wider text-slate-400 font-bold whitespace-nowrap">
                     <th className="p-5 w-12 text-center">#</th>
-                    <th className="p-5 min-w-[200px]">Name</th>
-                    <th className="p-5 min-w-[250px]">Email</th>
-                    <th className="p-5 min-w-[150px]">Cohort / Source</th>
+                    <th className="p-5 min-w-[200px]">Participant</th>
+                    <th className="p-5 min-w-[250px]">Email Address</th>
+                    <th className="p-5 min-w-[80px]">Cohort</th>
+                    <th className="p-5 min-w-[120px]">Status</th>
                     <th className="p-5 min-w-[120px]">Date</th>
                     <th className="p-5 text-right">Actions</th>
                   </tr>
@@ -536,7 +543,13 @@ export const UserManagementTab = () => {
                         <td className="p-5 text-slate-400 whitespace-nowrap">{user.email}</td>
                         <td className="p-5 whitespace-nowrap">
                           <span className={`px-3 py-1 text-xs font-bold rounded-full inline-block ${user.source === 'Couples Launchpad' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'bg-purple-500/10 text-purple-400 border border-purple-500/20'}`}>
-                            {user.source}
+                            {user.source === 'Couples Launchpad' ? 'CLP' : 'RFASM'}
+                          </span>
+                        </td>
+                        <td className="p-5 whitespace-nowrap">
+                          <span className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest ${user.is_activated ? 'text-green-500' : 'text-amber-500/60'}`}>
+                            <div className={`w-1.5 h-1.5 rounded-full ${user.is_activated ? 'bg-green-500 animate-pulse' : 'bg-amber-500/40'}`} />
+                            {user.is_activated ? 'Activated' : 'Pending'}
                           </span>
                         </td>
                         <td className="p-5 text-slate-500 whitespace-nowrap">{new Date(user.created_at).toLocaleDateString()}</td>

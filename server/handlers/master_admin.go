@@ -52,6 +52,7 @@ type MasterAdminUser struct {
 	AttendedBefore     bool   `json:"attended_before"`
 	AgreedToFeedback   bool   `json:"agreed_to_feedback"`
 	AgreedToParticipation bool `json:"agreed_to_participation"`
+	IsActivated         bool   `json:"is_activated"`
 }
 
 // GetMasterAdminUsers fetches all registered users across both programs
@@ -73,7 +74,8 @@ func GetMasterAdminUsers(w http.ResponseWriter, r *http.Request) {
 			COALESCE(religion, ''), COALESCE(instagram_handle, ''), 'Ready for a Soulmate' as source, created_at,
 			COALESCE(state, ''), COALESCE(age_group, ''), COALESCE(church_name, ''), COALESCE(relationship_status, ''), COALESCE(clan_id::text, ''),
 			'' as denomination, '' as referral_source, '' as wedding_date, '' as partner_registered,
-			'' as spouse_name, '' as spouse_whatsapp, false as attended_before, false as agreed_to_feedback, false as agreed_to_participation
+			'' as spouse_name, '' as spouse_whatsapp, false as attended_before, false as agreed_to_feedback, false as agreed_to_participation,
+			EXISTS (SELECT 1 FROM auth.users u WHERE u.email = email) as is_activated
 		FROM public.participants
 		UNION ALL
 		SELECT 
@@ -81,7 +83,8 @@ func GetMasterAdminUsers(w http.ResponseWriter, r *http.Request) {
 			COALESCE(religion, ''), COALESCE(instagram_handle, ''), 'Couples Launchpad' as source, created_at,
 			'' as state, '' as age_group, '' as church_name, '' as relationship_status, '' as clan_id,
 			COALESCE(denomination, ''), COALESCE(referral_source, ''), COALESCE(wedding_date::text, ''), COALESCE(partner_registered, ''),
-			COALESCE(spouse_name, ''), COALESCE(spouse_whatsapp, ''), COALESCE(attended_before, false), COALESCE(agreed_to_feedback, false), COALESCE(agreed_to_participation, false)
+			COALESCE(spouse_name, ''), COALESCE(spouse_whatsapp, ''), COALESCE(attended_before, false), COALESCE(agreed_to_feedback, false), COALESCE(agreed_to_participation, false),
+			EXISTS (SELECT 1 FROM auth.users u WHERE u.email = email) as is_activated
 		FROM public.couples_launchpad
 		ORDER BY created_at DESC
 	`)
@@ -101,6 +104,7 @@ func GetMasterAdminUsers(w http.ResponseWriter, r *http.Request) {
 			&u.State, &u.AgeGroup, &u.ChurchName, &u.RelationshipStatus, &u.ClanID,
 			&u.Denomination, &u.ReferralSource, &u.WeddingDate, &u.PartnerRegistered,
 			&u.SpouseName, &u.SpouseWhatsApp, &u.AttendedBefore, &u.AgreedToFeedback, &u.AgreedToParticipation,
+			&u.IsActivated,
 		)
 		if err != nil {
 			fmt.Println("Scaning error:", err)
