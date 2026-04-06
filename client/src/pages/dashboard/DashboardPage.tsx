@@ -4,6 +4,7 @@ import { fetchLMS } from '../../lib/api';
 import { DashboardHeader } from './components/DashboardHeader';
 import { DashboardGateways } from './components/DashboardGateways';
 import { ModuleAccordion } from './components/ModuleAccordion';
+import { IntroVideoCard } from './components/IntroVideoCard';
 
 export interface DashboardLesson {
   id: string; title: string; estimated_time: string;
@@ -12,7 +13,11 @@ export interface DashboardLesson {
 }
 export interface DashboardModule { id: string; title: string; lessons: DashboardLesson[]; }
 export interface DashboardData {
-  user_id: string; has_completed_final_review: boolean; has_completed_mid_review: boolean;
+  user_id: string; 
+  has_completed_final_review: boolean; 
+  has_completed_mid_review: boolean;
+  checkpoint_video_id: string;
+  intro_video_id: string;
   active_program: string; enrolled_programs: string[];
   cohort: { name: string; total_lessons: number; completed_lessons: number; };
   next_lesson: { id: string; title: string; estimated_time: string; };
@@ -81,6 +86,9 @@ export const DashboardPage = () => {
     <div className="max-w-4xl mx-auto space-y-8 pb-20 px-4 md:px-0">
       <DashboardHeader data={data} progressPercentage={progressPercentage} isFullyCompleted={isFullyCompleted} hasCompletedFinalReview={hasCompletedFinalReview} />
       <DashboardGateways data={data} isFullyCompleted={isFullyCompleted} requiresMidReview={requiresMidReview} hasCompletedFinalReview={hasCompletedFinalReview} setHasCompletedFinalReview={setHasCompletedFinalReview} />
+      
+      {data.intro_video_id && <IntroVideoCard videoId={data.intro_video_id} />}
+
       <ModuleAccordion
         curriculum={data.curriculum}
         nextLessonId={data.next_lesson?.id}

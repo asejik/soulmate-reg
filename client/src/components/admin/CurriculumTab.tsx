@@ -83,14 +83,18 @@ const SettingsForm = ({
     fetchSettings();
   }, []);
 
-  const update = async (pName: string, vID: string) => {
+  const update = async (pName: string, midID: string, introID: string) => {
     setSaving(true);
     try {
       const headers = await authHeaders();
       const res = await fetch(`${API_BASE_URL}/admin/settings`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ program_name: pName, mid_checkpoint_video_id: vID })
+        body: JSON.stringify({ 
+           program_name: pName, 
+           mid_checkpoint_video_id: midID,
+           intro_video_id: introID
+        })
       });
       if (res.ok) {
         toast.success(`Settings updated for ${pName}`);
@@ -106,20 +110,43 @@ const SettingsForm = ({
   return (
     <>
       <ToastContainer toasts={toasts} onDismiss={dismiss} />
-      <div className="space-y-6">
-        {PROGRAMS.map(p => {
-          const s = (settings || []).find(st => st.program_name === p) || { mid_checkpoint_video_id: '' };
+          {PROGRAMS.map(p => {
+          const s = (settings || []).find(st => st.program_name === p) || { mid_checkpoint_video_id: '', intro_video_id: '' };
           return (
             <div key={p} className="p-4 bg-white/3 rounded-2xl border border-white/5 space-y-4">
               <div className="flex items-center justify-between">
                 <span className={`text-[10px] font-bold px-3 py-1 rounded-full border ${PILL_COLOR[p]}`}>{p}</span>
+                <button 
+                  onClick={() => update(p, s.mid_checkpoint_video_id, s.intro_video_id)}
+                  disabled={saving}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-all text-xs font-bold flex items-center gap-2"
+                >
+                  <Save size={14} /> {saving ? 'Saving...' : 'Save Settings'}
+                </button>
               </div>
-              <Field label="Mid-Program Checkpoint Video ID">
-                <div className="flex gap-2">
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Field label="Introductory Video ID">
                   <input 
                     type="text" 
                     className={inputCls} 
-                    value={s.mid_checkpoint_video_id} 
+                    value={s.intro_video_id || ''} 
+                    onChange={e => {
+                      const ns = [...settings];
+                      const idx = ns.findIndex(st => st.program_name === p);
+                      if (idx >= 0) ns[idx].intro_video_id = e.target.value;
+                      else ns.push({ program_name: p, intro_video_id: e.target.value });
+                      setSettings(ns);
+                    }}
+                    placeholder="YouTube ID (e.g. dQw4w9WgXcQ)"
+                  />
+                </Field>
+
+                <Field label="Mid-Program Checkpoint Video ID">
+                  <input 
+                    type="text" 
+                    className={inputCls} 
+                    value={s.mid_checkpoint_video_id || ''} 
                     onChange={e => {
                       const ns = [...settings];
                       const idx = ns.findIndex(st => st.program_name === p);
@@ -129,15 +156,8 @@ const SettingsForm = ({
                     }}
                     placeholder="YouTube ID (e.g. dQw4w9WgXcQ)"
                   />
-                  <button 
-                    onClick={() => update(p, s.mid_checkpoint_video_id)}
-                    disabled={saving}
-                    className="p-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-all"
-                  >
-                    <Save size={16} />
-                  </button>
-                </div>
-              </Field>
+                </Field>
+              </div>
             </div>
           );
         })}
