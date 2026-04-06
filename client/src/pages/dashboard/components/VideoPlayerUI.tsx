@@ -16,10 +16,9 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeCha
   const [showHUD, setShowHUD] = useState(true);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const formatTime = (s: number) => `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
 
   const {
-    containerRef, isPlaying, isEnded, progress, progressInSeconds,
+    containerRef, isPlaying, isEnded, progress,
     isLiveMode, isWaiting, timeLeft, volume, isMuted, togglePlay, handleSeek, toggleMute, handleVolumeChange
   } = useYouTubePlayer({
     videoId: lesson.videoId,
