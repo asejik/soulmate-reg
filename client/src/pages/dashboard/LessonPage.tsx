@@ -62,15 +62,15 @@ export const LessonPage = () => {
   }
 
   return (
-    <div className="max-w-5xl mx-auto flex flex-col pb-20">
-      <div className="py-6 px-4 md:px-0">
+    <div className="max-w-5xl mx-auto pb-20 px-4 md:px-0">
+      <div className="py-6">
         <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-sm font-medium text-slate-400 hover:text-white transition-colors w-max">
           <ChevronLeft size={16} /> Back to Course Material
         </button>
       </div>
       
-      {/* Sticky Video HUD - Locks to the top of the scrollable main area */}
-      <div className="sticky top-0 z-40 bg-[#0b0f19] pt-2 pb-4 px-4 md:px-0 shadow-2xl border-b border-white/5 md:border-none">
+      {/* Sticky Video HUD - Locks to the top of the scrollable main area with higher z-index */}
+      <div className="sticky top-0 z-50 bg-[#0b0f19] pt-2 pb-4 -mx-4 px-4 md:mx-0 shadow-2xl border-b border-white/5 md:border-none">
         <VideoPlayerUI 
           lesson={lesson} 
           isUnlocked={isUnlocked} 
