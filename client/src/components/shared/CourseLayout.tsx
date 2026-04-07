@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Award, MessageSquare, Menu, X, LogOut, Layout, Heart, Users } from 'lucide-react';
+import { Award, MessageSquare, Menu, X, LogOut, Layout, Heart, Users, Phone } from 'lucide-react';
 import { supabase } from '../../config';
 import { TAiLogo } from '../TAiLogo';
 
@@ -33,6 +33,7 @@ export const CourseLayout = () => {
     { label: 'Discussion Forums', path: '/dashboard/discussions', icon: MessageSquare },
     { label: 'Support & Giving', path: '/dashboard/giving', icon: Heart },
     { label: 'Volunteer to Serve', path: '/dashboard/volunteer', icon: Users },
+    { label: 'Contact & Support', path: '/dashboard/contact', icon: Phone },
   ];
 
   return (
