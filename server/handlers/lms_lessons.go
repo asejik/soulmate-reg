@@ -185,8 +185,8 @@ func GetLessonActivity(w http.ResponseWriter, r *http.Request) {
 		SELECT DISTINCT COALESCE(cl.full_name, p.full_name, 'Participant') as name
 		FROM public.lesson_progress lp
 		JOIN auth.users au ON lp.user_id = au.id
-		LEFT JOIN public.couples_launchpad cl ON au.email = cl.email
-		LEFT JOIN public.participants p ON au.email = p.email
+		LEFT JOIN public.couples_launchpad cl ON lower(au.email) = lower(cl.email)
+		LEFT JOIN public.participants p ON lower(au.email) = lower(p.email)
 		WHERE lp.lesson_id = $1 AND lp.updated_at > NOW() - INTERVAL '1 minute'
 		ORDER BY name ASC
 	`, lessonID)

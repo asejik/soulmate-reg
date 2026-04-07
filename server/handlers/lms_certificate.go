@@ -21,7 +21,7 @@ func GenerateCertificate(w http.ResponseWriter, r *http.Request) {
 	var userName string
 	db.Pool.QueryRow(r.Context(), `
 		SELECT COALESCE(cl.full_name, p.full_name, 'Participant') FROM auth.users au
-		LEFT JOIN public.couples_launchpad cl ON au.email = cl.email LEFT JOIN public.participants p ON au.email = p.email
+		LEFT JOIN public.couples_launchpad cl ON lower(au.email) = lower(cl.email) LEFT JOIN public.participants p ON lower(au.email) = lower(p.email)
 		WHERE au.id = $1 LIMIT 1
 	`, userID).Scan(&userName)
 

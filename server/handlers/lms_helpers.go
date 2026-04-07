@@ -74,8 +74,8 @@ func resolveActiveProgram(ctx context.Context, userID string, requestedProgram s
 	err := db.Pool.QueryRow(ctx, `
 		SELECT cl.email IS NOT NULL, p.email IS NOT NULL
 		FROM auth.users au
-		LEFT JOIN public.couples_launchpad cl ON au.email = cl.email
-		LEFT JOIN public.participants p ON au.email = p.email
+		LEFT JOIN public.couples_launchpad cl ON lower(au.email) = lower(cl.email)
+		LEFT JOIN public.participants p ON lower(au.email) = lower(p.email)
 		WHERE au.id = $1 LIMIT 1
 	`, userID).Scan(&isLaunchpad, &isSoulmate)
 

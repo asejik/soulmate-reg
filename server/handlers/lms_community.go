@@ -32,7 +32,7 @@ func GetLessonComments(w http.ResponseWriter, r *http.Request) {
 	rows, _ := db.Pool.Query(r.Context(), `
 		SELECT c.id, c.lesson_id, l.title, c.content, c.created_at, COALESCE(cl.full_name, p.full_name, 'Participant') AS user_name
 		FROM public.lesson_comments c JOIN public.lessons l ON c.lesson_id = l.id JOIN auth.users au ON c.user_id = au.id
-		LEFT JOIN public.couples_launchpad cl ON au.email = cl.email LEFT JOIN public.participants p ON au.email = p.email
+		LEFT JOIN public.couples_launchpad cl ON lower(au.email) = lower(cl.email) LEFT JOIN public.participants p ON lower(au.email) = lower(p.email)
 		WHERE c.lesson_id = $1 ORDER BY c.created_at DESC
 	`, lessonID)
 	defer rows.Close()
@@ -64,8 +64,8 @@ func GetGlobalDiscussions(w http.ResponseWriter, r *http.Request) {
 		JOIN public.lessons l ON lc.lesson_id = l.id
 		JOIN public.modules m ON l.module_id = m.id
 		JOIN auth.users au ON lc.user_id = au.id 
-		LEFT JOIN public.couples_launchpad cl ON au.email = cl.email 
-		LEFT JOIN public.participants p ON au.email = p.email
+		LEFT JOIN public.couples_launchpad cl ON lower(au.email) = lower(cl.email) 
+		LEFT JOIN public.participants p ON lower(au.email) = lower(p.email)
 		WHERE m.program_name = $1
 		ORDER BY lc.created_at DESC
 	`, programName)

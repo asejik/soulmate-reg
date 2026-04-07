@@ -152,8 +152,8 @@ func GetAdminSubmissions(w http.ResponseWriter, r *http.Request) {
 		FROM public.assignment_submissions sub
 		JOIN auth.users au ON sub.user_id = au.id
 		JOIN public.lessons l ON sub.lesson_id = l.id
-		LEFT JOIN public.couples_launchpad cl ON au.email = cl.email
-		LEFT JOIN public.participants p ON au.email = p.email
+		LEFT JOIN public.couples_launchpad cl ON lower(au.email) = lower(cl.email)
+		LEFT JOIN public.participants p ON lower(au.email) = lower(p.email)
 		ORDER BY sub.submitted_at DESC
 	`)
 
