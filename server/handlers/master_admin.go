@@ -311,14 +311,15 @@ type CurriculumModule struct {
 }
 
 type CurriculumLesson struct {
-	ModuleID           string     `json:"module_id"`
-	Title              string     `json:"title"`
-	Description        string     `json:"description"`
-	VideoID            string     `json:"video_id"`
-	EstimatedTime      string     `json:"estimated_time"`
-	AssignmentPrompt   string     `json:"assignment_prompt"`
-	SortOrder          int        `json:"sort_order"`
-	ScheduledStartTime *time.Time `json:"scheduled_start_time"`
+	ModuleID            string     `json:"module_id"`
+	Title               string     `json:"title"`
+	Description         string     `json:"description"`
+	VideoID             string     `json:"video_id"`
+	EstimatedTime       string     `json:"estimated_time"`
+	AssignmentPrompt    string     `json:"assignment_prompt"`
+	SortOrder           int        `json:"sort_order"`
+	ScheduledStartTime  *time.Time `json:"scheduled_start_time"`
+	LiveDurationMinutes int        `json:"live_duration_minutes"`
 }
 
 // GetAdminModules fetches modules for the dropdown in the UI
@@ -400,9 +401,9 @@ func CreateAdminLesson(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, err := db.Pool.Exec(r.Context(), `
-		INSERT INTO public.lessons (module_id, title, description, video_id, estimated_time, assignment_prompt, sort_order, scheduled_start_time)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-		l.ModuleID, l.Title, l.Description, l.VideoID, l.EstimatedTime, l.AssignmentPrompt, l.SortOrder, l.ScheduledStartTime)
+		INSERT INTO public.lessons (module_id, title, description, video_id, estimated_time, assignment_prompt, sort_order, scheduled_start_time, live_duration_minutes)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+		l.ModuleID, l.Title, l.Description, l.VideoID, l.EstimatedTime, l.AssignmentPrompt, l.SortOrder, l.ScheduledStartTime, l.LiveDurationMinutes)
 
 	if err != nil {
 		fmt.Println("💥 DB INSERT ERROR (Lesson):", err)
@@ -425,24 +426,25 @@ func GetAdminLessons(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type AdminLesson struct {
-		ID                 string     `json:"id"`
-		ModuleID           string     `json:"module_id"`
-		ModuleTitle        string     `json:"module_title"`
-		ProgramName        string     `json:"program_name"`
-		Title              string     `json:"title"`
-		Description        string     `json:"description"`
-		VideoID            string     `json:"video_id"`
-		EstimatedTime      string     `json:"estimated_time"`
-		AssignmentPrompt   string     `json:"assignment_prompt"`
-		SortOrder          int        `json:"sort_order"`
-		ScheduledStartTime *time.Time `json:"scheduled_start_time"`
+		ID                  string     `json:"id"`
+		ModuleID            string     `json:"module_id"`
+		ModuleTitle         string     `json:"module_title"`
+		ProgramName         string     `json:"program_name"`
+		Title               string     `json:"title"`
+		Description         string     `json:"description"`
+		VideoID             string     `json:"video_id"`
+		EstimatedTime       string     `json:"estimated_time"`
+		AssignmentPrompt    string     `json:"assignment_prompt"`
+		SortOrder           int        `json:"sort_order"`
+		ScheduledStartTime  *time.Time `json:"scheduled_start_time"`
+		LiveDurationMinutes int        `json:"live_duration_minutes"`
 	}
 
 	rows, err := db.Pool.Query(r.Context(), `
 		SELECT l.id::text, l.module_id::text, m.title, m.program_name,
 			   l.title, COALESCE(l.description,''), COALESCE(l.video_id,''),
 			   COALESCE(l.estimated_time,''), COALESCE(l.assignment_prompt,''), l.sort_order,
-			   l.scheduled_start_time
+			   l.scheduled_start_time, COALESCE(l.live_duration_minutes, 0)::int
 		FROM public.lessons l
 		JOIN public.modules m ON l.module_id = m.id
 		ORDER BY m.program_name, m.sort_order, l.sort_order ASC
@@ -458,7 +460,7 @@ func GetAdminLessons(w http.ResponseWriter, r *http.Request) {
 		var l AdminLesson
 		if err := rows.Scan(&l.ID, &l.ModuleID, &l.ModuleTitle, &l.ProgramName, &l.Title,
 			&l.Description, &l.VideoID, &l.EstimatedTime, &l.AssignmentPrompt, &l.SortOrder,
-			&l.ScheduledStartTime); err == nil {
+			&l.ScheduledStartTime, &l.LiveDurationMinutes); err == nil {
 			lessons = append(lessons, l)
 		}
 	}
@@ -542,10 +544,10 @@ func UpdateAdminLesson(w http.ResponseWriter, r *http.Request) {
 		UPDATE public.lessons
 		SET module_id=$1, title=$2, description=$3, video_id=$4,
 		    estimated_time=$5, assignment_prompt=$6, sort_order=$7,
-		    scheduled_start_time=$8
-		WHERE id=$9`,
+		    scheduled_start_time=$8, live_duration_minutes=$9
+		WHERE id=$10`,
 		l.ModuleID, l.Title, l.Description, l.VideoID,
-		l.EstimatedTime, l.AssignmentPrompt, l.SortOrder, l.ScheduledStartTime, id)
+		l.EstimatedTime, l.AssignmentPrompt, l.SortOrder, l.ScheduledStartTime, l.LiveDurationMinutes, id)
 	if err != nil {
 		fmt.Println("💥 UPDATE LESSON ERROR:", err)
 		http.Error(w, "Failed to update lesson", http.StatusInternalServerError)

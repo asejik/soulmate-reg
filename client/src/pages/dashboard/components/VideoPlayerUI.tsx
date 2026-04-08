@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, Volume2, VolumeX, Users } from 'lucide-react';
+import { Play, Pause, RotateCcw, Volume2, VolumeX, Users, Lock } from 'lucide-react';
 import { useYouTubePlayer } from '../../../hooks/useYouTubePlayer';
 import { postLMS } from '../../../lib/api';
 import type { LessonData } from '../LessonPage';
@@ -16,6 +16,15 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeCha
   const [showHUD, setShowHUD] = useState(true);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // 48h closure countdown — ticks every second from closing_at
+  const [closureSecs, setClosureSecs] = useState<number>(0);
+  useEffect(() => {
+    if (!lesson.closing_at) return;
+    const calcSecs = () => Math.max(0, Math.floor((new Date(lesson.closing_at!).getTime() - Date.now()) / 1000));
+    setClosureSecs(calcSecs());
+    const iv = setInterval(() => setClosureSecs(calcSecs()), 1000);
+    return () => clearInterval(iv);
+  }, [lesson.closing_at]);
 
   const {
     containerRef, isPlaying, isEnded, progress,
@@ -76,6 +85,14 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeCha
         className="absolute inset-0 z-10 cursor-pointer" 
         onClick={handleMaskClick} 
       />
+
+      {/* 48h Closure Countdown Banner — shown after live ends, before lock */}
+      {lesson.closing_at && closureSecs > 0 && !isWaiting && !isLiveMode && (
+        <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-center gap-2 bg-amber-500/90 backdrop-blur-sm py-1.5 px-4 text-amber-950 text-[11px] font-bold pointer-events-none">
+          <Lock size={11} className="flex-shrink-0" />
+          <span>Access closes in <span className="font-mono">{formatCountdown(closureSecs)}</span></span>
+        </div>
+      )}
 
       {isLiveMode && (
         <>

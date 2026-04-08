@@ -15,24 +15,27 @@ func GetLesson(w http.ResponseWriter, r *http.Request) {
 	lessonID := chi.URLParam(r, "id")
 
 	var lesson struct {
-		ID                 string     `json:"id"`
-		Title              string     `json:"title"`
-		Description        string     `json:"description"`
-		VideoID            string     `json:"videoId"`
-		EstimatedTime      string     `json:"estimatedTime"`
-		AssignmentPrompt   string     `json:"assignmentPrompt"`
-		IsCompleted        bool       `json:"is_completed"`
-		IsLocked           bool       `json:"is_locked"`
-		ScheduledStartTime *time.Time `json:"scheduled_start_time"`
-		LastWatchedSeconds float64    `json:"last_watched_seconds"`
-		Progress           int        `json:"progress"` // <-- ADDED THIS
+		ID                  string     `json:"id"`
+		Title               string     `json:"title"`
+		Description         string     `json:"description"`
+		VideoID             string     `json:"videoId"`
+		EstimatedTime       string     `json:"estimatedTime"`
+		AssignmentPrompt    string     `json:"assignmentPrompt"`
+		IsCompleted         bool       `json:"is_completed"`
+		IsLocked            bool       `json:"is_locked"`
+		ScheduledStartTime  *time.Time `json:"scheduled_start_time"`
+		LastWatchedSeconds  float64    `json:"last_watched_seconds"`
+		Progress            int        `json:"progress"`
+		DurationMinutes     *int       `json:"-"`          // server-side only; drives 48h locking
+		ClosingAt           *time.Time `json:"closing_at"` // non-nil during the 48h rewatch window
 	}
 
 	var programName string
 	err := db.Pool.QueryRow(r.Context(), `
 		SELECT l.id, l.title, COALESCE(l.description, ''), l.video_id, COALESCE(l.estimated_time, ''), COALESCE(l.assignment_prompt, ''),
 			   m.program_name, l.scheduled_start_time, COALESCE(lp.is_completed, false), COALESCE(lp.last_watched_seconds, 0.0)::float,
-			   COALESCE(lp.highest_watched_pct, 0)::int -- <-- ADDED THIS
+			   COALESCE(lp.highest_watched_pct, 0)::int,
+			   l.live_duration_minutes
 		FROM public.lessons l
 		JOIN public.modules m ON l.module_id = m.id
 		LEFT JOIN public.lesson_progress lp ON l.id = lp.lesson_id AND lp.user_id = $2
@@ -40,7 +43,8 @@ func GetLesson(w http.ResponseWriter, r *http.Request) {
 	`, lessonID, userID).Scan(
 		&lesson.ID, &lesson.Title, &lesson.Description, &lesson.VideoID, &lesson.EstimatedTime,
 		&lesson.AssignmentPrompt, &programName, &lesson.ScheduledStartTime, &lesson.IsCompleted,
-		&lesson.LastWatchedSeconds, &lesson.Progress, // <-- ADDED THIS
+		&lesson.LastWatchedSeconds, &lesson.Progress,
+		&lesson.DurationMinutes,
 	)
 
 	if err != nil {
@@ -74,6 +78,21 @@ func GetLesson(w http.ResponseWriter, r *http.Request) {
 
 	// All valid lessons are now unlocked to allow access to waitrooms and countdowns
 	lesson.IsLocked = false
+
+	// Post-live 48h access window: lock lesson after 48 hours from live session end.
+	// Only applies to lessons that have both a scheduled start time AND a duration set.
+	if lesson.ScheduledStartTime != nil && lesson.DurationMinutes != nil && *lesson.DurationMinutes > 0 {
+		liveEnd := lesson.ScheduledStartTime.Add(time.Duration(*lesson.DurationMinutes) * time.Minute)
+		lockAt := liveEnd.Add(48 * time.Hour)
+		now := time.Now().UTC()
+		if now.After(lockAt) {
+			// 48h window has expired — deny access
+			lesson.IsLocked = true
+		} else if now.After(liveEnd) {
+			// Session ended but still within 48h — show countdown to closure
+			lesson.ClosingAt = &lockAt
+		}
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(lesson)

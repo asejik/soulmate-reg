@@ -29,6 +29,7 @@ interface Lesson {
   assignment_prompt: string;
   sort_order: number;
   scheduled_start_time?: string;
+  live_duration_minutes?: number;
 }
 
 type PanelMode =
@@ -298,7 +299,7 @@ const ModuleForm = ({
 
 // ─── Lesson Form ───────────────────────────────────────────────────────────────
 
-const blankLesson = { module_id: '', title: '', description: '', video_id: '', estimated_time: '15 mins', assignment_prompt: '', sort_order: 1, scheduled_start_time: '' };
+const blankLesson = { module_id: '', title: '', description: '', video_id: '', estimated_time: '15 mins', assignment_prompt: '', sort_order: 1, scheduled_start_time: '', live_duration_minutes: 0 };
 
 const LessonForm = ({
   initial, modules, onSave, onCancel, mode,
@@ -319,7 +320,8 @@ const LessonForm = ({
         estimated_time: initial.estimated_time,
         assignment_prompt: initial.assignment_prompt,
         sort_order: initial.sort_order,
-        scheduled_start_time: initial.scheduled_start_time ? new Date(initial.scheduled_start_time).toISOString().slice(0, 16) : ''
+        scheduled_start_time: initial.scheduled_start_time ? new Date(initial.scheduled_start_time).toISOString().slice(0, 16) : '',
+        live_duration_minutes: initial.live_duration_minutes ?? 0,
       }
     : { ...blankLesson });
   const [saving, setSaving] = useState(false);
@@ -379,10 +381,13 @@ const LessonForm = ({
           <Field label="Est. Duration">
             <input required type="text" value={form.estimated_time} onChange={e => setForm({ ...form, estimated_time: e.target.value })} className={inputCls} placeholder="30 mins" />
           </Field>
-          <Field label="Start Time (Optional)">
+          <Field label="Premiere Start Time">
             <input type="datetime-local" value={form.scheduled_start_time} onChange={e => setForm({ ...form, scheduled_start_time: e.target.value })} className={inputCls} />
           </Field>
         </div>
+        <Field label="Live Duration (mins)">
+          <input type="number" min={0} value={form.live_duration_minutes} onChange={e => setForm({ ...form, live_duration_minutes: Number(e.target.value) })} className={inputCls} placeholder="e.g. 90 (required for 48h auto-lock)" />
+        </Field>
         <Field label="Description">
           <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={3} className={`${inputCls} resize-none`} placeholder="What will students learn?" />
         </Field>
