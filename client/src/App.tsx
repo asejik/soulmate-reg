@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { LandingPage } from './pages/LandingPage';
 import { LaunchpadApp } from './pages/LaunchpadApp';
 import { LoginPage } from './pages/auth/LoginPage';
+import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
 import { ProtectedRoute } from './components/shared/ProtectedRoute';
 import { CourseLayout } from './components/shared/CourseLayout';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
@@ -23,6 +24,7 @@ export default function App() {
       <Route path="/soulmate" element={<Navigate to="/" replace />} />
       <Route path="/launchpad" element={<LaunchpadApp />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/register" element={<ClaimAccountPage />} />
 
       {/* --- PROTECTED LMS ROUTES --- */}
