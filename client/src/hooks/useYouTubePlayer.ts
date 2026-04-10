@@ -146,7 +146,8 @@ export function useYouTubePlayer({
 
                  if (pct >= 98 && !hasCompletedRef.current) {
                    hasCompletedRef.current = true;
-                   playerRef.current.pauseVideo();
+                   // Do NOT pause here — let the video play to its natural end.
+                   // The ENDED event handler below will pause and show the completion overlay.
                    setIsLiveMode(false);
                    setIsWaiting(false);
                    setProgress(100);
