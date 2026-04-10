@@ -1,8 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Filter, ChevronLeft, ChevronRight, X, FileText } from 'lucide-react';
 import { supabase, API_BASE_URL } from '../../config';
 import { CustomDropdown } from './CustomDropdown';
+
+const isUrl = (val: string) => val.startsWith('http://') || val.startsWith('https://');
 
 export const ProgressTab = () => {
   const [submissions, setSubmissions] = useState<any[]>([]);
@@ -10,6 +12,7 @@ export const ProgressTab = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(50);
   const [progressFilter, setProgressFilter] = useState('All');
+  const [textModal, setTextModal] = useState<{ name: string; content: string } | null>(null);
 
   useEffect(() => { setCurrentPage(1); }, [progressFilter, itemsPerPage]);
 
@@ -34,6 +37,43 @@ export const ProgressTab = () => {
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+
+      {/* Text Submission Modal */}
+      <AnimatePresence>
+        {textModal && (
+          <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="bg-[#0f0f1e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col"
+            >
+              <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 flex-shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-pink-500/10 flex items-center justify-center text-pink-400">
+                    <FileText size={16} />
+                  </div>
+                  <div>
+                    <p className="text-white font-bold text-sm">{textModal.name}</p>
+                    <p className="text-slate-500 text-xs">Text Submission</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setTextModal(null)}
+                  className="p-2 text-slate-500 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="p-6 overflow-y-auto">
+                <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">{textModal.content}</p>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end mb-8 gap-6">
         <div className="max-w-md">
           <h2 className="text-2xl sm:text-3xl font-bold mb-2">Instructor Dashboard</h2>
@@ -46,6 +86,7 @@ export const ProgressTab = () => {
           <div className="text-sm font-bold text-pink-400 bg-pink-500/10 px-4 py-2.5 rounded-xl border border-pink-500/20 text-center flex-1 lg:flex-none whitespace-nowrap">Submissions: {processedSubmissions.total}</div>
         </div>
       </div>
+
       <div className="bg-[#13132b] border border-white/5 rounded-3xl overflow-hidden shadow-xl flex flex-col">
         {isLoading ? (<div className="h-64 flex items-center justify-center text-slate-500">Loading submissions...</div>) : (
           <>
@@ -53,7 +94,7 @@ export const ProgressTab = () => {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-black/20 border-b border-white/5 text-xs uppercase tracking-wider text-slate-400 font-bold">
-                    <th className="p-5 w-12 text-center">#</th><th className="p-5">Student</th><th className="p-5">Lesson</th><th className="p-5">Submitted URL</th><th className="p-5">Date</th>
+                    <th className="p-5 w-12 text-center">#</th><th className="p-5">Student</th><th className="p-5">Lesson</th><th className="p-5">Submission</th><th className="p-5">Date</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5 text-sm text-slate-300">
@@ -64,7 +105,25 @@ export const ProgressTab = () => {
                         <td className="p-5 text-center text-slate-500 font-mono text-xs">{serialNum}</td>
                         <td className="p-5"><div className="font-bold text-white">{sub.student_name}</div><div className="text-xs text-slate-500">{sub.email}</div></td>
                         <td className="p-5 font-medium text-indigo-300">{sub.lesson_title}</td>
-                        <td className="p-5"><a href={sub.submission_url} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-pink-500/10 text-pink-400 hover:bg-pink-500 hover:text-white rounded-lg transition-colors inline-block text-xs font-bold">View Assignment</a></td>
+                        <td className="p-5">
+                          {isUrl(sub.submission_url) ? (
+                            <a
+                              href={sub.submission_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-4 py-2 bg-pink-500/10 text-pink-400 hover:bg-pink-500 hover:text-white rounded-lg transition-colors inline-block text-xs font-bold"
+                            >
+                              View Assignment
+                            </a>
+                          ) : (
+                            <button
+                              onClick={() => setTextModal({ name: sub.student_name, content: sub.submission_url })}
+                              className="px-4 py-2 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500 hover:text-white rounded-lg transition-colors text-xs font-bold"
+                            >
+                              Read Response
+                            </button>
+                          )}
+                        </td>
                         <td className="p-5 text-slate-500">{new Date(sub.submitted_at).toLocaleDateString()}</td>
                       </tr>
                     );
