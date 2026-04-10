@@ -2,12 +2,14 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
-	"fmt"
 
 	"github.com/asejik/soulmate-reg/server/db"
+	"github.com/go-chi/chi/v5"
 )
+
 
 // isAdminEmail checks if the provided email belongs to one of the master administrators
 func isAdminEmail(email string) bool {
