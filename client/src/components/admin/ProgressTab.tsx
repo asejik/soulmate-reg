@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Filter, ChevronLeft, ChevronRight, X, FileText } from 'lucide-react';
+import { Filter, ChevronLeft, ChevronRight, X, FileText, MessageSquare } from 'lucide-react';
 import { supabase, API_BASE_URL } from '../../config';
 import { CustomDropdown } from './CustomDropdown';
 
@@ -13,6 +13,11 @@ export const ProgressTab = () => {
   const [itemsPerPage, setItemsPerPage] = useState<number>(50);
   const [progressFilter, setProgressFilter] = useState('All');
   const [textModal, setTextModal] = useState<{ name: string; content: string } | null>(null);
+  const [feedbackModal, setFeedbackModal] = useState<{
+    id: string; studentName: string; lessonTitle: string; currentFeedback: string;
+  } | null>(null);
+  const [feedbackDraft, setFeedbackDraft] = useState('');
+  const [isSavingFeedback, setIsSavingFeedback] = useState(false);
 
   useEffect(() => { setCurrentPage(1); }, [progressFilter, itemsPerPage]);
 
@@ -35,6 +40,29 @@ export const ProgressTab = () => {
     return { data: paginated, total: filtered.length, totalPages: Math.ceil(filtered.length / limit) || 1 };
   }, [submissions, progressFilter, currentPage, itemsPerPage]);
 
+  const openFeedbackModal = (sub: any) => {
+    setFeedbackDraft(sub.admin_feedback || '');
+    setFeedbackModal({ id: sub.id, studentName: sub.student_name, lessonTitle: sub.lesson_title, currentFeedback: sub.admin_feedback || '' });
+  };
+
+  const saveFeedback = async () => {
+    if (!feedbackModal) return;
+    setIsSavingFeedback(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${API_BASE_URL}/admin/submissions/${feedbackModal.id}/feedback`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ feedback: feedbackDraft }),
+      });
+      if (res.ok) {
+        // Update the local data so the button reflects the saved state
+        setSubmissions(prev => prev.map(s => s.id === feedbackModal.id ? { ...s, admin_feedback: feedbackDraft } : s));
+        setFeedbackModal(null);
+      }
+    } catch (err) { console.error(err); } finally { setIsSavingFeedback(false); }
+  };
+
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
 
@@ -51,23 +79,58 @@ export const ProgressTab = () => {
             >
               <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 flex-shrink-0">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-pink-500/10 flex items-center justify-center text-pink-400">
-                    <FileText size={16} />
-                  </div>
-                  <div>
-                    <p className="text-white font-bold text-sm">{textModal.name}</p>
-                    <p className="text-slate-500 text-xs">Text Submission</p>
-                  </div>
+                  <div className="w-8 h-8 rounded-lg bg-pink-500/10 flex items-center justify-center text-pink-400"><FileText size={16} /></div>
+                  <div><p className="text-white font-bold text-sm">{textModal.name}</p><p className="text-slate-500 text-xs">Text Submission</p></div>
                 </div>
-                <button
-                  onClick={() => setTextModal(null)}
-                  className="p-2 text-slate-500 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                >
-                  <X size={18} />
-                </button>
+                <button onClick={() => setTextModal(null)} className="p-2 text-slate-500 hover:text-white hover:bg-white/5 rounded-lg transition-colors"><X size={18} /></button>
               </div>
               <div className="p-6 overflow-y-auto">
                 <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">{textModal.content}</p>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Admin Feedback Modal */}
+      <AnimatePresence>
+        {feedbackModal && (
+          <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="bg-[#0f0f1e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col"
+            >
+              <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 flex-shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-teal-500/10 flex items-center justify-center text-teal-400"><MessageSquare size={16} /></div>
+                  <div>
+                    <p className="text-white font-bold text-sm">{feedbackModal.studentName}</p>
+                    <p className="text-slate-500 text-xs">{feedbackModal.lessonTitle}</p>
+                  </div>
+                </div>
+                <button onClick={() => setFeedbackModal(null)} className="p-2 text-slate-500 hover:text-white hover:bg-white/5 rounded-lg transition-colors"><X size={18} /></button>
+              </div>
+              <div className="p-6 space-y-4">
+                <textarea
+                  rows={6}
+                  value={feedbackDraft}
+                  onChange={e => setFeedbackDraft(e.target.value)}
+                  placeholder="Write your feedback for this student..."
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-teal-500/50 resize-none transition-colors"
+                />
+                <div className="flex gap-3">
+                  <button onClick={() => setFeedbackModal(null)} className="flex-1 py-2.5 rounded-xl border border-white/10 text-slate-400 text-sm font-semibold hover:bg-white/5 transition-colors">Cancel</button>
+                  <button
+                    onClick={saveFeedback}
+                    disabled={isSavingFeedback || !feedbackDraft.trim()}
+                    className="flex-1 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-sm font-bold transition-colors disabled:opacity-50"
+                  >
+                    {isSavingFeedback ? 'Saving...' : 'Save Feedback'}
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>
@@ -94,7 +157,7 @@ export const ProgressTab = () => {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-black/20 border-b border-white/5 text-xs uppercase tracking-wider text-slate-400 font-bold">
-                    <th className="p-5 w-12 text-center">#</th><th className="p-5">Student</th><th className="p-5">Lesson</th><th className="p-5">Submission</th><th className="p-5">Date</th>
+                    <th className="p-5 w-12 text-center">#</th><th className="p-5">Student</th><th className="p-5">Lesson</th><th className="p-5">Submission</th><th className="p-5">Feedback</th><th className="p-5">Date</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5 text-sm text-slate-300">
@@ -107,28 +170,34 @@ export const ProgressTab = () => {
                         <td className="p-5 font-medium text-indigo-300">{sub.lesson_title}</td>
                         <td className="p-5">
                           {isUrl(sub.submission_url) ? (
-                            <a
-                              href={sub.submission_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-4 py-2 bg-pink-500/10 text-pink-400 hover:bg-pink-500 hover:text-white rounded-lg transition-colors inline-block text-xs font-bold"
-                            >
+                            <a href={sub.submission_url} target="_blank" rel="noopener noreferrer"
+                              className="px-4 py-2 bg-pink-500/10 text-pink-400 hover:bg-pink-500 hover:text-white rounded-lg transition-colors inline-block text-xs font-bold">
                               View Assignment
                             </a>
                           ) : (
-                            <button
-                              onClick={() => setTextModal({ name: sub.student_name, content: sub.submission_url })}
-                              className="px-4 py-2 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500 hover:text-white rounded-lg transition-colors text-xs font-bold"
-                            >
+                            <button onClick={() => setTextModal({ name: sub.student_name, content: sub.submission_url })}
+                              className="px-4 py-2 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500 hover:text-white rounded-lg transition-colors text-xs font-bold">
                               Read Response
                             </button>
                           )}
+                        </td>
+                        <td className="p-5">
+                          <button
+                            onClick={() => openFeedbackModal(sub)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                              sub.admin_feedback
+                                ? 'bg-teal-500/15 text-teal-400 hover:bg-teal-500 hover:text-white'
+                                : 'bg-white/5 text-slate-500 hover:bg-white/10 hover:text-white'
+                            }`}
+                          >
+                            {sub.admin_feedback ? 'Edit Feedback' : 'Leave Feedback'}
+                          </button>
                         </td>
                         <td className="p-5 text-slate-500">{new Date(sub.submitted_at).toLocaleDateString()}</td>
                       </tr>
                     );
                   })}
-                  {processedSubmissions.data.length === 0 && <tr><td colSpan={5} className="p-8 text-center text-slate-500">No assignments match this filter.</td></tr>}
+                  {processedSubmissions.data.length === 0 && <tr><td colSpan={6} className="p-8 text-center text-slate-500">No assignments match this filter.</td></tr>}
                 </tbody>
               </table>
             </div>

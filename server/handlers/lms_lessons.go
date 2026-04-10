@@ -227,7 +227,39 @@ func GetLessonActivity(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"count": len(names),
+		"count":        len(names),
 		"participants": names,
 	})
 }
+
+// GetMySubmission returns the current user's submission for a lesson, including any admin feedback.
+func GetMySubmission(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(userIDKey).(string)
+	lessonID := chi.URLParam(r, "id")
+
+	var result struct {
+		Content        string     `json:"content"`
+		SubmissionType string     `json:"submission_type"`
+		AdminFeedback  *string    `json:"admin_feedback"`
+		FeedbackAt     *time.Time `json:"feedback_at"`
+		SubmittedAt    time.Time  `json:"submitted_at"`
+	}
+
+	err := db.Pool.QueryRow(r.Context(), `
+		SELECT content, COALESCE(submission_type, 'text'), admin_feedback, feedback_at, submitted_at
+		FROM public.assignment_submissions
+		WHERE user_id = $1 AND lesson_id = $2
+		ORDER BY submitted_at DESC LIMIT 1
+	`, userID, lessonID).Scan(
+		&result.Content, &result.SubmissionType, &result.AdminFeedback, &result.FeedbackAt, &result.SubmittedAt,
+	)
+
+	w.Header().Set("Content-Type", "application/json")
+	if err != nil {
+		// No submission found — return null so the frontend can handle gracefully
+		json.NewEncoder(w).Encode(nil)
+		return
+	}
+	json.NewEncoder(w).Encode(result)
+}
+

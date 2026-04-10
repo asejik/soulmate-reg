@@ -23,6 +23,13 @@ export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false, activity }:
   const [submissionType, setSubmissionType] = useState<'text' | 'link'>('link');
   const [submissionValue, setSubmissionValue] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mySubmission, setMySubmission] = useState<{
+    content: string;
+    submission_type: string;
+    admin_feedback: string | null;
+    feedback_at: string | null;
+    submitted_at: string;
+  } | null>(null);
   const commentsEndRef = useRef<HTMLDivElement>(null);
   const knownIdsRef = useRef<Set<string>>(new Set());
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -44,6 +51,14 @@ export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false, activity }:
       }
     }
   }, [isLiveMode]);
+
+  // Fetch student's own submission (including admin feedback) when lesson is completed
+  useEffect(() => {
+    if (!lesson.is_completed) return;
+    fetchLMS(`/lms/lessons/${lesson.id}/my-submission`)
+      .then(data => setMySubmission(data || null))
+      .catch(console.error);
+  }, [lesson.id, lesson.is_completed]);
 
   useEffect(() => {
     if (activeTab === 'discussion') {
@@ -137,7 +152,48 @@ export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false, activity }:
             {activeTab === 'assignment' && (
               <motion.div key="assignment" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-3xl mx-auto space-y-6">
                 {lesson.is_completed ? (
-                  <div className="flex flex-col items-center py-8 text-center space-y-4"><div className="w-12 h-12 sm:w-16 sm:h-16 bg-green-500/10 rounded-full flex items-center justify-center text-green-500"><CheckCircle2 size={24} className="sm:w-8 sm:h-8" /></div><h3 className="text-lg sm:text-xl font-bold text-white">Assignment Completed</h3></div>
+                  <div className="space-y-5">
+                    {/* Completion header */}
+                    <div className="flex items-center gap-3 pb-4 border-b border-white/5">
+                      <div className="w-10 h-10 bg-green-500/10 rounded-full flex-shrink-0 flex items-center justify-center text-green-500">
+                        <CheckCircle2 size={20} />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-white text-sm sm:text-base">Assignment Completed</h3>
+                        <p className="text-xs text-slate-500">Thank you for your submission</p>
+                      </div>
+                    </div>
+
+                    {/* Their submission */}
+                    {mySubmission && (
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Your Submission</p>
+                        {mySubmission.content.startsWith('http') ? (
+                          <a href={mySubmission.content} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:text-blue-300 rounded-xl text-sm font-medium transition-colors">
+                            <LinkIcon size={14} /> View Submitted Link
+                          </a>
+                        ) : (
+                          <div className="p-4 bg-white/5 border border-white/10 rounded-xl text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">
+                            {mySubmission.content}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Admin / Instructor feedback */}
+                    {mySubmission?.admin_feedback && (
+                      <div className="p-4 bg-amber-500/8 border border-amber-500/25 rounded-xl space-y-2">
+                        <p className="text-[10px] font-bold text-amber-400 uppercase tracking-widest flex items-center gap-1.5">
+                          <MessageSquare size={11} /> Instructor Feedback
+                        </p>
+                        <p className="text-sm text-slate-200 whitespace-pre-wrap leading-relaxed">{mySubmission.admin_feedback}</p>
+                        {mySubmission.feedback_at && (
+                          <p className="text-[10px] text-slate-600">{new Date(mySubmission.feedback_at).toLocaleDateString()}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 ) : !isUnlocked ? (
                   <div className="flex flex-col items-center py-10 sm:py-12 text-center space-y-4"><div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/5 rounded-full flex items-center justify-center text-slate-500"><Lock size={24} className="sm:w-8 sm:h-8" /></div><h3 className="text-lg sm:text-xl font-bold text-white">Assignment Locked</h3><p className="text-sm sm:text-base text-slate-400">Please watch at least 80% of the video to unlock.</p></div>
                 ) : (

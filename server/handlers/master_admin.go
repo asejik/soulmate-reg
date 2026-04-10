@@ -120,12 +120,14 @@ func GetMasterAdminUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 type AdminSubmission struct {
-	ID            string    `json:"id"`
-	StudentName   string    `json:"student_name"`
-	Email         string    `json:"email"`
-	LessonTitle   string    `json:"lesson_title"`
-	SubmissionURL string    `json:"submission_url"`
-	SubmittedAt   time.Time `json:"submitted_at"`
+	ID            string     `json:"id"`
+	StudentName   string     `json:"student_name"`
+	Email         string     `json:"email"`
+	LessonTitle   string     `json:"lesson_title"`
+	SubmissionURL string     `json:"submission_url"`
+	SubmittedAt   time.Time  `json:"submitted_at"`
+	AdminFeedback *string    `json:"admin_feedback"`
+	FeedbackAt    *time.Time `json:"feedback_at"`
 }
 
 // GetAdminSubmissions fetches all assignment submissions for review
@@ -148,7 +150,9 @@ func GetAdminSubmissions(w http.ResponseWriter, r *http.Request) {
 			au.email,
 			l.title AS lesson_title,
 			sub.content,
-			sub.submitted_at
+			sub.submitted_at,
+			sub.admin_feedback,
+			sub.feedback_at
 		FROM public.assignment_submissions sub
 		JOIN auth.users au ON sub.user_id = au.id
 		JOIN public.lessons l ON sub.lesson_id = l.id
@@ -168,7 +172,7 @@ func GetAdminSubmissions(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var s AdminSubmission
 		// Scan directly into the SubmissionURL and SubmittedAt fields of our Go struct
-		if err := rows.Scan(&s.ID, &s.StudentName, &s.Email, &s.LessonTitle, &s.SubmissionURL, &s.SubmittedAt); err != nil {
+		if err := rows.Scan(&s.ID, &s.StudentName, &s.Email, &s.LessonTitle, &s.SubmissionURL, &s.SubmittedAt, &s.AdminFeedback, &s.FeedbackAt); err != nil {
 			fmt.Println("💥 DB SCAN ERROR:", err)
 			continue
 		}
@@ -178,6 +182,37 @@ func GetAdminSubmissions(w http.ResponseWriter, r *http.Request) {
 	// 3. Return the data
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(submissions)
+}
+
+// UpdateSubmissionFeedback allows admins to leave feedback on a student's submission
+func UpdateSubmissionFeedback(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(userIDKey).(string)
+	submissionID := chi.URLParam(r, "id")
+
+	var adminEmail string
+	if err := db.Pool.QueryRow(r.Context(), "SELECT email FROM auth.users WHERE id = $1", userID).Scan(&adminEmail); err != nil || !isAdminEmail(adminEmail) {
+		http.Error(w, "Unauthorized", http.StatusForbidden)
+		return
+	}
+
+	var req struct {
+		Feedback string `json:"feedback"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid payload", http.StatusBadRequest)
+		return
+	}
+
+	_, err := db.Pool.Exec(r.Context(),
+		"UPDATE public.assignment_submissions SET admin_feedback = $1, feedback_at = NOW() WHERE id = $2",
+		req.Feedback, submissionID)
+	if err != nil {
+		fmt.Println("💥 FEEDBACK UPDATE ERROR:", err)
+		http.Error(w, "Failed to save feedback", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
 
 // DeleteAdminUser removes a user from either the CLP or RFASM tables based on the provided source
