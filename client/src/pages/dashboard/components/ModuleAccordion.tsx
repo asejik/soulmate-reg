@@ -4,6 +4,8 @@ import { ChevronDown, ChevronUp, Clock, Timer, CheckCircle2, Star } from 'lucide
 import { useNavigate } from 'react-router-dom';
 import type { DashboardModule } from '../DashboardPage';
 import { CheckpointModal } from './CheckpointModal';
+import { FeedbackModal } from './FeedbackModal';
+import { MessageSquare } from 'lucide-react';
 
 interface Props {
   curriculum: DashboardModule[];
@@ -23,6 +25,7 @@ export const ModuleAccordion = ({ curriculum, nextLessonId, currentTime, require
     });
     return initial;
   });
+  const [feedbackModalData, setFeedbackModalData] = useState<{ id: string; title: string } | null>(null);
 
   const toggleModule = (id: string) => setExpandedModules(prev => ({ ...prev, [id]: !prev[id] }));
 
@@ -92,7 +95,16 @@ export const ModuleAccordion = ({ curriculum, nextLessonId, currentTime, require
                                 <div className={`flex items-center gap-1.5 text-xs mt-1 ${isTimeLocked || isLockedByCheckpoint ? 'text-slate-700' : 'text-slate-500'}`}><Clock size={12} /> {lesson.estimated_time} • Video</div>
                               </div>
                             </div>
-                            <div className="pl-9 md:pl-0 shrink-0">
+                            <div className="pl-9 md:pl-0 shrink-0 flex items-center gap-2">
+                              {lesson.has_feedback && (
+                                <button
+                                  onClick={() => setFeedbackModalData({ id: lesson.id, title: lesson.title })}
+                                  className="p-2.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 rounded-lg border border-amber-500/20 transition-all group"
+                                  title="View Instructor Feedback"
+                                >
+                                  <MessageSquare size={18} className="group-hover:scale-110 transition-transform" />
+                                </button>
+                              )}
                               <button
                                 onClick={() => {
                                   if (isLockedByCheckpoint) {
@@ -125,6 +137,12 @@ export const ModuleAccordion = ({ curriculum, nextLessonId, currentTime, require
       </div>
 
       <CheckpointModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <FeedbackModal 
+        isOpen={!!feedbackModalData} 
+        onClose={() => setFeedbackModalData(null)} 
+        lessonId={feedbackModalData?.id || ''} 
+        lessonTitle={feedbackModalData?.title || ''} 
+      />
     </div>
   );
 };

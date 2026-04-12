@@ -10,6 +10,7 @@ export interface DashboardLesson {
   id: string; title: string; estimated_time: string;
   is_completed: boolean; scheduled_start_time?: string | null;
   progress: number; last_watched_seconds: number;
+  has_feedback: boolean;
 }
 export interface DashboardModule { id: string; title: string; lessons: DashboardLesson[]; }
 export interface DashboardData {

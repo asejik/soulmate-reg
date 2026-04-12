@@ -17,6 +17,7 @@ type DashLesson struct {
 	ScheduledStartTime *time.Time `json:"scheduled_start_time"`
 	Progress           int        `json:"progress"`
 	LastWatchedSeconds float64    `json:"last_watched_seconds"`
+	HasFeedback        bool       `json:"has_feedback"`
 }
 
 type DashModule struct {
@@ -107,7 +108,8 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 		SELECT
 			m.id, m.title, l.id, l.title,
 			COALESCE(l.estimated_time, ''), COALESCE(lp.is_completed, false), l.scheduled_start_time,
-			COALESCE(lp.highest_watched_pct, 0)::int, COALESCE(lp.last_watched_seconds, 0.0)::float
+			COALESCE(lp.highest_watched_pct, 0)::int, COALESCE(lp.last_watched_seconds, 0.0)::float,
+			EXISTS(SELECT 1 FROM public.assignment_submissions WHERE user_id = $2 AND lesson_id = l.id AND admin_feedback IS NOT NULL AND admin_feedback <> '')
 		FROM public.modules m
 		JOIN public.lessons l ON m.id = l.module_id
 		LEFT JOIN public.lesson_progress lp ON l.id = lp.lesson_id AND lp.user_id = $2
@@ -127,8 +129,9 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 			var lScheduled *time.Time
 			var lPct int
 			var lSecs float64
+			var lHasFeedback bool
 
-			if err := rows.Scan(&mID, &mTitle, &lID, &lTitle, &lEstTime, &lCompleted, &lScheduled, &lPct, &lSecs); err == nil {
+			if err := rows.Scan(&mID, &mTitle, &lID, &lTitle, &lEstTime, &lCompleted, &lScheduled, &lPct, &lSecs, &lHasFeedback); err == nil {
 				if currentModule == nil || currentModule.ID != mID {
 					if currentModule != nil { modules = append(modules, *currentModule) }
 					currentModule = &DashModule{ID: mID, Title: mTitle, Lessons: []DashLesson{}}
@@ -136,6 +139,7 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 				currentModule.Lessons = append(currentModule.Lessons, DashLesson{
 					ID: lID, Title: lTitle, EstimatedTime: lEstTime, IsCompleted: lCompleted,
 					ScheduledStartTime: lScheduled, Progress: lPct, LastWatchedSeconds: lSecs,
+					HasFeedback: lHasFeedback,
 				})
 				if !lCompleted && nextLessonID == "" { nextLessonID = lID }
 			}
