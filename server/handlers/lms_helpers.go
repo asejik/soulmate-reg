@@ -2,20 +2,19 @@ package handlers
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 	"net/http"
 	"os"
 	"strings"
 
 	"github.com/asejik/soulmate-reg/server/db"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 type contextKey string
 
 const userIDKey contextKey = "user_id"
 
-// LMSAuth Middleware verifies the Supabase Bearer Token LOCALLY for zero-latency
+// LMSAuth Middleware verifies the Supabase Bearer Token
 func LMSAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
@@ -24,35 +23,41 @@ func LMSAuth(next http.Handler) http.Handler {
 			return
 		}
 
-		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-		jwtSecret := os.Getenv("SUPABASE_JWT_SECRET")
+		supabaseURL := strings.TrimSuffix(os.Getenv("SUPABASE_URL"), "/")
+		serviceKey := os.Getenv("SUPABASE_SERVICE_ROLE_KEY")
 
-		if jwtSecret == "" {
-			http.Error(w, "Background Configuration Error: JWT Secret missing", http.StatusInternalServerError)
+		if supabaseURL == "" || serviceKey == "" {
+			http.Error(w, "Background Configuration Error: Supabase credentials missing on server", http.StatusInternalServerError)
 			return
 		}
 
-		// Parse and verify the token locally
-		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-			}
-			return []byte(jwtSecret), nil
-		})
+		userURL := supabaseURL + "/auth/v1/user"
+		req, err := http.NewRequest("GET", userURL, nil)
+		if err != nil {
+			http.Error(w, "Server error creating auth request", http.StatusInternalServerError)
+			return
+		}
+		req.Header.Set("Authorization", authHeader)
+		req.Header.Set("apikey", serviceKey)
 
-		if err != nil || !token.Valid {
+		client := &http.Client{}
+		resp, err := client.Do(req)
+
+		if err != nil {
+			http.Error(w, "Failed to reach Auth Provider", http.StatusInternalServerError)
+			return
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
 			http.Error(w, "LMS Session Expired or Unauthorized. Please log in again.", http.StatusUnauthorized)
 			return
 		}
 
-		claims, ok := token.Claims.(jwt.MapClaims)
-		if !ok {
-			http.Error(w, "Invalid token claims", http.StatusUnauthorized)
-			return
-		}
+		var result map[string]interface{}
+		json.NewDecoder(resp.Body).Decode(&result)
 
-		// Supabase stores the user ID in the "sub" claim
-		userID, ok := claims["sub"].(string)
+		userID, ok := result["id"].(string)
 		if !ok {
 			http.Error(w, "User ID not found in token", http.StatusUnauthorized)
 			return
