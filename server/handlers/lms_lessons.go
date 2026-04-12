@@ -145,6 +145,15 @@ func SubmitAssignment(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"status": "success", "message": "Assignment submitted!"})
 }
 func ResetUserProgress(w http.ResponseWriter, r *http.Request) {
+	// 0. Double-Lock Security: Verify the requester is actually the admin
+	userID := r.Context().Value(userIDKey).(string)
+	var adminEmail string
+	err := db.Pool.QueryRow(r.Context(), "SELECT email FROM auth.users WHERE id = $1", userID).Scan(&adminEmail)
+	if err != nil || !isAdminEmail(adminEmail) {
+		http.Error(w, "Unauthorized Admin Access", http.StatusForbidden)
+		return
+	}
+
 	// 1. Inputs: This ID is from public.participants or couples_launchpad
 	targetParticipantID := r.URL.Query().Get("user_id") 
 	lessonID := r.URL.Query().Get("lesson_id")
@@ -158,7 +167,7 @@ func ResetUserProgress(w http.ResponseWriter, r *http.Request) {
 	// 2. IMPORTANT: We MUST find the corresponding Auth User ID (UUID) 
 	// This ensures we clean up the tables linked to the actual login identity.
 	var authID string
-	err := db.Pool.QueryRow(r.Context(), `
+	err = db.Pool.QueryRow(r.Context(), `
 		SELECT id FROM auth.users WHERE email IN (
 			SELECT email FROM public.participants WHERE id::text = $1
 			UNION

@@ -620,6 +620,14 @@ func DeleteAdminLesson(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "Lesson deleted"})
 }
 func GetProgramSettings(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(userIDKey).(string)
+	var adminEmail string
+	db.Pool.QueryRow(r.Context(), "SELECT email FROM auth.users WHERE id = $1", userID).Scan(&adminEmail)
+	if !isAdminEmail(adminEmail) {
+		http.Error(w, "Unauthorized Admin Access", http.StatusForbidden)
+		return
+	}
+
 	settings := []map[string]interface{}{}
 	rows, _ := db.Pool.Query(r.Context(), "SELECT program_name, COALESCE(mid_checkpoint_video_id, ''), COALESCE(intro_video_id, '') FROM public.program_settings")
 	defer rows.Close()

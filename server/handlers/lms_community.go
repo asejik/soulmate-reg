@@ -113,6 +113,14 @@ func SubmitReview(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteLessonComment(w http.ResponseWriter, r *http.Request) {
+	// Verify Admin JWT
+	userID := r.Context().Value(userIDKey).(string)
+	var adminEmail string
+	if err := db.Pool.QueryRow(r.Context(), "SELECT email FROM auth.users WHERE id = $1", userID).Scan(&adminEmail); err != nil || !isAdminEmail(adminEmail) {
+		http.Error(w, "Unauthorized", http.StatusForbidden)
+		return
+	}
+
 	id := r.URL.Query().Get("id")
 	if id == "" {
 		http.Error(w, "Missing ID", http.StatusBadRequest)
