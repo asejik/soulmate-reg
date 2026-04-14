@@ -66,10 +66,18 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeCha
   };
 
   const formatCountdown = (seconds: number) => {
-    const h = Math.floor(seconds / 3600);
+    const d = Math.floor(seconds / (3600 * 24));
+    const h = Math.floor((seconds % (3600 * 24)) / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
-    return `${h > 0 ? h + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+
+    const parts = [];
+    if (d > 0) parts.push(`${d}d`);
+    parts.push(`${h.toString().padStart(2, '0')}h`);
+    parts.push(`${m.toString().padStart(2, '0')}m`);
+    parts.push(`${s.toString().padStart(2, '0')}s`);
+    
+    return parts.join(' ');
   };
 
   useEffect(() => {
@@ -114,7 +122,7 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeCha
             <div className="mb-6 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-black uppercase tracking-[0.3em] animate-pulse">
               Up Next: Video Premiere
             </div>
-            <div className="text-5xl sm:text-7xl md:text-9xl font-black text-white tracking-tighter tabular-nums drop-shadow-[0_0_30px_rgba(255,255,255,0.1)]">
+            <div className="text-4xl sm:text-6xl md:text-8xl font-black text-white tabular-nums drop-shadow-[0_0_30px_rgba(255,255,255,0.1)]">
               {formatCountdown(timeLeft)}
             </div>
             <p className="mt-8 text-slate-400 font-medium text-center max-w-xs px-4">
