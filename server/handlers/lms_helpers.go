@@ -3,18 +3,28 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"os"
 	"strings"
 
 	"github.com/asejik/soulmate-reg/server/db"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type contextKey string
 
 const userIDKey contextKey = "user_id"
 
-// LMSAuth Middleware verifies the Supabase Bearer Token via Supabase's auth API.
+// LMSAuth Middleware verifies the Supabase Bearer Token.
+//
+// Strategy 1 (Fast Path): Attempts local cryptographic JWT verification.
+// If successful, it eliminates network egress to Supabase.
+//
+// Strategy 2 (Fallback): If local verification fails for any reason
+// (e.g., secret mismatch, strict claim rejection), it seamlessly falls back to
+// original HTTP verification via the Supabase API to guarantee 100% uptime,
+// and logs the local validation error to help debug.
 func LMSAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
@@ -23,8 +33,39 @@ func LMSAuth(next http.Handler) http.Handler {
 			return
 		}
 
+		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+		jwtSecret := strings.TrimSpace(os.Getenv("SUPABASE_JWT_SECRET"))
+
+		// ── STRATEGY 1: Attempt Local JWT Verification ────────────────────────
+		if jwtSecret != "" {
+			token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+					return nil, jwt.ErrTokenSignatureInvalid
+				}
+				return []byte(jwtSecret), nil
+			})
+
+			if err == nil && token.Valid {
+				if claims, ok := token.Claims.(jwt.MapClaims); ok {
+					if userID, ok := claims["sub"].(string); ok && userID != "" {
+						ctx := context.WithValue(r.Context(), userIDKey, userID)
+						next.ServeHTTP(w, r.WithContext(ctx))
+						return
+					}
+				}
+			}
+			
+			// Local validation failed. Log the exact reason to server console
+			isValid := false
+			if token != nil {
+				isValid = token.Valid
+			}
+			log.Printf("[LMSAuth] Local JWT validation skipped/failed, falling back to HTTP. Error: %v, TokenValid: %v", err, isValid)
+		}
+
+		// ── STRATEGY 2: Fallback to HTTP Verification ─────────────────────────
 		supabaseURL := strings.TrimSuffix(os.Getenv("SUPABASE_URL"), "/")
-		serviceKey := os.Getenv("SUPABASE_SERVICE_ROLE_KEY")
+		serviceKey := strings.TrimSpace(os.Getenv("SUPABASE_SERVICE_ROLE_KEY"))
 
 		if supabaseURL == "" || serviceKey == "" {
 			http.Error(w, "Background Configuration Error: Supabase credentials missing on server", http.StatusInternalServerError)
