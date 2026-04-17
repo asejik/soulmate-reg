@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trash2, MessageSquare, Filter, AlertTriangle, Search } from 'lucide-react';
-import { supabase, API_BASE_URL } from '../../config';
+import { API_BASE_URL } from '../../config';
+import { getAuthSession } from '../../lib/api';
 import { CustomDropdown } from './CustomDropdown';
 
 export const DiscussionsTab = () => {
@@ -14,7 +15,7 @@ export const DiscussionsTab = () => {
   const fetchComments = async (program: string) => {
     setIsLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const session = await getAuthSession();
       const res = await fetch(`${API_BASE_URL}/lms/discussions?program=${program}`, {
         headers: { 'Authorization': `Bearer ${session?.access_token}` }
       });
@@ -33,7 +34,7 @@ export const DiscussionsTab = () => {
   const handleDelete = async () => {
     setDeleteModal(prev => ({ ...prev, isDeleting: true }));
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const session = await getAuthSession();
       const res = await fetch(`${API_BASE_URL}/admin/comments?id=${deleteModal.id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${session?.access_token}` }

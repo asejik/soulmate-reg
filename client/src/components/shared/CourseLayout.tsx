@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Award, MessageSquare, Menu, X, LogOut, Layout, Heart, Users, Phone } from 'lucide-react';
 import { supabase } from '../../config';
+import { getAuthSession, clearSessionCache } from '../../lib/api';
 import { TAiLogo } from '../TAiLogo';
 
 export const CourseLayout = () => {
@@ -14,7 +15,7 @@ export const CourseLayout = () => {
 
   // Fetch the logged-in user's email to create a dynamic avatar
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    getAuthSession().then((session) => {
       if (session?.user?.email) {
         setUserEmail(session.user.email);
         setUserInitial(session.user.email.charAt(0).toUpperCase());
@@ -23,6 +24,7 @@ export const CourseLayout = () => {
   }, []);
 
   const handleLogout = async () => {
+    clearSessionCache();
     await supabase.auth.signOut();
     navigate('/login');
   };

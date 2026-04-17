@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Filter, ChevronLeft, ChevronRight, X, FileText, MessageSquare } from 'lucide-react';
-import { supabase, API_BASE_URL } from '../../config';
+import { API_BASE_URL } from '../../config';
+import { getAuthSession } from '../../lib/api';
 import { CustomDropdown } from './CustomDropdown';
 
 const isUrl = (val: string) => val.startsWith('http://') || val.startsWith('https://');
@@ -25,7 +26,7 @@ export const ProgressTab = () => {
     const fetchSubmissions = async () => {
       setIsLoading(true);
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const session = await getAuthSession();
         const res = await fetch(`${API_BASE_URL}/admin/submissions`, { headers: { 'Authorization': `Bearer ${session?.access_token}` } });
         if (res.ok) setSubmissions(await res.json() || []);
       } catch (err) { console.error(err); } finally { setIsLoading(false); }
@@ -49,7 +50,7 @@ export const ProgressTab = () => {
     if (!feedbackModal) return;
     setIsSavingFeedback(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const session = await getAuthSession();
       const res = await fetch(`${API_BASE_URL}/admin/submissions/${feedbackModal.id}/feedback`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },

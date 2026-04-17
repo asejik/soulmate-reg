@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { BookOpen, Award } from 'lucide-react';
-import { supabase, API_BASE_URL } from '../../../config';
+import { API_BASE_URL } from '../../../config';
+import { getAuthSession } from '../../../lib/api';
 import { type DashboardData } from '../DashboardPage';
 import { StatusModal } from './StatusModal';
 
@@ -23,7 +24,7 @@ export const DashboardHeader = ({ data, progressPercentage, isFullyCompleted, ha
 
   const handleDownloadCertificate = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const session = await getAuthSession();
       const activeProg = localStorage.getItem('tai_active_program') || '';
       const response = await fetch(`${API_BASE_URL}/lms/certificate?program=${activeProg}`, {
         headers: { 'Authorization': `Bearer ${session?.access_token}` }

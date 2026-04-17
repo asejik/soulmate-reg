@@ -5,6 +5,7 @@ import {
   Pencil, Trash2, X, AlertTriangle, Layers, Save, RotateCcw,
 } from 'lucide-react';
 import { supabase, API_BASE_URL } from '../../config';
+import { getAuthSession } from '../../lib/api';
 import { useToast, ToastContainer } from '../shared/Toast';
 import { CustomDropdown } from './CustomDropdown';
 
@@ -48,7 +49,7 @@ interface DeleteTarget {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 async function authHeaders() {
-  const { data: { session } } = await supabase.auth.getSession();
+  const session = await getAuthSession();
   return { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` };
 }
 

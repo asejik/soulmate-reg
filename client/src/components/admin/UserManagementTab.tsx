@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trash2, AlertTriangle, Filter, ChevronLeft, ChevronRight, UserPlus, X, Save, Phone, Instagram, Users, Search, RotateCcw, Book } from 'lucide-react';
-import { supabase, API_BASE_URL } from '../../config';
+import { API_BASE_URL } from '../../config';
+import { getAuthSession } from '../../lib/api';
 import { CustomDropdown } from './CustomDropdown';
 
 export const UserManagementTab = () => {
@@ -40,7 +41,7 @@ export const UserManagementTab = () => {
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const session = await getAuthSession();
       const res = await fetch(`${API_BASE_URL}/admin/users`, { headers: { 'Authorization': `Bearer ${session?.access_token}` } });
       if (res.ok) setUsers(await res.json() || []);
     } catch (err) { console.error(err); } finally { setIsLoading(false); }
@@ -48,7 +49,7 @@ export const UserManagementTab = () => {
 
   const fetchModules = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const session = await getAuthSession();
       const res = await fetch(`${API_BASE_URL}/admin/modules`, { 
         headers: { 'Authorization': `Bearer ${session?.access_token}` } 
       });
@@ -64,7 +65,7 @@ export const UserManagementTab = () => {
   const confirmDelete = async () => {
     setDeleteModal(prev => ({ ...prev, isDeleting: true }));
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const session = await getAuthSession();
       const res = await fetch(`${API_BASE_URL}/admin/users?id=${deleteModal.userId}&source=${encodeURIComponent(deleteModal.source)}`, {
         method: 'DELETE', headers: { 'Authorization': `Bearer ${session?.access_token}` }
       });
@@ -78,7 +79,7 @@ export const UserManagementTab = () => {
     e.preventDefault();
     setIsSaving(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const session = await getAuthSession();
       const res = await fetch(`${API_BASE_URL}/admin/users`, {
         method: 'POST',
         headers: { 
@@ -116,7 +117,7 @@ export const UserManagementTab = () => {
   const handleResetProgress = async () => {
     setResetModal(prev => ({ ...prev, isResetting: true }));
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const session = await getAuthSession();
       let url = `${API_BASE_URL}/admin/progress?user_id=${selectedUser.id}`;
       if (resetModal.type === 'module' && resetModal.moduleId) {
         url += `&module_id=${resetModal.moduleId}`;
