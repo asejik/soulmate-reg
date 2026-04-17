@@ -4,7 +4,7 @@ import {
   PlusCircle, ChevronRight, ChevronDown, BookOpen, FileVideo,
   Pencil, Trash2, X, AlertTriangle, Layers, Save, RotateCcw,
 } from 'lucide-react';
-import { supabase, API_BASE_URL } from '../../config';
+import { API_BASE_URL } from '../../config';
 import { getAuthSession } from '../../lib/api';
 import { useToast, ToastContainer } from '../shared/Toast';
 import { CustomDropdown } from './CustomDropdown';
