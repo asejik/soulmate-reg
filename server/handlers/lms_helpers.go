@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -22,9 +23,7 @@ const userIDKey contextKey = "user_id"
 // If successful, it eliminates network egress to Supabase.
 //
 // Strategy 2 (Fallback): If local verification fails for any reason
-// (e.g., secret mismatch, strict claim rejection), it seamlessly falls back to
-// original HTTP verification via the Supabase API to guarantee 100% uptime,
-// and logs the local validation error to help debug.
+// it seamlessly falls back to original HTTP verification via the Supabase API.
 func LMSAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
@@ -40,7 +39,7 @@ func LMSAuth(next http.Handler) http.Handler {
 		if jwtSecret != "" {
 			token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
 				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-					return nil, jwt.ErrTokenSignatureInvalid
+					return nil, fmt.Errorf("unexpected signing method: %v (alg=%v)", token.Method.Alg(), token.Header["alg"])
 				}
 				return []byte(jwtSecret), nil
 			})
@@ -51,7 +50,11 @@ func LMSAuth(next http.Handler) http.Handler {
 						ctx := context.WithValue(r.Context(), userIDKey, userID)
 						next.ServeHTTP(w, r.WithContext(ctx))
 						return
+					} else {
+						err = fmt.Errorf("missing or invalid sub claim")
 					}
+				} else {
+					err = fmt.Errorf("failed to cast claims to MapClaims")
 				}
 			}
 			
