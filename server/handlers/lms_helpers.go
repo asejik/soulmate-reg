@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"os"
 	"strings"
@@ -14,9 +15,15 @@ type contextKey string
 
 const userIDKey contextKey = "user_id"
 
-// LMSAuth Middleware verifies the Supabase Bearer Token locally (no network call).
-// It uses the SUPABASE_JWT_SECRET to cryptographically validate the JWT,
-// eliminating the HTTP round-trip to Supabase's auth API that was generating egress.
+// LMSAuth verifies the Supabase Bearer Token.
+//
+// Fast path (preferred): if SUPABASE_JWT_SECRET is set, the JWT is verified
+// locally with zero network calls, eliminating egress to Supabase's auth API.
+//
+// Fallback: if SUPABASE_JWT_SECRET is not yet configured on the server
+// (e.g. the env var hasn't been added to the hosting platform), it falls back
+// to the original HTTP call to Supabase's /auth/v1/user endpoint so the
+// server keeps working correctly without any downtime.
 func LMSAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
@@ -26,42 +33,73 @@ func LMSAuth(next http.Handler) http.Handler {
 		}
 
 		jwtSecret := os.Getenv("SUPABASE_JWT_SECRET")
-		if jwtSecret == "" {
-			http.Error(w, "Server configuration error: JWT secret not set", http.StatusInternalServerError)
+
+		if jwtSecret != "" {
+			// ── Fast path: local JWT verification (no egress) ────────────────
+			tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+			token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+					return nil, jwt.ErrTokenSignatureInvalid
+				}
+				return []byte(jwtSecret), nil
+			})
+			if err != nil || !token.Valid {
+				http.Error(w, "LMS Session Expired or Unauthorized. Please log in again.", http.StatusUnauthorized)
+				return
+			}
+			claims, ok := token.Claims.(jwt.MapClaims)
+			if !ok {
+				http.Error(w, "Invalid token claims", http.StatusUnauthorized)
+				return
+			}
+			userID, ok := claims["sub"].(string)
+			if !ok || userID == "" {
+				http.Error(w, "User ID not found in token", http.StatusUnauthorized)
+				return
+			}
+			ctx := context.WithValue(r.Context(), userIDKey, userID)
+			next.ServeHTTP(w, r.WithContext(ctx))
 			return
 		}
 
-		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
-
-		token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
-			// Supabase uses HMAC-SHA256 (HS256) to sign JWTs
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, jwt.ErrTokenSignatureInvalid
-			}
-			return []byte(jwtSecret), nil
-		})
-
-		if err != nil || !token.Valid {
+		// ── Fallback: HTTP verification via Supabase API ──────────────────────
+		// Used when SUPABASE_JWT_SECRET is not set. Add the env var to your
+		// hosting platform to switch to the zero-egress fast path above.
+		supabaseURL := strings.TrimSuffix(os.Getenv("SUPABASE_URL"), "/")
+		serviceKey := os.Getenv("SUPABASE_SERVICE_ROLE_KEY")
+		if supabaseURL == "" || serviceKey == "" {
+			http.Error(w, "Server configuration error: auth credentials missing", http.StatusInternalServerError)
+			return
+		}
+		req, err := http.NewRequest("GET", supabaseURL+"/auth/v1/user", nil)
+		if err != nil {
+			http.Error(w, "Server error creating auth request", http.StatusInternalServerError)
+			return
+		}
+		req.Header.Set("Authorization", authHeader)
+		req.Header.Set("apikey", serviceKey)
+		resp, err := (&http.Client{}).Do(req)
+		if err != nil {
+			http.Error(w, "Failed to reach Auth Provider", http.StatusInternalServerError)
+			return
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
 			http.Error(w, "LMS Session Expired or Unauthorized. Please log in again.", http.StatusUnauthorized)
 			return
 		}
-
-		claims, ok := token.Claims.(jwt.MapClaims)
+		var result map[string]interface{}
+		json.NewDecoder(resp.Body).Decode(&result)
+		userID, ok := result["id"].(string)
 		if !ok {
-			http.Error(w, "Invalid token claims", http.StatusUnauthorized)
-			return
-		}
-
-		userID, ok := claims["sub"].(string)
-		if !ok || userID == "" {
 			http.Error(w, "User ID not found in token", http.StatusUnauthorized)
 			return
 		}
-
 		ctx := context.WithValue(r.Context(), userIDKey, userID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
+
 
 // resolveActiveProgram detects if a user is in RFASM, CLP, or both
 func resolveActiveProgram(ctx context.Context, userID string, requestedProgram string) (string, []string, error) {
