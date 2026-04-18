@@ -20,7 +20,7 @@ export const GivingTab = () => {
   useEffect(() => {
     const loadCommitments = async () => {
       try {
-        const data = await fetchLMS('/api/admin/giving-commitments');
+        const data = await fetchLMS('/admin/giving-commitments');
         setCommitments(data || []);
       } catch (err) {
         console.error("Failed to load giving commitments:", err);
