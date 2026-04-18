@@ -86,6 +86,9 @@ func main() {
 		r.Post("/api/lms/lessons/{id}/progress", handlers.UpdateProgress)
 		r.Get("/api/lms/lessons/{id}/activity", handlers.GetLessonActivity)
 		r.Get("/api/lms/lessons/{id}/my-submission", handlers.GetMySubmission)
+		r.Post("/api/lms/giving-commitment", handlers.SubmitGivingCommitment)
+		r.Get("/api/lms/giving-commitment", handlers.GetGivingCommitment)
+		r.Get("/api/admin/giving-commitments", handlers.GetAdminGivingCommitments)
 
 		// Admin Moderation / Reset
 		r.Delete("/api/admin/comments", handlers.DeleteLessonComment)

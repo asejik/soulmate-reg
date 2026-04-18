@@ -54,6 +54,15 @@ func InitTables() {
 
 		-- Ensure updated_at exists in lesson_progress
 		ALTER TABLE public.lesson_progress ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
+		CREATE TABLE IF NOT EXISTS public.giving_commitments (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			user_id UUID NOT NULL REFERENCES auth.users(id),
+			program_name TEXT NOT NULL,
+			commitment_text TEXT NOT NULL,
+			created_at TIMESTAMPTZ DEFAULT NOW(),
+			UNIQUE(user_id, program_name)
+		);
 	`)
 	if err != nil {
 		fmt.Printf("⚠️  Table Init Failed: %v\n", err)

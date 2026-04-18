@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Users, GraduationCap, BookOpen, LogOut, ShieldAlert, Menu, X } from 'lucide-react';
+import { Users, GraduationCap, BookOpen, LogOut, ShieldAlert, Menu, X, Heart } from 'lucide-react';
 import { supabase } from '../../config';
 
 // Import our newly created components
@@ -8,8 +8,9 @@ import { UserManagementTab } from '../../components/admin/UserManagementTab';
 import { ProgressTab } from '../../components/admin/ProgressTab';
 import { CurriculumTab } from '../../components/admin/CurriculumTab';
 import { DiscussionsTab } from '../../components/admin/DiscussionsTab';
+import { GivingTab } from '../../components/admin/GivingTab';
 
-type AdminTab = 'users' | 'progress' | 'curriculum' | 'discussions';
+type AdminTab = 'users' | 'progress' | 'curriculum' | 'discussions' | 'giving';
 
 export default function AdminPortalPage() {
   const navigate = useNavigate();
@@ -79,6 +80,7 @@ export default function AdminPortalPage() {
           <button onClick={() => handleTabChange('progress')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'progress' ? 'bg-pink-500/10 text-pink-400 font-bold' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}><GraduationCap size={18} />LMS Progress</button>
           <button onClick={() => handleTabChange('curriculum')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'curriculum' ? 'bg-pink-500/10 text-pink-400 font-bold' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}><BookOpen size={18} />Curriculum Data</button>
           <button onClick={() => handleTabChange('discussions')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'discussions' ? 'bg-pink-500/10 text-pink-400 font-bold' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}><ShieldAlert size={18} />Discussions</button>
+          <button onClick={() => handleTabChange('giving')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'giving' ? 'bg-pink-500/10 text-pink-400 font-bold' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}><Heart size={18} />Giving Commitments</button>
         </nav>
         <div className="p-4 border-t border-white/5">
           <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all"><LogOut size={18} />Log Out</button>
@@ -105,6 +107,7 @@ export default function AdminPortalPage() {
           {activeTab === 'progress' && <ProgressTab />}
           {activeTab === 'curriculum' && <CurriculumTab />}
           {activeTab === 'discussions' && <DiscussionsTab />}
+          {activeTab === 'giving' && <GivingTab />}
         </div>
       </div>
     </div>
