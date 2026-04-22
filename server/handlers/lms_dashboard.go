@@ -109,7 +109,8 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 			m.id, m.title, l.id, l.title,
 			COALESCE(l.estimated_time, ''), COALESCE(lp.is_completed, false), l.scheduled_start_time,
 			COALESCE(lp.highest_watched_pct, 0)::int, COALESCE(lp.last_watched_seconds, 0.0)::float,
-			EXISTS(SELECT 1 FROM public.assignment_submissions WHERE user_id = $2 AND lesson_id = l.id AND admin_feedback IS NOT NULL AND admin_feedback <> '')
+			EXISTS(SELECT 1 FROM public.assignment_submissions WHERE user_id = $2 AND lesson_id = l.id AND admin_feedback IS NOT NULL AND admin_feedback <> ''),
+			lp.updated_at
 		FROM public.modules m
 		JOIN public.lessons l ON m.id = l.module_id
 		LEFT JOIN public.lesson_progress lp ON l.id = lp.lesson_id AND lp.user_id = $2
@@ -121,6 +122,11 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 	var currentModule *DashModule
 	var nextLessonID string
 
+	var firstUncompletedLessonID string
+	var recentUncompletedLessonID string
+	var firstLessonID string
+	var maxUpdatedAt time.Time
+
 	if err == nil {
 		defer rows.Close()
 		for rows.Next() {
@@ -130,8 +136,9 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 			var lPct int
 			var lSecs float64
 			var lHasFeedback bool
+			var lUpdated *time.Time
 
-			if err := rows.Scan(&mID, &mTitle, &lID, &lTitle, &lEstTime, &lCompleted, &lScheduled, &lPct, &lSecs, &lHasFeedback); err == nil {
+			if err := rows.Scan(&mID, &mTitle, &lID, &lTitle, &lEstTime, &lCompleted, &lScheduled, &lPct, &lSecs, &lHasFeedback, &lUpdated); err == nil {
 				if currentModule == nil || currentModule.ID != mID {
 					if currentModule != nil { modules = append(modules, *currentModule) }
 					currentModule = &DashModule{ID: mID, Title: mTitle, Lessons: []DashLesson{}}
@@ -141,10 +148,26 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 					ScheduledStartTime: lScheduled, Progress: lPct, LastWatchedSeconds: lSecs,
 					HasFeedback: lHasFeedback,
 				})
-				if !lCompleted && nextLessonID == "" { nextLessonID = lID }
+
+				if firstLessonID == "" { firstLessonID = lID }
+				if !lCompleted {
+					if firstUncompletedLessonID == "" { firstUncompletedLessonID = lID }
+					if lUpdated != nil && lUpdated.After(maxUpdatedAt) {
+						maxUpdatedAt = *lUpdated
+						recentUncompletedLessonID = lID
+					}
+				}
 			}
 		}
 		if currentModule != nil { modules = append(modules, *currentModule) }
+	}
+
+	if recentUncompletedLessonID != "" {
+		nextLessonID = recentUncompletedLessonID
+	} else if firstUncompletedLessonID != "" {
+		nextLessonID = firstUncompletedLessonID
+	} else {
+		nextLessonID = firstLessonID
 	}
 
 	// COLLECT PARALLEL RESULTS (Wait for channels)

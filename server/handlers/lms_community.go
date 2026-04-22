@@ -83,6 +83,17 @@ func GetGlobalDiscussions(w http.ResponseWriter, r *http.Request) {
 	requestedProgram := r.URL.Query().Get("program")
 	programName, _, _ := resolveActiveProgram(r.Context(), userID, requestedProgram)
 
+	// Admin Override: Admins might not be enrolled in any program
+	var adminEmail string
+	db.Pool.QueryRow(r.Context(), "SELECT email FROM auth.users WHERE id = $1", userID).Scan(&adminEmail)
+	if isAdminEmail(adminEmail) {
+		if requestedProgram == "launchpad" {
+			programName = "launchpad"
+		} else {
+			programName = "Ready for a Soulmate"
+		}
+	}
+
 	rows, _ := db.Pool.Query(r.Context(), `
 		WITH LatestComments AS (
 			SELECT DISTINCT ON (lesson_id) *
