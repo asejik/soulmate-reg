@@ -103,11 +103,11 @@ export default function AdminPortalPage() {
               <Menu size={24} />
             </button>
           </div>
-          {activeTab === 'users' && <UserManagementTab />}
-          {activeTab === 'progress' && <ProgressTab />}
-          {activeTab === 'curriculum' && <CurriculumTab />}
-          {activeTab === 'discussions' && <DiscussionsTab />}
-          {activeTab === 'giving' && <GivingTab />}
+          <div className={activeTab === 'users' ? 'block' : 'hidden'}><UserManagementTab /></div>
+          <div className={activeTab === 'progress' ? 'block' : 'hidden'}><ProgressTab /></div>
+          <div className={activeTab === 'curriculum' ? 'block' : 'hidden'}><CurriculumTab /></div>
+          <div className={activeTab === 'discussions' ? 'block' : 'hidden'}><DiscussionsTab /></div>
+          <div className={activeTab === 'giving' ? 'block' : 'hidden'}><GivingTab /></div>
         </div>
       </div>
     </div>

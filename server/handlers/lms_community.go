@@ -3,6 +3,8 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"sync"
+	"time"
 
 	"github.com/asejik/soulmate-reg/server/db"
 	"github.com/go-chi/chi/v5"
@@ -17,18 +19,39 @@ type CommentResponse struct {
 	CreatedAt   string `json:"created_at"`
 }
 
+var (
+	commentsCache   = make(map[string][]byte)
+	commentsCacheTs = make(map[string]time.Time)
+	commentsMutex   sync.Mutex
+)
+
 func PostLessonComment(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(userIDKey).(string)
 	lessonID := chi.URLParam(r, "id")
-	var req struct { Content string `json:"content"` }
+	var req struct{ Content string `json:"content"` }
 	json.NewDecoder(r.Body).Decode(&req)
 
 	db.Pool.Exec(r.Context(), "INSERT INTO public.lesson_comments (lesson_id, user_id, content) VALUES ($1, $2, $3)", lessonID, userID, req.Content)
+
+	commentsMutex.Lock()
+	delete(commentsCacheTs, lessonID)
+	commentsMutex.Unlock()
+
 	w.WriteHeader(http.StatusCreated)
 }
 
 func GetLessonComments(w http.ResponseWriter, r *http.Request) {
 	lessonID := chi.URLParam(r, "id")
+
+	commentsMutex.Lock()
+	if ts, ok := commentsCacheTs[lessonID]; ok && time.Since(ts) < 5*time.Second {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(commentsCache[lessonID])
+		commentsMutex.Unlock()
+		return
+	}
+	commentsMutex.Unlock()
+
 	rows, _ := db.Pool.Query(r.Context(), `
 		SELECT c.id, c.lesson_id, l.title, c.content, c.created_at, COALESCE(cl.full_name, p.full_name, 'Participant') AS user_name
 		FROM public.lesson_comments c JOIN public.lessons l ON c.lesson_id = l.id JOIN auth.users au ON c.user_id = au.id
@@ -43,8 +66,16 @@ func GetLessonComments(w http.ResponseWriter, r *http.Request) {
 		rows.Scan(&c.ID, &c.LessonID, &c.LessonTitle, &c.Content, &c.CreatedAt, &c.UserName)
 		comments = append(comments, c)
 	}
+
+	responseBytes, _ := json.Marshal(comments)
+
+	commentsMutex.Lock()
+	commentsCache[lessonID] = responseBytes
+	commentsCacheTs[lessonID] = time.Now()
+	commentsMutex.Unlock()
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(comments)
+	w.Write(responseBytes)
 }
 
 func GetGlobalDiscussions(w http.ResponseWriter, r *http.Request) {

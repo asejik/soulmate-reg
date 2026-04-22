@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/asejik/soulmate-reg/server/db"
@@ -206,8 +207,23 @@ func ResetUserProgress(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+var (
+	activityCache   = make(map[string][]byte)
+	activityCacheTs = make(map[string]time.Time)
+	activityMutex   sync.Mutex
+)
+
 func GetLessonActivity(w http.ResponseWriter, r *http.Request) {
 	lessonID := chi.URLParam(r, "id")
+
+	activityMutex.Lock()
+	if ts, ok := activityCacheTs[lessonID]; ok && time.Since(ts) < 5*time.Second {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(activityCache[lessonID])
+		activityMutex.Unlock()
+		return
+	}
+	activityMutex.Unlock()
 
 	rows, err := db.Pool.Query(r.Context(), `
 		SELECT DISTINCT COALESCE(cl.full_name, p.full_name, 'Participant') as name
@@ -234,11 +250,18 @@ func GetLessonActivity(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	responseBytes, _ := json.Marshal(map[string]interface{}{
 		"count":        len(names),
 		"participants": names,
 	})
+
+	activityMutex.Lock()
+	activityCache[lessonID] = responseBytes
+	activityCacheTs[lessonID] = time.Now()
+	activityMutex.Unlock()
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(responseBytes)
 }
 
 // GetMySubmission returns the current user's submission for a lesson, including any admin feedback.
