@@ -679,3 +679,59 @@ func UpdateProgramSettings(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 }
+
+type AdminReview struct {
+ID          string    `json:"id"`
+StudentName string    `json:"student_name"`
+Email       string    `json:"email"`
+ProgramName string    `json:"program_name"`
+ReviewType  string    `json:"review_type"`
+Content     string    `json:"content"`
+CreatedAt   time.Time `json:"created_at"`
+}
+
+func GetAdminReviews(w http.ResponseWriter, r *http.Request) {
+userID := r.Context().Value(userIDKey).(string)
+var adminEmail string
+err := db.Pool.QueryRow(r.Context(), "SELECT email FROM auth.users WHERE id = $1", userID).Scan(&adminEmail)
+if err != nil || !isAdminEmail(adminEmail) {
+http.Error(w, "Unauthorized Admin Access", http.StatusForbidden)
+return
+}
+
+rows, err := db.Pool.Query(r.Context(), `
+SELECT
+pr.id::text,
+COALESCE(cl.full_name, p.full_name, 'Unknown User') AS student_name,
+au.email,
+pr.program_name,
+pr.review_type,
+pr.content,
+pr.created_at
+FROM public.program_reviews pr
+JOIN auth.users au ON pr.user_id = au.id
+LEFT JOIN public.couples_launchpad cl ON lower(au.email) = lower(cl.email)
+LEFT JOIN public.participants p ON lower(au.email) = lower(p.email)
+ORDER BY pr.created_at DESC
+`)
+
+if err != nil {
+fmt.Println("💥 DB QUERY ERROR:", err)
+http.Error(w, "Failed to fetch reviews", http.StatusInternalServerError)
+return
+}
+defer rows.Close()
+
+var reviews []AdminReview
+for rows.Next() {
+var rev AdminReview
+if err := rows.Scan(&rev.ID, &rev.StudentName, &rev.Email, &rev.ProgramName, &rev.ReviewType, &rev.Content, &rev.CreatedAt); err != nil {
+fmt.Println("💥 DB SCAN ERROR:", err)
+continue
+}
+reviews = append(reviews, rev)
+}
+
+w.Header().Set("Content-Type", "application/json")
+json.NewEncoder(w).Encode(reviews)
+}

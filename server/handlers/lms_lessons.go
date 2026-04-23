@@ -70,7 +70,7 @@ func GetLesson(w http.ResponseWriter, r *http.Request) {
 	if lessonPosition > (totalLessons+1)/2 {
 		// Post-checkpoint lesson: Check if review is submitted
 		var hasReviewed bool
-		db.Pool.QueryRow(r.Context(), "SELECT EXISTS(SELECT 1 FROM public.program_reviews WHERE user_id = $1 AND program_name = $2 AND review_type = 'mid_cohort')", userID, programName).Scan(&hasReviewed)
+		db.Pool.QueryRow(r.Context(), "SELECT EXISTS(SELECT 1 FROM public.program_reviews WHERE user_id = $1 AND program_name = $2 AND review_type IN ('mid_cohort', 'mid_video', 'mid_google'))", userID, programName).Scan(&hasReviewed)
 		if !hasReviewed {
 			http.Error(w, "Checkpoint Required. Please complete your Mid-Program Review to unlock the second half of the curriculum.", http.StatusForbidden)
 			return

@@ -71,6 +71,7 @@ func main() {
 		r.Post("/api/admin/users", handlers.CreateAdminUser)
 		r.Delete("/api/admin/users", handlers.DeleteAdminUser)
 		r.Get("/api/admin/submissions", handlers.GetAdminSubmissions)
+		r.Get("/api/admin/reviews", handlers.GetAdminReviews)
 		r.Get("/api/admin/modules", handlers.GetAdminModules)
 		r.Post("/api/admin/modules", handlers.CreateAdminModule)
 		r.Put("/api/admin/modules", handlers.UpdateAdminModule)

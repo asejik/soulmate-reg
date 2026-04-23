@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Star, ShieldAlert, ChevronLeft, Send, CheckCircle2, Play, Pause, RotateCcw, Volume2, VolumeX } from 'lucide-react';
+import { Star, ShieldAlert, ChevronLeft, Send, CheckCircle2, Play, Pause, RotateCcw, Volume2, VolumeX, Video, FileText } from 'lucide-react';
 import { postLMS, fetchLMS } from '../../lib/api';
 import { useYouTubePlayer } from '../../hooks/useYouTubePlayer';
 import { StatusModal } from '../../pages/dashboard/components/StatusModal';
 
 export const MidCohortReviewPage = () => {
   const navigate = useNavigate();
+  const [reviewType, setReviewType] = useState<'written' | 'video' | 'google'>('written');
   const [reviewContent, setReviewContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -46,9 +47,13 @@ export const MidCohortReviewPage = () => {
     setIsSubmitting(true);
     try {
       const activeProgram = localStorage.getItem('tai_active_program') || '';
+      let typeStr = 'mid_cohort';
+      if (reviewType === 'video') typeStr = 'mid_video';
+      if (reviewType === 'google') typeStr = 'mid_google';
+      
       await postLMS(`/lms/reviews?program=${activeProgram}`, {
-        reviewType: 'mid_cohort',
-        content: reviewContent
+        reviewType: typeStr,
+        content: reviewContent || 'Google Review Clicked'
       });
 
       setIsSuccess(true);
@@ -195,24 +200,61 @@ export const MidCohortReviewPage = () => {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-bold text-slate-300 mb-2">How has the program impacted you so far?</label>
-            <textarea
-              required
-              rows={6}
-              placeholder="Write your professional review here..."
-              value={reviewContent}
-              onChange={(e) => setReviewContent(e.target.value)}
-              className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 resize-none transition-colors"
-            />
+          <div className="flex gap-4 max-w-lg mx-auto p-1 bg-white/5 rounded-2xl mb-6">
+            <button type="button" onClick={() => setReviewType('written')} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${reviewType === 'written' ? 'bg-amber-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}><FileText size={16} /> Written</button>
+            <button type="button" onClick={() => setReviewType('video')} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${reviewType === 'video' ? 'bg-amber-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}><Video size={16} /> Video Link</button>
+            <button type="button" onClick={() => setReviewType('google')} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${reviewType === 'google' ? 'bg-amber-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}><Star size={16} /> Google Review</button>
           </div>
+
+          {reviewType === 'written' && (
+            <div>
+              <label className="block text-sm font-bold text-slate-300 mb-2">How has the program impacted you so far?</label>
+              <textarea
+                required
+                rows={6}
+                placeholder="Write your professional review here..."
+                value={reviewContent}
+                onChange={(e) => setReviewContent(e.target.value)}
+                className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 resize-none transition-colors"
+              />
+            </div>
+          )}
+
+          {reviewType === 'video' && (
+            <div>
+              <label className="block text-sm font-bold text-slate-300 mb-2">Share your Video Review (Paste link below)</label>
+              <input 
+                type="url" 
+                required 
+                placeholder="Loom, YouTube, or Drive link..." 
+                value={reviewContent} 
+                onChange={e => setReviewContent(e.target.value)} 
+                className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors" 
+              />
+            </div>
+          )}
+
+          {reviewType === 'google' && (
+            <div className="space-y-6 text-center py-4">
+              <p className="text-slate-400 text-sm leading-relaxed">Please click the link below to leave us a 5-star review on Google! Once done, come back here to finalize your checkpoint.</p>
+              <a 
+                href="https://g.page/r/CUshM1sWqjCoEAE/review" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                onClick={() => setReviewContent('Google Review Link Clicked')}
+                className="inline-flex items-center gap-2 text-amber-400 hover:text-amber-300 font-bold underline decoration-amber-500/30 underline-offset-4"
+              >
+                Soulmate Relationship Google Review Page
+              </a>
+            </div>
+          )}
 
           <button
             type="submit"
-            disabled={isSubmitting || !reviewContent.trim()}
+            disabled={isSubmitting || (reviewType !== 'google' && !reviewContent.trim())}
             className="w-full py-4 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20"
           >
-            {isSubmitting ? 'Verifying...' : 'Submit Review & Unlock Next Lesson'} <Send size={18} />
+            {isSubmitting ? 'Verifying...' : reviewType === 'google' ? 'I have submitted my Google Review' : 'Submit Review & Unlock Next Lesson'} <Send size={18} />
           </button>
         </form>
       </div>
