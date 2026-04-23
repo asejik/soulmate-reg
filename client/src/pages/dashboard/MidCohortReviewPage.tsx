@@ -9,6 +9,7 @@ export const MidCohortReviewPage = () => {
   const navigate = useNavigate();
   const [reviewType, setReviewType] = useState<'video' | 'google'>('video');
   const [reviewContent, setReviewContent] = useState('');
+  const [hasClickedGoogleLink, setHasClickedGoogleLink] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [videoId, setVideoId] = useState('');
@@ -199,8 +200,8 @@ export const MidCohortReviewPage = () => {
           </div>
 
           <div className="flex gap-4 max-w-sm mx-auto p-1 bg-white/5 rounded-2xl mb-6">
-            <button type="button" onClick={() => setReviewType('video')} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${reviewType === 'video' ? 'bg-amber-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}><Video size={16} /> Video Link</button>
-            <button type="button" onClick={() => setReviewType('google')} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${reviewType === 'google' ? 'bg-amber-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}><Star size={16} /> Google Review</button>
+            <button type="button" onClick={() => { setReviewType('video'); setReviewContent(''); }} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${reviewType === 'video' ? 'bg-amber-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}><Video size={16} /> Video Link</button>
+            <button type="button" onClick={() => { setReviewType('google'); setReviewContent(''); }} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${reviewType === 'google' ? 'bg-amber-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}><Star size={16} /> Google Review</button>
           </div>
 
           {reviewType === 'video' && (
@@ -219,22 +220,36 @@ export const MidCohortReviewPage = () => {
 
           {reviewType === 'google' && (
             <div className="space-y-6 text-center py-4">
-              <p className="text-slate-400 text-sm leading-relaxed">Please click the link below to leave us a 5-star review on Google! Once done, come back here to finalize your checkpoint.</p>
+              <p className="text-slate-400 text-sm leading-relaxed">Please click the link below to leave us a 5-star review on Google!</p>
               <a 
                 href="https://g.page/r/CUshM1sWqjCoEAE/review" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                onClick={() => setReviewContent('Google Review Link Clicked')}
-                className="inline-flex items-center gap-2 text-amber-400 hover:text-amber-300 font-bold underline decoration-amber-500/30 underline-offset-4"
+                onClick={() => setHasClickedGoogleLink(true)}
+                className="inline-flex items-center gap-2 text-amber-400 hover:text-amber-300 font-bold underline decoration-amber-500/30 underline-offset-4 mb-4"
               >
                 Soulmate Relationship Google Review Page
               </a>
+
+              {hasClickedGoogleLink && (
+                <div className="text-left animate-in fade-in slide-in-from-top-2 duration-300">
+                  <label className="block text-sm font-bold text-slate-300 mb-2">Type EXACTLY: <span className="text-amber-400 font-mono">I have submitted my Google Review</span></label>
+                  <input 
+                    type="text" 
+                    required 
+                    placeholder="I have submitted my Google Review" 
+                    value={reviewContent} 
+                    onChange={e => setReviewContent(e.target.value)} 
+                    className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors" 
+                  />
+                </div>
+              )}
             </div>
           )}
 
           <button
             type="submit"
-            disabled={isSubmitting || (reviewType !== 'google' && !reviewContent.trim())}
+            disabled={isSubmitting || (reviewType === 'video' && !reviewContent.trim()) || (reviewType === 'google' && reviewContent !== 'I have submitted my Google Review')}
             className="w-full py-4 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20"
           >
             {isSubmitting ? 'Verifying...' : reviewType === 'google' ? 'I have submitted my Google Review' : 'Submit Review & Unlock Next Lesson'} <Send size={18} />
