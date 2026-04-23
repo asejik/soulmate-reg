@@ -126,6 +126,8 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 	var recentUncompletedLessonID string
 	var firstLessonID string
 	var maxUpdatedAt time.Time
+	var lessonIndex int
+	var maxFinishedIndex int
 
 	if err == nil {
 		defer rows.Close()
@@ -157,6 +159,11 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 						recentUncompletedLessonID = lID
 					}
 				}
+
+				lessonIndex++
+				if lPct >= 85 || lCompleted {
+					maxFinishedIndex = lessonIndex
+				}
 			}
 		}
 		if currentModule != nil { modules = append(modules, *currentModule) }
@@ -178,10 +185,21 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 	resVideo := <-checkpointVideoChan
 	resIntro := <-introVideoChan
 
+	totalCount := 0
+	if val, ok := resTotal.val.(int); ok {
+		totalCount = val
+	} else if val, ok := resTotal.val.(int64); ok {
+		totalCount = int(val)
+	}
+	
+	midwayPos := (totalCount + 1) / 2
+	hasReachedMidway := maxFinishedIndex >= midwayPos
+
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"user_id": userID, "has_completed_final_review": resFinal.val, "has_completed_mid_review": resMid.val,
 		"checkpoint_video_id": resVideo.val,
 		"intro_video_id": resIntro.val,
+		"has_reached_midway": hasReachedMidway,
 		"active_program": programName, "enrolled_programs": enrolledPrograms,
 		"cohort": map[string]interface{}{"name": programNameDisplay, "total_lessons": resTotal.val, "completed_lessons": resCompleted.val},
 		"curriculum": modules, "next_lesson": map[string]interface{}{"id": nextLessonID},

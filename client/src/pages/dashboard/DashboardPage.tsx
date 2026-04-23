@@ -17,6 +17,7 @@ export interface DashboardData {
   user_id: string; 
   has_completed_final_review: boolean; 
   has_completed_mid_review: boolean;
+  has_reached_midway: boolean;
   checkpoint_video_id: string;
   intro_video_id: string;
   active_program: string; enrolled_programs: string[];
@@ -81,7 +82,7 @@ export const DashboardPage = () => {
 
   const progressPercentage = Math.round((data.cohort.completed_lessons / data.cohort.total_lessons) * 100);
   const isFullyCompleted = progressPercentage >= 100;
-  const requiresMidReview = progressPercentage >= 50 && !data.has_completed_mid_review;
+  const requiresMidReview = data.has_reached_midway && !data.has_completed_mid_review;
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-20 px-4 md:px-0">
