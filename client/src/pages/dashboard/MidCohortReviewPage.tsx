@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Star, ShieldAlert, ChevronLeft, Send, CheckCircle2, Play, Pause, RotateCcw, Volume2, VolumeX, Video, FileText } from 'lucide-react';
+import { Star, ShieldAlert, ChevronLeft, Send, CheckCircle2, Play, Pause, RotateCcw, Volume2, VolumeX, Video } from 'lucide-react';
 import { postLMS, fetchLMS } from '../../lib/api';
 import { useYouTubePlayer } from '../../hooks/useYouTubePlayer';
 import { StatusModal } from '../../pages/dashboard/components/StatusModal';
 
 export const MidCohortReviewPage = () => {
   const navigate = useNavigate();
-  const [reviewType, setReviewType] = useState<'written' | 'video' | 'google'>('written');
+  const [reviewType, setReviewType] = useState<'video' | 'google'>('video');
   const [reviewContent, setReviewContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -160,8 +160,6 @@ export const MidCohortReviewPage = () => {
 
         <div className="space-y-2 text-slate-300 text-sm leading-relaxed">
           <p>Take your time to create a clean video to fully express yourself.</p>
-          <p className="text-slate-500 font-medium">Or</p>
-          <p>Drop your review (well written and well presented) on our site.</p>
         </div>
 
         <hr className="border-white/10" />
@@ -200,25 +198,10 @@ export const MidCohortReviewPage = () => {
             </div>
           </div>
 
-          <div className="flex gap-4 max-w-lg mx-auto p-1 bg-white/5 rounded-2xl mb-6">
-            <button type="button" onClick={() => setReviewType('written')} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${reviewType === 'written' ? 'bg-amber-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}><FileText size={16} /> Written</button>
+          <div className="flex gap-4 max-w-sm mx-auto p-1 bg-white/5 rounded-2xl mb-6">
             <button type="button" onClick={() => setReviewType('video')} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${reviewType === 'video' ? 'bg-amber-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}><Video size={16} /> Video Link</button>
             <button type="button" onClick={() => setReviewType('google')} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${reviewType === 'google' ? 'bg-amber-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}><Star size={16} /> Google Review</button>
           </div>
-
-          {reviewType === 'written' && (
-            <div>
-              <label className="block text-sm font-bold text-slate-300 mb-2">How has the program impacted you so far?</label>
-              <textarea
-                required
-                rows={6}
-                placeholder="Write your professional review here..."
-                value={reviewContent}
-                onChange={(e) => setReviewContent(e.target.value)}
-                className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 resize-none transition-colors"
-              />
-            </div>
-          )}
 
           {reviewType === 'video' && (
             <div>
