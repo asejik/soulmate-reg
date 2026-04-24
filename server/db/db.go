@@ -63,6 +63,16 @@ func InitTables() {
 			created_at TIMESTAMPTZ DEFAULT NOW(),
 			UNIQUE(user_id, program_name)
 		);
+
+		CREATE TABLE IF NOT EXISTS public.program_reviews (
+			user_id UUID NOT NULL REFERENCES auth.users(id),
+			program_name TEXT NOT NULL,
+			review_type TEXT NOT NULL,
+			content TEXT NOT NULL,
+			PRIMARY KEY(user_id, program_name, review_type)
+		);
+		ALTER TABLE public.program_reviews ADD COLUMN IF NOT EXISTS id UUID DEFAULT gen_random_uuid();
+		ALTER TABLE public.program_reviews ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
 	`)
 	if err != nil {
 		fmt.Printf("⚠️  Table Init Failed: %v\n", err)

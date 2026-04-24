@@ -162,26 +162,6 @@ export const MidCohortReviewPage = () => {
         <div className="space-y-2 text-slate-300 text-sm leading-relaxed">
           <p>Take your time to create a clean video to fully express yourself.</p>
         </div>
-
-        <hr className="border-white/10" />
-
-        <p className="text-slate-400 text-sm">It's been 6 sessions back to back.</p>
-
-        <ul className="space-y-4">
-          {[
-            "How would you describe your experience so far in the growth and relationship-focused sessions with Mrs. Ayenigba?",
-            "What changes have you begun to notice in your self-awareness, mindset, or approach to relationships?",
-            "How would you describe the level of guidance and support you have received so far?",
-            "What are you looking forward to seeing in the remaining Sessions?"
-          ].map((question, i) => (
-            <li key={i} className="flex items-start gap-3">
-              <span className="mt-1 flex-shrink-0 w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 text-xs font-bold flex items-center justify-center">
-                {i + 1}
-              </span>
-              <p className="text-slate-300 text-sm leading-relaxed">{question}</p>
-            </li>
-          ))}
-        </ul>
       </div>
 
       {/* The Review Form */}
