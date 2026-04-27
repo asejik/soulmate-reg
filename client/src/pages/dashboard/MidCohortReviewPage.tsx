@@ -48,9 +48,7 @@ export const MidCohortReviewPage = () => {
     setIsSubmitting(true);
     try {
       const activeProgram = localStorage.getItem('tai_active_program') || '';
-      let typeStr = 'mid_cohort';
-      if (reviewType === 'video') typeStr = 'mid_video';
-      if (reviewType === 'google') typeStr = 'mid_google';
+      const typeStr = reviewType === 'video' ? 'mid_video' : 'mid_google';
       
       await postLMS(`/lms/reviews?program=${activeProgram}`, {
         reviewType: typeStr,
