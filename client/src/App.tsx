@@ -15,6 +15,7 @@ import { GradesPage } from './pages/dashboard/GradesPage';
 import { DiscussionsPage } from './pages/dashboard/DiscussionsPage';
 import { MidCohortReviewPage } from './pages/dashboard/MidCohortReviewPage';
 import { ContactPage } from './pages/dashboard/ContactPage';
+import { QAPage } from './pages/dashboard/QAPage';
 
 export default function App() {
   return (
@@ -43,6 +44,7 @@ export default function App() {
           <Route path="/dashboard/discussions" element={<DiscussionsPage />} />
           <Route path="/dashboard/mid-review" element={<MidCohortReviewPage />} />
           <Route path="/dashboard/contact" element={<ContactPage />} />
+          <Route path="/dashboard/qa" element={<QAPage />} />
         </Route>
 
       </Route>

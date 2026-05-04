@@ -97,6 +97,12 @@ func main() {
 		r.Get("/api/admin/settings", handlers.GetProgramSettings)
 		r.Post("/api/admin/settings", handlers.UpdateProgramSettings)
 		r.Put("/api/admin/submissions/{id}/feedback", handlers.UpdateSubmissionFeedback)
+		
+		// Q&A Routes
+		r.Get("/api/lms/qa", handlers.GetUserQuestions)
+		r.Post("/api/lms/qa", handlers.AskQuestion)
+		r.Get("/api/admin/qa", handlers.GetAllQuestionsForAdmin)
+		r.Post("/api/admin/qa/answer", handlers.AnswerQuestion)
 
 
 	})
