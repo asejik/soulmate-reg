@@ -25,7 +25,7 @@ export const QATab = () => {
 
   const loadQuestions = async () => {
     try {
-      const data = await fetchLMS('/api/admin/qa');
+      const data = await fetchLMS('/admin/qa');
       setQuestions(data);
     } catch (err) {
       console.error('Failed to load questions for admin:', err);
@@ -42,7 +42,7 @@ export const QATab = () => {
     if (!replyContent.trim()) return;
     setIsSubmitting(true);
     try {
-      await postLMS('/api/admin/qa/answer', {
+      await postLMS('/admin/qa/answer', {
         question_id: questionId,
         answer: replyContent
       });
