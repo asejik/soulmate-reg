@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MessageSquare, Send, CheckCircle2, Clock, User, Loader2, Search, Filter } from 'lucide-react';
+import { MessageSquare, Send, CheckCircle2, Clock, User, Loader2, Search } from 'lucide-react';
 import { fetchLMS, postLMS } from '../../lib/api';
 
 interface Question {
