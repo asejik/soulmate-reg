@@ -74,7 +74,7 @@ export const DashboardHeader = ({ data, progressPercentage, isFullyCompleted, ha
             {isFullyCompleted ? <Award size={24} /> : <BookOpen size={24} />}
           </div>
           <div>
-            <div className="text-sm font-bold text-white mb-1">{isFullyCompleted ? "Course Completed!" : "Learning Progress"}</div>
+            <div className="text-sm font-bold text-white mb-1">{isFullyCompleted ? "Graduation Unlocked!" : "Learning Progress"}</div>
             <div className="text-xs text-slate-400">{data.cohort.completed_lessons} of {data.cohort.total_lessons} items completed</div>
           </div>
         </div>

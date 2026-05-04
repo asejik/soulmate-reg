@@ -18,6 +18,35 @@ func GenerateCertificate(w http.ResponseWriter, r *http.Request) {
 	displayProgramName := "Ready for a Soulmate"
 	if programName == "launchpad" { displayProgramName = "Couples' Launchpad 5.0" }
 
+	// 1. Eligibility Check: 66% Completion + Final Review Submitted
+	var totalLessons, completedLessons int
+	db.Pool.QueryRow(r.Context(), "SELECT COUNT(l.id) FROM public.lessons l JOIN public.modules m ON l.module_id = m.id WHERE m.program_name = $1", programName).Scan(&totalLessons)
+	db.Pool.QueryRow(r.Context(), `
+		SELECT COUNT(lp.lesson_id) FROM public.lesson_progress lp 
+		JOIN public.lessons l ON lp.lesson_id = l.id 
+		JOIN public.modules m ON l.module_id = m.id 
+		WHERE lp.user_id = $1 AND lp.is_completed = true AND m.program_name = $2
+	`, userID, programName).Scan(&completedLessons)
+
+	var hasCompletedFinalReview bool
+	db.Pool.QueryRow(r.Context(), `
+		SELECT EXISTS(
+			SELECT 1 FROM public.program_reviews 
+			WHERE user_id = $1 AND program_name = $2 
+			AND review_type IN ('final', 'final_video', 'final_google')
+		)
+	`, userID, programName).Scan(&hasCompletedFinalReview)
+
+	completionRate := 0.0
+	if totalLessons > 0 {
+		completionRate = float64(completedLessons) / float64(totalLessons)
+	}
+
+	if !hasCompletedFinalReview || completionRate < 0.66 {
+		http.Error(w, "You are not yet eligible for a certificate. Please ensure you have at least 66% completion (8 of 12 lessons) and have submitted your final cohort review.", http.StatusForbidden)
+		return
+	}
+
 	var userName string
 	db.Pool.QueryRow(r.Context(), `
 		SELECT COALESCE(cl.full_name, p.full_name, 'Participant') FROM auth.users au
