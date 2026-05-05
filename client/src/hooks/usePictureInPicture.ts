@@ -1,94 +1,122 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import type { RefObject } from 'react';
+
+declare global {
+  interface Window {
+    documentPictureInPicture: any;
+  }
+}
 
 /**
  * usePictureInPicture
- *
- * Finds the <video> element inside a YouTube iframe container and
- * requests / exits Picture-in-Picture on it.
- *
- * YouTube embeds render as: containerDiv > iframe > (shadow) > video
- * We access it via containerRef → querySelector('iframe') → contentDocument → querySelector('video').
- *
- * Note: This only works when the page and iframe share the same origin OR when the
- * browser grants access. Modern browsers allow PiP on cross-origin iframes when
- * `allow="picture-in-picture"` is set on the iframe — which the YouTube IFrame API
- * does NOT set by default. Our workaround is to patch the attribute after the player
- * is created, then grab the video element.
+ * 
+ * Implements Picture-in-Picture using the Document Picture-in-Picture API.
+ * This allows moving the entire player container (iframe + controls) into a 
+ * separate floating window that stays on top of other applications.
  */
 export function usePictureInPicture(containerRef: RefObject<HTMLDivElement | null>) {
   const [isPiP, setIsPiP] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
+  
+  // Ref to store the original parent and next sibling to return the element correctly
+  const originalParentRef = useRef<HTMLElement | null>(null);
+  const originalNextSiblingRef = useRef<Node | null>(null);
+  const pipWindowRef = useRef<any>(null);
 
-  // Check browser support once on mount
   useEffect(() => {
     setIsSupported(
-      typeof document !== 'undefined' &&
-      'pictureInPictureEnabled' in document &&
-      (document as any).pictureInPictureEnabled === true
+      typeof window !== 'undefined' && 
+      'documentPictureInPicture' in window
     );
   }, []);
 
-  // Patch the iframe's allow attribute so PiP is permitted cross-origin
-  const patchIframe = useCallback(() => {
-    if (!containerRef.current) return;
-    const iframe = containerRef.current.querySelector('iframe');
-    if (!iframe) return;
-    const allow = iframe.getAttribute('allow') || '';
-    if (!allow.includes('picture-in-picture')) {
-      iframe.setAttribute('allow', allow ? `${allow}; picture-in-picture` : 'picture-in-picture');
-    }
-  }, [containerRef]);
-
-  // Try to get the <video> element inside the YouTube iframe
-  const getVideoEl = useCallback((): HTMLVideoElement | null => {
-    if (!containerRef.current) return null;
-    const iframe = containerRef.current.querySelector('iframe');
-    if (!iframe) return null;
-    try {
-      // Cross-origin access — this will throw in strict environments
-      return iframe.contentDocument?.querySelector('video') ?? null;
-    } catch {
-      return null;
-    }
-  }, [containerRef]);
-
   const togglePiP = useCallback(async () => {
-    if (!isSupported) return;
+    if (!isSupported || !containerRef.current) return;
 
-    // Ensure iframe has the permission attribute first
-    patchIframe();
-
-    // If already in PiP, exit it
-    if (document.pictureInPictureElement) {
-      await document.exitPictureInPicture();
-      return;
-    }
-
-    const video = getVideoEl();
-    if (!video) {
-      console.warn('PiP: Could not find the video element inside the YouTube iframe.');
+    // If already in PiP, close the window
+    if (isPiP && pipWindowRef.current) {
+      pipWindowRef.current.close();
       return;
     }
 
     try {
-      await video.requestPictureInPicture();
-    } catch (err) {
-      console.warn('PiP request failed:', err);
-    }
-  }, [isSupported, patchIframe, getVideoEl]);
+      const container = containerRef.current;
+      originalParentRef.current = container.parentElement;
+      originalNextSiblingRef.current = container.nextSibling;
 
-  // Keep `isPiP` in sync with the browser's PiP state
+      // Request a PiP window
+      const pipWindow = await window.documentPictureInPicture.requestWindow({
+        width: container.clientWidth || 640,
+        height: container.clientHeight || 360,
+      });
+
+      pipWindowRef.current = pipWindow;
+
+      // Copy styles from the main window to the PiP window
+      [...document.styleSheets].forEach((styleSheet) => {
+        try {
+          if (styleSheet.cssRules) {
+            const newStyle = pipWindow.document.createElement('style');
+            [...styleSheet.cssRules].forEach((rule) => {
+              newStyle.append(rule.cssText);
+            });
+            pipWindow.document.head.append(newStyle);
+          } else if (styleSheet.href) {
+            const newLink = pipWindow.document.createElement('link');
+            newLink.rel = 'stylesheet';
+            newLink.href = styleSheet.href;
+            pipWindow.document.head.append(newLink);
+          }
+        } catch (e) {
+          // Cross-origin stylesheet access might fail
+        }
+      });
+
+      // Move the container to the PiP window
+      pipWindow.document.body.append(container);
+      
+      // Ensure the container fills the PiP window
+      container.style.width = '100vw';
+      container.style.height = '100vh';
+      container.style.margin = '0';
+      container.style.borderRadius = '0';
+
+      setIsPiP(true);
+
+      // Handle the PiP window being closed
+      pipWindow.addEventListener('pagehide', () => {
+        setIsPiP(false);
+        pipWindowRef.current = null;
+        
+        // Return the container to its original position
+        if (originalParentRef.current) {
+          if (originalNextSiblingRef.current) {
+            originalParentRef.current.insertBefore(container, originalNextSiblingRef.current);
+          } else {
+            originalParentRef.current.append(container);
+          }
+        }
+        
+        // Reset styles
+        container.style.width = '';
+        container.style.height = '';
+        container.style.margin = '';
+        container.style.borderRadius = '';
+      });
+
+    } catch (err) {
+      console.error('Failed to enter Document PiP:', err);
+    }
+  }, [isSupported, containerRef, isPiP]);
+
+  // Clean up on unmount
   useEffect(() => {
-    const onEnter = () => setIsPiP(true);
-    const onLeave = () => setIsPiP(false);
-    document.addEventListener('enterpictureinpicture', onEnter);
-    document.addEventListener('leavepictureinpicture', onLeave);
     return () => {
-      document.removeEventListener('enterpictureinpicture', onEnter);
-      document.removeEventListener('leavepictureinpicture', onLeave);
+      if (pipWindowRef.current) {
+        pipWindowRef.current.close();
+      }
     };
   }, []);
 
-  return { isPiP, isSupported, togglePiP, patchIframe };
+  return { isPiP, isSupported, togglePiP, patchIframe: () => {} };
 }
