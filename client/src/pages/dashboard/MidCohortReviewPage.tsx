@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Star, ShieldAlert, ChevronLeft, Send, CheckCircle2, Play, Pause, RotateCcw, Volume2, VolumeX, Video } from 'lucide-react';
+import { Star, ShieldAlert, ChevronLeft, Send, CheckCircle2, Play, Pause, RotateCcw, Volume2, VolumeX, Video, PictureInPicture2 } from 'lucide-react';
 import { postLMS, fetchLMS } from '../../lib/api';
 import { useYouTubePlayer } from '../../hooks/useYouTubePlayer';
+import { usePictureInPicture } from '../../hooks/usePictureInPicture';
 import { StatusModal } from '../../pages/dashboard/components/StatusModal';
 
 export const MidCohortReviewPage = () => {
@@ -40,6 +41,10 @@ export const MidCohortReviewPage = () => {
       onProgressChange: (pct) => { if (pct >= 85) setIsUnlocked(true); },
       onComplete: () => setIsUnlocked(true),
   });
+
+  const { isPiP, isSupported: isPiPSupported, togglePiP, patchIframe } = usePictureInPicture(containerRef);
+
+  useEffect(() => { patchIframe(); }, [patchIframe]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -146,6 +151,20 @@ export const MidCohortReviewPage = () => {
               </div>
             )}
             <span className="text-white text-sm font-bold w-12 text-right flex-shrink-0">{progress}%</span>
+
+            {isPiPSupported && (
+              <button
+                onClick={togglePiP}
+                title={isPiP ? 'Exit Picture-in-Picture' : 'Picture-in-Picture'}
+                className={`flex items-center justify-center w-9 h-9 rounded-full border transition-all backdrop-blur-md flex-shrink-0 ${
+                  isPiP
+                    ? 'bg-blue-500/30 border-blue-500/60 text-blue-300'
+                    : 'bg-black/40 border-white/10 text-white/70 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <PictureInPicture2 size={16} />
+              </button>
+            )}
 
           </div>
         </div>
