@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, Volume2, VolumeX, Users, Lock, PictureInPicture2 } from 'lucide-react';
+import { Play, Pause, RotateCcw, Volume2, VolumeX, Users, Lock } from 'lucide-react';
 import { useYouTubePlayer } from '../../../hooks/useYouTubePlayer';
-import { usePictureInPicture } from '../../../hooks/usePictureInPicture';
 import { postLMS } from '../../../lib/api';
 import type { LessonData } from '../LessonPage';
 
@@ -42,11 +41,6 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeCha
     },
     onComplete: () => setIsUnlocked(true),
   });
-
-  const { isPiP, isSupported: isPiPSupported, togglePiP, patchIframe } = usePictureInPicture(containerRef);
-
-  // Patch the iframe's allow attribute as soon as the player renders
-  useEffect(() => { patchIframe(); }, [patchIframe]);
 
   const resetHideTimer = () => {
     setShowHUD(true);
@@ -201,20 +195,6 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeCha
                 <div className="text-white/60 text-xs sm:text-sm font-bold bg-white/5 px-3 py-1.5 rounded-full border border-white/10 backdrop-blur-md">
                   {Math.round(progress)}%
                 </div>
-              )}
-
-              {isPiPSupported && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); togglePiP(); resetHideTimer(); }}
-                  title={isPiP ? 'Exit Picture-in-Picture' : 'Picture-in-Picture'}
-                  className={`flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full border transition-all backdrop-blur-md ${
-                    isPiP
-                      ? 'bg-blue-500/30 border-blue-500/60 text-blue-300'
-                      : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white'
-                  }`}
-                >
-                  <PictureInPicture2 size={15} />
-                </button>
               )}
             </div>
           </div>

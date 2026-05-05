@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, Volume2, VolumeX, PlayCircle, PictureInPicture2 } from 'lucide-react';
+import { Play, Pause, RotateCcw, Volume2, VolumeX, PlayCircle } from 'lucide-react';
 import { useYouTubePlayer } from '../../../hooks/useYouTubePlayer';
-import { usePictureInPicture } from '../../../hooks/usePictureInPicture';
 
 interface Props {
   videoId: string;
@@ -18,10 +17,6 @@ const ActivePlayer = ({ videoId }: { videoId: string }) => {
     onProgressChange: () => {},
     onComplete: () => {},
   });
-
-  const { isPiP, isSupported: isPiPSupported, togglePiP, patchIframe } = usePictureInPicture(containerRef);
-
-  useEffect(() => { patchIframe(); }, [patchIframe]);
 
   const resetHideTimer = () => {
     setShowHUD(true);
@@ -92,20 +87,6 @@ const ActivePlayer = ({ videoId }: { videoId: string }) => {
             <div className="text-white/60 text-sm font-medium">
               {Math.round(progress)}%
             </div>
-
-            {isPiPSupported && (
-              <button
-                onClick={(e) => { e.stopPropagation(); togglePiP(); resetHideTimer(); }}
-                title={isPiP ? 'Exit Picture-in-Picture' : 'Picture-in-Picture'}
-                className={`flex items-center justify-center w-8 h-8 rounded-full border transition-all backdrop-blur-md ${
-                  isPiP
-                    ? 'bg-blue-500/30 border-blue-500/60 text-blue-300'
-                    : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                <PictureInPicture2 size={14} />
-              </button>
-            )}
           </div>
         </div>
       </div>
