@@ -29,7 +29,7 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeCha
 
   const {
     containerRef, isPlaying, isEnded, progress,
-    isLiveMode, isWaiting, timeLeft, volume, isMuted, togglePlay, handleSeek, toggleMute, handleVolumeChange
+    isLiveMode, isWaiting, timeLeft, volume, isMuted, togglePlay, handleSeek, toggleMute, handleVolumeChange, playerInstance
   } = useYouTubePlayer({
     videoId: lesson.videoId,
     scheduledStartTime: lesson.scheduled_start_time,
@@ -43,7 +43,7 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeCha
     onComplete: () => setIsUnlocked(true),
   });
 
-  const { isActive: isPiPActive, mode: pipMode, togglePiP, closePiP } = useSmartPiP();
+  const { isActive: isPiPActive, mode: pipMode, togglePiP, closePiP } = useSmartPiP(lesson.videoId, playerInstance);
 
   const resetHideTimer = () => {
     setShowHUD(true);
