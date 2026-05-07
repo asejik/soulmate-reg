@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, Volume2, VolumeX, PlayCircle, PictureInPicture2, X } from 'lucide-react';
+import { Play, Pause, RotateCcw, Volume2, VolumeX, PlayCircle } from 'lucide-react';
 import { useYouTubePlayer } from '../../../hooks/useYouTubePlayer';
-import { useSmartPiP } from '../../../hooks/useSmartPiP';
 
 interface Props {
   videoId: string;
@@ -12,14 +11,12 @@ const ActivePlayer = ({ videoId }: { videoId: string }) => {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
-    containerRef, isPlaying, isEnded, togglePlay, progress, volume, isMuted, handleVolumeChange, toggleMute, handleSeek, playerInstance
+    containerRef, isPlaying, isEnded, togglePlay, progress, volume, isMuted, handleVolumeChange, toggleMute, handleSeek
   } = useYouTubePlayer({
     videoId: videoId,
     onProgressChange: () => {},
     onComplete: () => {},
   });
-
-  const { isActive: isPiPActive, mode: pipMode, togglePiP, closePiP } = useSmartPiP(videoId, playerInstance);
 
   const resetHideTimer = () => {
     setShowHUD(true);
@@ -44,22 +41,7 @@ const ActivePlayer = ({ videoId }: { videoId: string }) => {
   };
 
   return (
-    <div 
-      className={`bg-black shadow-2xl border border-white/5 relative aspect-video group transition-all duration-500 ${
-        pipMode === 'floating' 
-          ? 'fixed bottom-6 right-6 w-80 sm:w-96 z-[100] rounded-xl overflow-hidden ring-1 ring-white/20 shadow-2xl' 
-          : 'w-full rounded-3xl overflow-hidden'
-      }`} 
-      onMouseMove={resetHideTimer}
-    >
-      <button 
-        onClick={closePiP}
-        className={`absolute top-2 right-2 z-50 p-1.5 bg-black/60 hover:bg-black/80 text-white rounded-full backdrop-blur-md border border-white/10 transition-all duration-300 ${
-          pipMode === 'floating' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
-      >
-        <X size={14} />
-      </button>
+    <div className="w-full bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/5 relative aspect-video group" onMouseMove={resetHideTimer}>
       <div ref={containerRef} className="absolute inset-0 w-full h-full" />
       
       {/* Interaction Mask: Toggles HUD/Play and blocks YouTube UI */}
@@ -105,18 +87,6 @@ const ActivePlayer = ({ videoId }: { videoId: string }) => {
             <div className="text-white/60 text-sm font-medium">
               {Math.round(progress)}%
             </div>
-
-            <button
-              onClick={(e) => { e.stopPropagation(); togglePiP(); resetHideTimer(); }}
-              title={isPiPActive ? 'Exit Picture-in-Picture' : 'Picture-in-Picture'}
-              className={`flex items-center justify-center w-8 h-8 rounded-full border transition-all backdrop-blur-md ${
-                isPiPActive
-                  ? 'bg-blue-500/30 border-blue-500/60 text-blue-300'
-                  : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white'
-              }`}
-            >
-              <PictureInPicture2 size={14} />
-            </button>
           </div>
         </div>
       </div>

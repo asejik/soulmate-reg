@@ -32,7 +32,6 @@ interface UseYouTubePlayerReturn {
   isLiveMode:         boolean;
   isWaiting:          boolean;
   timeLeft:           number;
-  playerInstance:     any;
 }
 
 function loadYouTubeApi(): Promise<void> {
@@ -260,5 +259,5 @@ export function useYouTubePlayer({
     }
   };
 
-  return { containerRef, isPlaying, isEnded, togglePlay, progress, progressInSeconds, volume, isMuted, handleVolumeChange, toggleMute, handleSeek, isLiveMode, isWaiting, timeLeft, playerInstance: playerRef.current };
+  return { containerRef, isPlaying, isEnded, togglePlay, progress, progressInSeconds, volume, isMuted, handleVolumeChange, toggleMute, handleSeek, isLiveMode, isWaiting, timeLeft };
 }

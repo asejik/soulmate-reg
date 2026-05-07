@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Star, ShieldAlert, ChevronLeft, Send, CheckCircle2, Play, Pause, RotateCcw, Volume2, VolumeX, Video, PictureInPicture2, X } from 'lucide-react';
+import { Star, ShieldAlert, ChevronLeft, Send, CheckCircle2, Play, Pause, RotateCcw, Volume2, VolumeX, Video } from 'lucide-react';
 import { postLMS, fetchLMS } from '../../lib/api';
 import { useYouTubePlayer } from '../../hooks/useYouTubePlayer';
-import { useSmartPiP } from '../../hooks/useSmartPiP';
 import { StatusModal } from '../../pages/dashboard/components/StatusModal';
 
 export const MidCohortReviewPage = () => {
@@ -35,14 +34,12 @@ export const MidCohortReviewPage = () => {
   }, []);
 
   const {
-      containerRef, isPlaying, isEnded, togglePlay, progress, volume, isMuted, handleVolumeChange, toggleMute, handleSeek, playerInstance
+      containerRef, isPlaying, isEnded, togglePlay, progress, volume, isMuted, handleVolumeChange, toggleMute, handleSeek
   } = useYouTubePlayer({
       videoId: videoId,
       onProgressChange: (pct) => { if (pct >= 85) setIsUnlocked(true); },
       onComplete: () => setIsUnlocked(true),
   });
-
-  const { isActive: isPiPActive, mode: pipMode, togglePiP, closePiP } = useSmartPiP(videoId, playerInstance);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,21 +101,7 @@ export const MidCohortReviewPage = () => {
       </div>
 
       {/* CUSTOM Video Player UI (Same as lessons) */}
-      <div 
-        className={`bg-black shadow-2xl border border-white/5 relative aspect-video group transition-all duration-500 ${
-          pipMode === 'floating' 
-            ? 'fixed bottom-6 right-6 w-80 sm:w-96 z-[100] rounded-xl overflow-hidden ring-1 ring-white/20 shadow-2xl' 
-            : 'w-full rounded-2xl overflow-hidden'
-        }`}
-      >
-        <button 
-          onClick={closePiP}
-          className={`absolute top-2 right-2 z-50 p-1.5 bg-black/60 hover:bg-black/80 text-white rounded-full backdrop-blur-md border border-white/10 transition-all duration-300 ${
-            pipMode === 'floating' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-          }`}
-        >
-          <X size={14} />
-        </button>
+      <div className="w-full bg-black rounded-2xl overflow-hidden shadow-2xl border border-white/5 relative aspect-video group">
         <div ref={containerRef} className="absolute inset-0 w-full h-full" />
         <div className="absolute inset-0 z-10 bg-transparent" onContextMenu={(e) => e.preventDefault()} />
 
@@ -164,17 +147,6 @@ export const MidCohortReviewPage = () => {
             )}
             <span className="text-white text-sm font-bold w-12 text-right flex-shrink-0">{progress}%</span>
 
-            <button
-              onClick={togglePiP}
-              title={isPiPActive ? 'Exit Picture-in-Picture' : 'Picture-in-Picture'}
-              className={`flex items-center justify-center w-9 h-9 rounded-full border transition-all backdrop-blur-md flex-shrink-0 ${
-                isPiPActive
-                  ? 'bg-blue-500/30 border-blue-500/60 text-blue-300'
-                  : 'bg-black/40 border-white/10 text-white/70 hover:bg-white/10 hover:text-white'
-              }`}
-            >
-              <PictureInPicture2 size={16} />
-            </button>
           </div>
         </div>
       </div>
