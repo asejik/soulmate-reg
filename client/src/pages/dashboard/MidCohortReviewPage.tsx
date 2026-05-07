@@ -35,14 +35,14 @@ export const MidCohortReviewPage = () => {
   }, []);
 
   const {
-      containerRef, isPlaying, isEnded, togglePlay, progress, volume, isMuted, handleVolumeChange, toggleMute, handleSeek, playerInstance
+      containerRef, isPlaying, isEnded, togglePlay, progress, volume, isMuted, handleVolumeChange, toggleMute, handleSeek
   } = useYouTubePlayer({
       videoId: videoId,
       onProgressChange: (pct) => { if (pct >= 85) setIsUnlocked(true); },
       onComplete: () => setIsUnlocked(true),
   });
 
-  const { isActive: isPiPActive, mode: pipMode, togglePiP, closePiP } = useSmartPiP(videoId, playerInstance);
+  const { isActive: isPiPActive, mode: pipMode, togglePiP, closePiP } = useSmartPiP();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

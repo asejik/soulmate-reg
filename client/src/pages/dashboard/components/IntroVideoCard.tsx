@@ -12,14 +12,14 @@ const ActivePlayer = ({ videoId }: { videoId: string }) => {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
-    containerRef, isPlaying, isEnded, togglePlay, progress, volume, isMuted, handleVolumeChange, toggleMute, handleSeek, playerInstance
+    containerRef, isPlaying, isEnded, togglePlay, progress, volume, isMuted, handleVolumeChange, toggleMute, handleSeek
   } = useYouTubePlayer({
     videoId: videoId,
     onProgressChange: () => {},
     onComplete: () => {},
   });
 
-  const { isActive: isPiPActive, mode: pipMode, togglePiP, closePiP } = useSmartPiP(videoId, playerInstance);
+  const { isActive: isPiPActive, mode: pipMode, togglePiP, closePiP } = useSmartPiP();
 
   const resetHideTimer = () => {
     setShowHUD(true);
