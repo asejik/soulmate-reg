@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, Volume2, VolumeX, Users, Lock } from 'lucide-react';
+import { Play, Pause, RotateCcw, Volume2, VolumeX, Users, Lock, PictureInPicture2, X } from 'lucide-react';
 import { useYouTubePlayer } from '../../../hooks/useYouTubePlayer';
+import { useSmartPiP } from '../../../hooks/useSmartPiP';
 import { postLMS } from '../../../lib/api';
 import type { LessonData } from '../LessonPage';
 
@@ -28,7 +29,7 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeCha
 
   const {
     containerRef, isPlaying, isEnded, progress,
-    isLiveMode, isWaiting, timeLeft, volume, isMuted, togglePlay, handleSeek, toggleMute, handleVolumeChange
+    isLiveMode, isWaiting, timeLeft, volume, isMuted, togglePlay, handleSeek, toggleMute, handleVolumeChange, playerInstance
   } = useYouTubePlayer({
     videoId: lesson.videoId,
     scheduledStartTime: lesson.scheduled_start_time,
@@ -41,6 +42,8 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeCha
     },
     onComplete: () => setIsUnlocked(true),
   });
+
+  const { isActive: isPiPActive, mode: pipMode, togglePiP, closePiP } = useSmartPiP(lesson.videoId, playerInstance);
 
   const resetHideTimer = () => {
     setShowHUD(true);
@@ -85,7 +88,22 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeCha
   }, [isLiveMode, onLiveModeChange]);
 
   return (
-    <div className="w-full bg-black rounded-2xl overflow-hidden shadow-2xl border border-white/5 relative aspect-video group" onMouseMove={resetHideTimer}>
+    <div 
+      className={`bg-black shadow-2xl border border-white/5 relative aspect-video group transition-all duration-500 ${
+        pipMode === 'floating' 
+          ? 'fixed bottom-6 right-6 w-80 sm:w-96 z-[100] rounded-xl overflow-hidden ring-1 ring-white/20 shadow-2xl' 
+          : 'w-full rounded-2xl overflow-hidden'
+      }`} 
+      onMouseMove={resetHideTimer}
+    >
+      {pipMode === 'floating' && (
+        <button 
+          onClick={closePiP}
+          className="absolute top-2 right-2 z-50 p-1.5 bg-black/60 hover:bg-black/80 text-white rounded-full backdrop-blur-md border border-white/10 transition-colors"
+        >
+          <X size={14} />
+        </button>
+      )}
       <div ref={containerRef} className="absolute inset-0 w-full h-full" />
       
       {/* Interaction Mask: Toggles HUD/Play and blocks YouTube UI */}
@@ -196,6 +214,18 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeCha
                   {Math.round(progress)}%
                 </div>
               )}
+
+              <button
+                onClick={(e) => { e.stopPropagation(); togglePiP(); resetHideTimer(); }}
+                title={isPiPActive ? 'Exit Picture-in-Picture' : 'Picture-in-Picture'}
+                className={`flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full border transition-all backdrop-blur-md ${
+                  isPiPActive
+                    ? 'bg-blue-500/30 border-blue-500/60 text-blue-300'
+                    : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <PictureInPicture2 size={15} />
+              </button>
             </div>
           </div>
         </div>
