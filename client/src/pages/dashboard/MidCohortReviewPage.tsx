@@ -111,14 +111,14 @@ export const MidCohortReviewPage = () => {
             : 'w-full rounded-2xl overflow-hidden'
         }`}
       >
-        {pipMode === 'floating' && (
-          <button 
-            onClick={closePiP}
-            className="absolute top-2 right-2 z-50 p-1.5 bg-black/60 hover:bg-black/80 text-white rounded-full backdrop-blur-md border border-white/10 transition-colors"
-          >
-            <X size={14} />
-          </button>
-        )}
+        <button 
+          onClick={closePiP}
+          className={`absolute top-2 right-2 z-50 p-1.5 bg-black/60 hover:bg-black/80 text-white rounded-full backdrop-blur-md border border-white/10 transition-all duration-300 ${
+            pipMode === 'floating' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}
+        >
+          <X size={14} />
+        </button>
         <div ref={containerRef} className="absolute inset-0 w-full h-full" />
         <div className="absolute inset-0 z-10 bg-transparent" onContextMenu={(e) => e.preventDefault()} />
 
