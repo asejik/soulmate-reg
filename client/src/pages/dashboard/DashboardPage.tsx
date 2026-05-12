@@ -4,7 +4,7 @@ import { fetchLMS } from '../../lib/api';
 import { DashboardHeader } from './components/DashboardHeader';
 import { DashboardGateways } from './components/DashboardGateways';
 import { ModuleAccordion } from './components/ModuleAccordion';
-import { IntroVideoCard } from './components/IntroVideoCard';
+import { DashboardVideoCard, IntroVideoCard } from './components/DashboardVideoCard';
 
 export interface DashboardLesson {
   id: string; title: string; estimated_time: string;
@@ -89,7 +89,17 @@ export const DashboardPage = () => {
       <DashboardHeader data={data} progressPercentage={progressPercentage} isFullyCompleted={isEligibleForCertificate} hasCompletedFinalReview={hasCompletedFinalReview} />
       <DashboardGateways data={data} isFullyCompleted={isEligibleForCertificate} requiresMidReview={requiresMidReview} hasCompletedFinalReview={hasCompletedFinalReview} setHasCompletedFinalReview={setHasCompletedFinalReview} />
       
-      {data.intro_video_id && <IntroVideoCard videoId={data.intro_video_id} />}
+      <div className="grid grid-cols-1 gap-8">
+        {data.intro_video_id && <IntroVideoCard videoId={data.intro_video_id} />}
+        
+        <DashboardVideoCard 
+          videoId="R-UZOuLPSyo"
+          title="Basic Guide to Everyday Makeup💄"
+          subtitle="Grooming & Presentation"
+          description="Learn the essential techniques for a clean, professional, and confident everyday look. Enhance your presence and present the best version of yourself."
+          badge="Practical Guide"
+        />
+      </div>
 
       <ModuleAccordion
         curriculum={data.curriculum}

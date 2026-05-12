@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, Volume2, VolumeX, Users, Lock } from 'lucide-react';
+import { Play, Pause, RotateCcw, Volume2, VolumeX, Lock } from 'lucide-react';
 import { useYouTubePlayer } from '../../../hooks/useYouTubePlayer';
 import { postLMS } from '../../../lib/api';
 import type { LessonData } from '../LessonPage';
@@ -9,10 +9,9 @@ interface Props {
   isUnlocked: boolean;
   setIsUnlocked: (v: boolean) => void;
   onLiveModeChange?: (live: boolean) => void;
-  participantCount?: number;
 }
 
-export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeChange, participantCount = 0 }: Props) => {
+export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeChange }: Props) => {
   const [showHUD, setShowHUD] = useState(true);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -103,16 +102,9 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeCha
       )}
 
       {isLiveMode && (
-        <>
-          <div className="absolute top-3 left-3 sm:top-5 sm:left-5 z-50 flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-red-600 text-white rounded font-bold text-[8px] sm:text-[10px] tracking-widest shadow-xl animate-pulse uppercase">
-            <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-white rounded-full" /> LIVE SESSION
-          </div>
-          {participantCount > 0 && (
-            <div className="absolute top-3 right-3 sm:top-5 sm:right-5 z-50 flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 bg-black/60 backdrop-blur-md text-white rounded border border-white/10 font-bold text-[8px] sm:text-[10px] shadow-xl">
-               <Users size={12} className="text-blue-400 sm:w-4 sm:h-4" /> {participantCount} ONLINE
-            </div>
-          )}
-        </>
+        <div className="absolute top-3 left-3 sm:top-5 sm:left-5 z-50 flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-red-600 text-white rounded font-bold text-[8px] sm:text-[10px] tracking-widest shadow-xl animate-pulse uppercase">
+          <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-white rounded-full" /> LIVE SESSION
+        </div>
       )}
 
       {isWaiting && (

@@ -76,7 +76,6 @@ export const LessonPage = () => {
           isUnlocked={isUnlocked} 
           setIsUnlocked={setIsUnlocked} 
           onLiveModeChange={handleLiveModeChange} 
-          participantCount={activity.count}
         />
       </div>
 

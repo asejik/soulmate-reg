@@ -4,6 +4,10 @@ import { useYouTubePlayer } from '../../../hooks/useYouTubePlayer';
 
 interface Props {
   videoId: string;
+  title: string;
+  subtitle?: string;
+  description: string;
+  badge?: string;
 }
 
 const ActivePlayer = ({ videoId }: { videoId: string }) => {
@@ -94,7 +98,7 @@ const ActivePlayer = ({ videoId }: { videoId: string }) => {
   );
 };
 
-export const IntroVideoCard = ({ videoId }: Props) => {
+export const DashboardVideoCard = ({ videoId, title, subtitle, description, badge }: Props) => {
   const [isStarted, setIsStarted] = useState(false);
 
   if (!videoId) return null;
@@ -102,7 +106,7 @@ export const IntroVideoCard = ({ videoId }: Props) => {
   return (
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest px-1">Introductory Video</h3>
+        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest px-1">{title}</h3>
         {isStarted && (
           <button onClick={() => setIsStarted(false)} className="text-[10px] text-slate-500 hover:text-white transition-colors uppercase tracking-widest">
             Close Player
@@ -115,22 +119,24 @@ export const IntroVideoCard = ({ videoId }: Props) => {
           className="relative w-full aspect-video rounded-3xl overflow-hidden group cursor-pointer border border-white/5 hover:border-white/10 transition-all shadow-xl"
           onClick={() => setIsStarted(true)}
         >
-          <img src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`} alt="Course Intro" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+          <img src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`} alt={title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
           <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors" />
           
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
             <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white mb-6 group-hover:scale-110 group-hover:bg-white/20 transition-all duration-500 border border-white/10">
               <PlayCircle size={48} className="fill-white/80" />
             </div>
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-2 tracking-tight">Watch Introduction</h2>
-            <p className="text-white/70 text-sm md:text-base max-w-md">Start your journey here with a quick welcome video about the program.</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-2 tracking-tight">{subtitle || title}</h2>
+            <p className="text-white/70 text-sm md:text-base max-w-md">{description}</p>
           </div>
 
-          <div className="absolute bottom-6 right-6">
-            <span className="px-3 py-1 bg-black/60 backdrop-blur-md rounded-full border border-white/10 text-[10px] font-bold text-white uppercase tracking-widest">
-              Standalone Content
-            </span>
-          </div>
+          {badge && (
+            <div className="absolute bottom-6 right-6">
+              <span className="px-3 py-1 bg-black/60 backdrop-blur-md rounded-full border border-white/10 text-[10px] font-bold text-white uppercase tracking-widest">
+                {badge}
+              </span>
+            </div>
+          )}
         </div>
       ) : (
         <ActivePlayer videoId={videoId} />
@@ -138,3 +144,14 @@ export const IntroVideoCard = ({ videoId }: Props) => {
     </div>
   );
 };
+
+// Maintain alias for backward compatibility
+export const IntroVideoCard = ({ videoId }: { videoId: string }) => (
+  <DashboardVideoCard 
+    videoId={videoId} 
+    title="Introductory Video" 
+    subtitle="Watch Introduction"
+    description="Start your journey here with a quick welcome video about the program."
+    badge="Standalone Content"
+  />
+);
