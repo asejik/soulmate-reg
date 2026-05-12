@@ -84,6 +84,11 @@ func InitTables() {
 			answered_at TIMESTAMPTZ,
 			created_at TIMESTAMPTZ DEFAULT NOW()
 		);
+
+		-- Enable RLS to satisfy Supabase security advisor
+		-- Note: This does not affect our backend queries which connect via direct Postgres pool
+		ALTER TABLE public.giving_commitments ENABLE ROW LEVEL SECURITY;
+		ALTER TABLE public.questions ENABLE ROW LEVEL SECURITY;
 	`)
 	if err != nil {
 		fmt.Printf("⚠️  Table Init Failed: %v\n", err)
