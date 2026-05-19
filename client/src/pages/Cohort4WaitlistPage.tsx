@@ -122,7 +122,7 @@ export const Cohort4WaitlistPage = () => {
             build self-awareness, and become truly ready for a healthy love life.
           </p>
           <p className="text-indigo-400 font-semibold text-base">
-            Cohort 4 runs August – September 2026
+            Cohort 4 runs September – October 2026
           </p>
         </motion.div>
 
