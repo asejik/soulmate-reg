@@ -39,9 +39,6 @@ export const LandingPage = () => {
               alt="Temitope Ayenigba Initiative"
               className="h-10 w-auto object-contain drop-shadow-[0_0_8px_rgba(255,255,255,0.15)]"
             />
-            <span className="hidden sm:block text-sm font-bold text-white/70 tracking-tight leading-tight">
-              Temitope<br />Ayenigba
-            </span>
           </Link>
 
           {/* Desktop Nav */}
