@@ -138,7 +138,7 @@ func SubmitReview(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if req.ReviewType == "" || req.ReviewType == "mid_cohort" || req.ReviewType == "final" {
-		http.Error(w, "Legacy review types are no longer supported. Please submit a Video Link or Google Review.", http.StatusBadRequest)
+		http.Error(w, "Legacy review types are no longer supported.", http.StatusBadRequest)
 		return
 	}
 

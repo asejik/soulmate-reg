@@ -90,6 +90,14 @@ export const DashboardPage = () => {
       <DashboardGateways data={data} isFullyCompleted={isEligibleForCertificate} requiresMidReview={requiresMidReview} hasCompletedFinalReview={hasCompletedFinalReview} setHasCompletedFinalReview={setHasCompletedFinalReview} />
       
       <div className="grid grid-cols-1 gap-8">
+        <div className="w-full bg-[#111827] border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
+          <img 
+            src="/thank you.jpeg" 
+            alt="Thank you for Ready for A Soulmate" 
+            className="w-full h-auto object-cover"
+          />
+        </div>
+
         {data.intro_video_id && <IntroVideoCard videoId={data.intro_video_id} />}
         
         <DashboardVideoCard 

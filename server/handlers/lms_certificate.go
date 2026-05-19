@@ -33,7 +33,7 @@ func GenerateCertificate(w http.ResponseWriter, r *http.Request) {
 		SELECT EXISTS(
 			SELECT 1 FROM public.program_reviews 
 			WHERE user_id = $1 AND program_name = $2 
-			AND review_type IN ('final', 'final_video', 'final_google')
+			AND review_type IN ('final', 'final_video', 'final_google', 'final_instagram')
 		)
 	`, userID, programName).Scan(&hasCompletedFinalReview)
 
