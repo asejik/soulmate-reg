@@ -85,6 +85,18 @@ func InitTables() {
 			created_at TIMESTAMPTZ DEFAULT NOW()
 		);
 
+		-- Cohort 4 Waitlist table (new - does not affect any existing tables)
+		CREATE TABLE IF NOT EXISTS public.cohort4_waitlist (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			full_name TEXT NOT NULL,
+			nationality TEXT,
+			whatsapp_number TEXT NOT NULL,
+			email TEXT NOT NULL UNIQUE,
+			religion TEXT,
+			denomination TEXT,
+			created_at TIMESTAMPTZ DEFAULT NOW()
+		);
+
 		-- Enable RLS to satisfy Supabase security advisor
 		-- Note: This does not affect our backend queries which connect via direct Postgres pool
 		ALTER TABLE public.giving_commitments ENABLE ROW LEVEL SECURITY;

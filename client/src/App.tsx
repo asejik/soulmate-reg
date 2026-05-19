@@ -8,6 +8,7 @@ import { CourseLayout } from './components/shared/CourseLayout';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
 import { LessonPage } from './pages/dashboard/LessonPage';
 import ClaimAccountPage from './pages/ClaimAccountPage';
+import { Cohort4WaitlistPage } from './pages/Cohort4WaitlistPage';
 import AdminPortalPage from './pages/admin/AdminPortalPage';
 import { GivingPage } from './pages/dashboard/GivingPage';
 import { VolunteerPage } from './pages/dashboard/VolunteerPage';
@@ -27,6 +28,7 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/register" element={<ClaimAccountPage />} />
+      <Route path="/cohort4-waitlist" element={<Cohort4WaitlistPage />} />
 
       {/* --- PROTECTED LMS ROUTES --- */}
       <Route element={<ProtectedRoute />}>
