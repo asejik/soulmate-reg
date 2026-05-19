@@ -386,7 +386,7 @@ export const Cohort4WaitlistPage = () => {
                 </ul>
               </div>
 
-              <div className="space-y-4">
+              <div className="flex flex-col items-center gap-4">
                 <a
                   href={WHATSAPP_COMMUNITY_LINK}
                   target="_blank"
@@ -403,7 +403,7 @@ export const Cohort4WaitlistPage = () => {
                   href="https://www.instagram.com/readyforasoulmate"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-slate-400 hover:text-pink-400 transition-colors text-sm font-medium"
+                  className="inline-flex items-center gap-2 text-slate-400 hover:text-pink-400 transition-colors text-sm font-medium pt-2"
                 >
                   <Instagram size={16} />
                   Follow @readyforasoulmate on Instagram
