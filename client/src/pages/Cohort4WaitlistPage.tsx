@@ -354,7 +354,7 @@ export const Cohort4WaitlistPage = () => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
-              className="bg-white/5 border border-indigo-500/20 rounded-3xl p-10 md:p-16 text-center space-y-8"
+              className="bg-white/5 border border-indigo-500/20 rounded-3xl p-6 sm:p-10 md:p-16 text-center space-y-8"
             >
               <div className="w-20 h-20 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto text-4xl">
                 🎉
@@ -362,26 +362,26 @@ export const Cohort4WaitlistPage = () => {
 
               <div className="space-y-3">
                 <h2 className="text-3xl md:text-4xl font-black text-white">You're on the List!</h2>
-                <p className="text-slate-400 max-w-xl mx-auto leading-relaxed">
+                <p className="text-slate-400 max-w-xl mx-auto leading-relaxed text-sm md:text-base">
                   Thank you for joining the waitlist for <strong className="text-white">Ready for a Soulmate — Cohort 4.</strong>
                   {' '}You will be among the first to receive registration details when enrollment opens.
                 </p>
               </div>
 
-              <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl p-6 space-y-3 max-w-md mx-auto">
-                <p className="text-sm text-slate-400 font-medium">Next Steps</p>
-                <ul className="space-y-2 text-slate-300 text-sm text-left">
-                  <li className="flex items-start gap-2">
+              <div className="w-full bg-indigo-500/10 border border-indigo-500/20 rounded-2xl p-5 md:p-6 space-y-3 max-w-md mx-auto">
+                <p className="text-sm text-slate-400 font-bold">Next Steps</p>
+                <ul className="space-y-3 text-slate-300 text-sm text-left">
+                  <li className="flex items-start gap-2.5">
                     <CheckCircle2 size={16} className="text-indigo-400 mt-0.5 shrink-0" />
-                    Stay attentive to your email for further updates.
+                    <span>Stay attentive to your email for further updates.</span>
                   </li>
-                  <li className="flex items-start gap-2">
+                  <li className="flex items-start gap-2.5">
                     <CheckCircle2 size={16} className="text-indigo-400 mt-0.5 shrink-0" />
-                    Follow <strong className="text-white">@readyforasoulmate</strong> on Instagram so you don't miss important information.
+                    <span>Follow <strong className="text-white">@readyforasoulmate</strong> on Instagram so you don&apos;t miss important information.</span>
                   </li>
-                  <li className="flex items-start gap-2">
+                  <li className="flex items-start gap-2.5">
                     <CheckCircle2 size={16} className="text-indigo-400 mt-0.5 shrink-0" />
-                    Join the WhatsApp community below to stay connected.
+                    <span>Join the WhatsApp community below to stay connected.</span>
                   </li>
                 </ul>
               </div>
