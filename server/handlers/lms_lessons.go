@@ -34,7 +34,7 @@ func GetLesson(w http.ResponseWriter, r *http.Request) {
 	var programName string
 	err := db.Pool.QueryRow(r.Context(), `
 		SELECT l.id, l.title, COALESCE(l.description, ''), l.video_id, COALESCE(l.estimated_time, ''), COALESCE(l.assignment_prompt, ''),
-			   m.program_name, l.scheduled_start_time, COALESCE(lp.is_completed, false), COALESCE(lp.last_watched_seconds, 0.0)::float,
+			   m.program_name, l.scheduled_start_time, COALESCE(lp.is_completed OR lp.highest_watched_pct >= 80, false), COALESCE(lp.last_watched_seconds, 0.0)::float,
 			   COALESCE(lp.highest_watched_pct, 0)::int,
 			   l.live_duration_minutes
 		FROM public.lessons l
@@ -113,11 +113,12 @@ func UpdateProgress(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, err := db.Pool.Exec(r.Context(), `
-		INSERT INTO public.lesson_progress (user_id, lesson_id, last_watched_seconds, highest_watched_pct, updated_at)
-		VALUES ($1, $2, $3, $4, NOW()) ON CONFLICT (user_id, lesson_id)
+		INSERT INTO public.lesson_progress (user_id, lesson_id, last_watched_seconds, highest_watched_pct, is_completed, updated_at)
+		VALUES ($1, $2, $3, $4, $4 >= 80, NOW()) ON CONFLICT (user_id, lesson_id)
 		DO UPDATE SET 
 			last_watched_seconds = $3, 
 			highest_watched_pct = GREATEST(lesson_progress.highest_watched_pct, $4),
+			is_completed = (lesson_progress.is_completed OR GREATEST(lesson_progress.highest_watched_pct, $4) >= 80),
 			updated_at = NOW()
 	`, userID, lessonID, req.Seconds, req.Percent)
 

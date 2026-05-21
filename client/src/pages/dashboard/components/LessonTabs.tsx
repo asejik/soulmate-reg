@@ -23,6 +23,7 @@ export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false, activity }:
   const [submissionType, setSubmissionType] = useState<'text' | 'link'>('link');
   const [submissionValue, setSubmissionValue] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmissionLoaded, setIsSubmissionLoaded] = useState(false);
   const [mySubmission, setMySubmission] = useState<{
     content: string;
     submission_type: string;
@@ -52,13 +53,19 @@ export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false, activity }:
     }
   }, [isLiveMode]);
 
-  // Fetch student's own submission (including admin feedback) when lesson is completed
+  // Fetch student's own submission (including admin feedback)
   useEffect(() => {
-    if (!lesson.is_completed) return;
+    setIsSubmissionLoaded(false);
     fetchLMS(`/lms/lessons/${lesson.id}/my-submission`)
-      .then(data => setMySubmission(data || null))
-      .catch(console.error);
-  }, [lesson.id, lesson.is_completed]);
+      .then(data => {
+        setMySubmission(data || null);
+        setIsSubmissionLoaded(true);
+      })
+      .catch((err) => {
+        console.error(err);
+        setIsSubmissionLoaded(true);
+      });
+  }, [lesson.id]);
 
   useEffect(() => {
     if (activeTab === 'discussion') {
@@ -151,7 +158,19 @@ export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false, activity }:
 
             {activeTab === 'assignment' && (
               <motion.div key="assignment" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-3xl mx-auto space-y-6">
-                {lesson.is_completed ? (
+                {!isUnlocked ? (
+                  <div className="flex flex-col items-center py-10 sm:py-12 text-center space-y-4">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/5 rounded-full flex items-center justify-center text-slate-500">
+                      <Lock size={24} className="sm:w-8 sm:h-8" />
+                    </div>
+                    <h3 className="text-lg sm:text-xl font-bold text-white">Assignment Locked</h3>
+                    <p className="text-sm sm:text-base text-slate-400">Please watch at least 80% of the video to unlock.</p>
+                  </div>
+                ) : !isSubmissionLoaded ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+                  </div>
+                ) : mySubmission ? (
                   <div className="space-y-5">
                     {/* Completion header */}
                     <div className="flex items-center gap-3 pb-4 border-b border-white/5">
@@ -159,30 +178,28 @@ export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false, activity }:
                         <CheckCircle2 size={20} />
                       </div>
                       <div>
-                        <h3 className="font-bold text-white text-sm sm:text-base">Assignment Completed</h3>
+                        <h3 className="font-bold text-white text-sm sm:text-base">Assignment Submitted</h3>
                         <p className="text-xs text-slate-500">Thank you for your submission</p>
                       </div>
                     </div>
 
                     {/* Their submission */}
-                    {mySubmission && (
-                      <div className="space-y-2">
-                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Your Submission</p>
-                        {mySubmission.content.startsWith('http') ? (
-                          <a href={mySubmission.content} target="_blank" rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:text-blue-300 rounded-xl text-sm font-medium transition-colors">
-                            <LinkIcon size={14} /> View Submitted Link
-                          </a>
-                        ) : (
-                          <div className="p-4 bg-white/5 border border-white/10 rounded-xl text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">
-                            {mySubmission.content}
-                          </div>
-                        )}
-                      </div>
-                    )}
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Your Submission</p>
+                      {mySubmission.content.startsWith('http') ? (
+                        <a href={mySubmission.content} target="_blank" rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:text-blue-300 rounded-xl text-sm font-medium transition-colors">
+                          <LinkIcon size={14} /> View Submitted Link
+                        </a>
+                      ) : (
+                        <div className="p-4 bg-white/5 border border-white/10 rounded-xl text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">
+                          {mySubmission.content}
+                        </div>
+                      )}
+                    </div>
 
                     {/* Admin / Instructor feedback */}
-                    {mySubmission?.admin_feedback && (
+                    {mySubmission.admin_feedback && (
                       <div className="p-4 bg-amber-500/8 border border-amber-500/25 rounded-xl space-y-2">
                         <p className="text-[10px] font-bold text-amber-400 uppercase tracking-widest flex items-center gap-1.5">
                           <MessageSquare size={11} /> Instructor Feedback
@@ -194,8 +211,6 @@ export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false, activity }:
                       </div>
                     )}
                   </div>
-                ) : !isUnlocked ? (
-                  <div className="flex flex-col items-center py-10 sm:py-12 text-center space-y-4"><div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/5 rounded-full flex items-center justify-center text-slate-500"><Lock size={24} className="sm:w-8 sm:h-8" /></div><h3 className="text-lg sm:text-xl font-bold text-white">Assignment Locked</h3><p className="text-sm sm:text-base text-slate-400">Please watch at least 80% of the video to unlock.</p></div>
                 ) : (
                   <div className="space-y-6">
                     <div className="p-4 sm:p-5 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-100 text-sm sm:text-base whitespace-pre-wrap">{lesson.assignmentPrompt}</div>
@@ -205,7 +220,7 @@ export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false, activity }:
                         <button type="button" onClick={() => setSubmissionType('text')} className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold transition-all ${submissionType === 'text' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}><FileText size={14} className="sm:w-4 sm:h-4" /> Text</button>
                       </div>
                       {submissionType === 'link' ? <input type="url" required value={submissionValue} onChange={(e) => setSubmissionValue(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl py-3 px-4 text-sm text-white focus:border-blue-500/50 transition-colors" placeholder="https://..." /> : <textarea required rows={4} value={submissionValue} onChange={(e) => setSubmissionValue(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl py-3 px-4 text-sm text-white resize-none focus:border-blue-500/50 transition-colors" placeholder="Write your submission here..." />}
-                      <button type="submit" disabled={isSubmitting || !submissionValue} className="w-full py-3.5 sm:py-4 bg-white text-black font-bold rounded-xl hover:bg-slate-200 active:scale-[0.98] transition-all text-sm sm:text-base">{isSubmitting ? 'Submitting...' : 'Submit & Unlock'}</button>
+                      <button type="submit" disabled={isSubmitting || !submissionValue} className="w-full py-3.5 sm:py-4 bg-white text-black font-bold rounded-xl hover:bg-slate-200 active:scale-[0.98] transition-all text-sm sm:text-base">{isSubmitting ? 'Submitting...' : 'Submit Assignment'}</button>
                     </form>
                   </div>
                 )}

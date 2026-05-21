@@ -62,7 +62,7 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 			SELECT COUNT(lp.lesson_id) FROM public.lesson_progress lp 
 			JOIN public.lessons l ON lp.lesson_id = l.id 
 			JOIN public.modules m ON l.module_id = m.id 
-			WHERE lp.user_id = $1 AND lp.is_completed = true AND m.program_name = $2
+			WHERE lp.user_id = $1 AND (lp.is_completed = true OR lp.highest_watched_pct >= 80) AND m.program_name = $2
 		`, userID, programName).Scan(&count)
 		completedLessonsChan <- result{count, err}
 	}()
@@ -107,7 +107,7 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Pool.Query(r.Context(), `
 		SELECT
 			m.id, m.title, l.id, l.title,
-			COALESCE(l.estimated_time, ''), COALESCE(lp.is_completed, false), l.scheduled_start_time,
+			COALESCE(l.estimated_time, ''), COALESCE(lp.is_completed OR lp.highest_watched_pct >= 80, false), l.scheduled_start_time,
 			COALESCE(lp.highest_watched_pct, 0)::int, COALESCE(lp.last_watched_seconds, 0.0)::float,
 			EXISTS(SELECT 1 FROM public.assignment_submissions WHERE user_id = $2 AND lesson_id = l.id AND admin_feedback IS NOT NULL AND admin_feedback <> ''),
 			lp.updated_at

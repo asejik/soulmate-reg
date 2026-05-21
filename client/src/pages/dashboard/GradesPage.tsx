@@ -74,7 +74,7 @@ export const GradesPage = () => {
         <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-3">
           <Award className="text-blue-500" size={32} /> Grades & Progress
         </h1>
-        <p className="text-slate-400 text-sm">Track your assignment submissions and overall course completion.</p>
+        <p className="text-slate-400 text-sm">Track your video progress and overall course completion.</p>
       </div>
 
       {/* Progress Overview Card */}
@@ -88,14 +88,14 @@ export const GradesPage = () => {
         </div>
         <div>
           <h2 className="text-xl font-bold text-white mb-1">Academic Transcript</h2>
-          <p className="text-slate-400 text-sm">You have completed {data.cohort.completed_lessons} out of {data.cohort.total_lessons} required assignments to earn your certificate.</p>
+          <p className="text-slate-400 text-sm">You have completed {data.cohort.completed_lessons} out of {data.cohort.total_lessons} required lessons to earn your certificate.</p>
         </div>
       </div>
 
       {/* Detailed Transcript */}
       <div className="bg-[#111827] border border-white/5 rounded-2xl overflow-hidden shadow-xl">
         <div className="bg-black/20 px-6 py-4 border-b border-white/5">
-          <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider">Assignment History</h3>
+          <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider">Lesson Progress History</h3>
         </div>
         <div className="divide-y divide-white/5">
           {data.curriculum.map((module) => (
@@ -114,7 +114,7 @@ export const GradesPage = () => {
                   {lesson.is_completed ? (
                     <span className="px-3 py-1 bg-green-500/10 text-green-400 text-xs font-bold uppercase tracking-wider rounded-lg">Pass / Completed</span>
                   ) : (
-                    <span className="px-3 py-1 bg-slate-800 text-slate-400 text-xs font-bold uppercase tracking-wider rounded-lg">Pending Submission</span>
+                    <span className="px-3 py-1 bg-slate-800 text-slate-400 text-xs font-bold uppercase tracking-wider rounded-lg">Incomplete</span>
                   )}
                 </div>
               </div>

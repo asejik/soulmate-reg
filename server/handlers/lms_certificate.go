@@ -25,7 +25,7 @@ func GenerateCertificate(w http.ResponseWriter, r *http.Request) {
 		SELECT COUNT(lp.lesson_id) FROM public.lesson_progress lp 
 		JOIN public.lessons l ON lp.lesson_id = l.id 
 		JOIN public.modules m ON l.module_id = m.id 
-		WHERE lp.user_id = $1 AND lp.is_completed = true AND m.program_name = $2
+		WHERE lp.user_id = $1 AND (lp.is_completed = true OR lp.highest_watched_pct >= 80) AND m.program_name = $2
 	`, userID, programName).Scan(&completedLessons)
 
 	var hasCompletedFinalReview bool
