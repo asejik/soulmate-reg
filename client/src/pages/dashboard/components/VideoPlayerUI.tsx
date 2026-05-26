@@ -27,7 +27,8 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeCha
 
   const {
     containerRef, isPlaying, isEnded, progress,
-    isLiveMode, isWaiting, timeLeft, volume, isMuted, togglePlay, handleSeek, toggleMute, handleVolumeChange
+    isLiveMode, isWaiting, timeLeft, volume, isMuted, togglePlay, handleSeek, toggleMute, handleVolumeChange,
+    playbackRate, handlePlaybackRate
   } = useYouTubePlayer({
     videoId: lesson.videoId,
     scheduledStartTime: lesson.scheduled_start_time,
@@ -39,6 +40,7 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeCha
         .catch((err) => console.error("SAVE FAILED:", err));
     },
     onComplete: () => setIsUnlocked(true),
+    isCompleted: lesson.is_completed,
   });
 
   const resetHideTimer = () => {
@@ -176,6 +178,20 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeCha
                   <input type="range" min="0" max="100" value={isMuted ? 0 : volume} onChange={(e) => handleVolumeChange(Number(e.target.value))} className="w-20 accent-blue-500 h-1 cursor-pointer" />
                 </div>
               </div>
+
+              {lesson.is_completed && !isLiveMode && (
+                <div className="flex items-center bg-white/5 border border-white/10 rounded-full p-1 backdrop-blur-md">
+                  {[1, 1.5, 2].map((speed) => (
+                    <button
+                      key={speed}
+                      onClick={(e) => { e.stopPropagation(); handlePlaybackRate(speed); resetHideTimer(); }}
+                      className={`px-2 py-1 text-[10px] font-bold rounded-full transition-colors ${playbackRate === speed ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                    >
+                      {speed}x
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-3">

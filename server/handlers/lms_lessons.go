@@ -80,17 +80,23 @@ func GetLesson(w http.ResponseWriter, r *http.Request) {
 	// All valid lessons are now unlocked to allow access to waitrooms and countdowns
 	lesson.IsLocked = false
 
-	// Post-live 48h access window: lock lesson after 48 hours from live session end.
+	// Post-live access window: lock lesson after a certain duration from live session end.
 	// Only applies to lessons that have both a scheduled start time AND a duration set.
 	if lesson.ScheduledStartTime != nil && lesson.DurationMinutes != nil && *lesson.DurationMinutes > 0 {
 		liveEnd := lesson.ScheduledStartTime.Add(time.Duration(*lesson.DurationMinutes) * time.Minute)
-		lockAt := liveEnd.Add(48 * time.Hour)
+		
+		lockDuration := 48 * time.Hour
+		if programName == "launchpad" && lessonPosition == 4 {
+			lockDuration = 120 * time.Hour // 5 days
+		}
+
+		lockAt := liveEnd.Add(lockDuration)
 		now := time.Now().UTC()
 		if now.After(lockAt) {
-			// 48h window has expired — deny access
+			// window has expired — deny access
 			lesson.IsLocked = true
 		} else if now.After(liveEnd) {
-			// Session ended but still within 48h — show countdown to closure
+			// Session ended but still within window — show countdown to closure
 			lesson.ClosingAt = &lockAt
 		}
 	}

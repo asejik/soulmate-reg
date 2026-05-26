@@ -142,6 +142,13 @@ func SubmitReview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if programName == "launchpad" && (req.ReviewType == "mid_google" || req.ReviewType == "mid_video" || req.ReviewType == "mid_cohort") {
+		if len(req.Content) < 20 {
+			http.Error(w, "Please type a detailed response (at least 20 characters) or provide a valid link.", http.StatusBadRequest)
+			return
+		}
+	}
+
 	// Allow multiple reviews if types are different (mid_cohort vs final)
 	_, err := db.Pool.Exec(r.Context(), `
 		INSERT INTO public.program_reviews (user_id, program_name, review_type, content) 

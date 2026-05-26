@@ -187,3 +187,56 @@ func SendLaunchpadEmail(data LaunchpadEmailData) error {
 	fmt.Println("Launchpad Email sent successfully:", sent.Id)
 	return nil
 }
+
+// SendOTPEmail sends the verification code for claiming an account
+func SendOTPEmail(email string, code string) error {
+	apiKey := os.Getenv("RESEND_API_KEY")
+	if apiKey == "" {
+		fmt.Println("Error: RESEND_API_KEY is missing")
+		return nil
+	}
+
+	client := resend.NewClient(apiKey)
+
+	htmlContent := fmt.Sprintf(`
+	<!DOCTYPE html>
+	<html>
+	<head>
+		<style>
+			body { font-family: 'Helvetica', 'Arial', sans-serif; line-height: 1.6; color: #333; }
+			.container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px; }
+			.header { background-color: #ec4899; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
+			.content { padding: 20px; background-color: #fafafa; text-align: center; }
+			.code { font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #ec4899; margin: 20px 0; }
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<div class="header">
+				<h1>Verification Code</h1>
+			</div>
+			<div class="content">
+				<p>Your spouse has requested to claim their account for Couples' Launchpad.</p>
+				<p>Please share this 6-digit verification code with them to complete the process:</p>
+				<div class="code">%s</div>
+				<p>This code will expire in 15 minutes.</p>
+			</div>
+		</div>
+	</body>
+	</html>
+	`, code)
+
+	params := &resend.SendEmailRequest{
+		From:    "Couples' Launchpad <admin@temitopeayenigba.com>",
+		To:      []string{email},
+		Subject: "Your Verification Code - Couples' Launchpad",
+		Html:    htmlContent,
+	}
+
+	_, err := client.Emails.Send(params)
+	if err != nil {
+		fmt.Println("Error sending OTP email:", err)
+		return err
+	}
+	return nil
+}

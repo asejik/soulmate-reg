@@ -4,6 +4,7 @@ import { ChevronLeft, Lock } from 'lucide-react';
 import { fetchLMS } from '../../lib/api';
 import { VideoPlayerUI } from './components/VideoPlayerUI';
 import { LessonTabs } from './components/LessonTabs';
+import { QuizOverlay } from './components/QuizOverlay';
 
 export interface LessonData {
   id: string; title: string; description: string; videoId: string;
@@ -83,6 +84,8 @@ export const LessonPage = () => {
         <div><h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{lesson.title}</h1></div>
         <LessonTabs lesson={lesson} isUnlocked={isUnlocked} isLiveMode={isLiveMode} activity={activity} />
       </div>
+      
+      <QuizOverlay lessonId={lesson.id} />
     </div>
   );
 };

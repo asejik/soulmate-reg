@@ -5,6 +5,7 @@ import { DashboardHeader } from './components/DashboardHeader';
 import { DashboardGateways } from './components/DashboardGateways';
 import { ModuleAccordion } from './components/ModuleAccordion';
 import { DashboardVideoCard, IntroVideoCard } from './components/DashboardVideoCard';
+import { AnnouncementBanner } from './components/AnnouncementBanner';
 
 export interface DashboardLesson {
   id: string; title: string; estimated_time: string;
@@ -87,6 +88,7 @@ export const DashboardPage = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-20 px-4 md:px-0">
       <DashboardHeader data={data} progressPercentage={progressPercentage} isFullyCompleted={isEligibleForCertificate} hasCompletedFinalReview={hasCompletedFinalReview} />
+      <AnnouncementBanner />
       <DashboardGateways data={data} isFullyCompleted={isEligibleForCertificate} requiresMidReview={requiresMidReview} hasCompletedFinalReview={hasCompletedFinalReview} setHasCompletedFinalReview={setHasCompletedFinalReview} />
       
       <div className="grid grid-cols-1 gap-8">

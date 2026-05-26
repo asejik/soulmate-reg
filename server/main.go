@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -54,6 +55,7 @@ func main() {
 	r.Post("/api/launchpad/register", handlers.RegisterLaunchpad)
 	r.Post("/api/cohort4/waitlist", handlers.RegisterWaitlist)
 	r.Post("/api/auth/claim", handlers.ClaimAccount)
+	r.Post("/api/auth/request-otp", handlers.RequestOTP)
 
 	// Admin Routes
 	r.Get("/api/admin/stats", handlers.AdminAuth(handlers.GetDashboardStats))
@@ -64,8 +66,35 @@ func main() {
 		// Anything inside this group strictly requires a valid Supabase Auth Token
 		r.Use(handlers.LMSAuth)
 
+		r.Get("/api/lms/announcements", func(w http.ResponseWriter, req *http.Request) {
+			program := req.URL.Query().Get("program")
+			if program == "launchpad" {
+				program = "Couples' Launchpad 5.0"
+			} else {
+				program = "Ready for a Soulmate"
+			}
+			rows, _ := db.Pool.Query(req.Context(), `
+				SELECT id, title, image_url 
+				FROM public.announcements 
+				WHERE target_program = $1
+				AND (scheduled_start IS NULL OR NOW() >= scheduled_start)
+				AND (scheduled_end IS NULL OR NOW() <= scheduled_end)
+			`, program)
+			defer rows.Close()
+			var anns []map[string]interface{}
+			for rows.Next() {
+				var id, title, url string
+				rows.Scan(&id, &title, &url)
+				anns = append(anns, map[string]interface{}{"id": id, "title": title, "image_url": url})
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(anns)
+		})
+
 		r.Get("/api/lms/dashboard", handlers.GetDashboard)
 		r.Get("/api/lms/lessons/{id}", handlers.GetLesson)
+		r.Get("/api/lms/lessons/{id}/quiz", handlers.GetActiveQuiz)
+		r.Post("/api/lms/lessons/{id}/quiz", handlers.SubmitQuiz)
 		r.Post("/api/lms/lessons/{id}/submit", handlers.SubmitAssignment)
 		r.Get("/api/lms/certificate", handlers.GenerateCertificate)
 		r.Get("/api/admin/users", handlers.GetMasterAdminUsers)

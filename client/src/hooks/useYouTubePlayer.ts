@@ -15,6 +15,7 @@ interface UseYouTubePlayerOptions {
   onProgressChange:   (percent: number) => void;
   onTimeUpdate?:      (seconds: number, percent: number) => void; // <-- Auto-save callback
   onComplete:         () => void;
+  isCompleted?:       boolean;
 }
 
 interface UseYouTubePlayerReturn {
@@ -32,6 +33,8 @@ interface UseYouTubePlayerReturn {
   isLiveMode:         boolean;
   isWaiting:          boolean;
   timeLeft:           number;
+  playbackRate:       number;
+  handlePlaybackRate: (rate: number) => void;
 }
 
 function loadYouTubeApi(): Promise<void> {
@@ -57,6 +60,7 @@ export function useYouTubePlayer({
   onProgressChange,
   onTimeUpdate,
   onComplete,
+  isCompleted = false,
 }: UseYouTubePlayerOptions): UseYouTubePlayerReturn {
   const containerRef    = useRef<HTMLDivElement>(null);
   const playerRef       = useRef<any>(null);
@@ -71,6 +75,7 @@ export function useYouTubePlayer({
   const [isLiveMode, setIsLiveMode] = useState(false);
   const [isWaiting, setIsWaiting]   = useState(false);
   const [timeLeft, setTimeLeft]     = useState(0);
+  const [playbackRate, setPlaybackRate] = useState(1);
 
   const [volume, setVolume]   = useState(100);
   const [isMuted, setIsMuted] = useState(false);
@@ -259,5 +264,13 @@ export function useYouTubePlayer({
     }
   };
 
-  return { containerRef, isPlaying, isEnded, togglePlay, progress, progressInSeconds, volume, isMuted, handleVolumeChange, toggleMute, handleSeek, isLiveMode, isWaiting, timeLeft };
+  const handlePlaybackRate = (rate: number) => {
+    if (!isCompleted) return; // Only allow speed changes if completed (replay)
+    setPlaybackRate(rate);
+    if (playerRef.current && playerRef.current.setPlaybackRate) {
+      playerRef.current.setPlaybackRate(rate);
+    }
+  };
+
+  return { containerRef, isPlaying, isEnded, togglePlay, progress, progressInSeconds, volume, isMuted, handleVolumeChange, toggleMute, handleSeek, isLiveMode, isWaiting, timeLeft, playbackRate, handlePlaybackRate };
 }

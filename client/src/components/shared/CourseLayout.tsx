@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Award, MessageSquare, Menu, X, LogOut, Layout, Heart, Users, Phone, HelpCircle } from 'lucide-react';
+import { Award, MessageSquare, Menu, X, LogOut, Layout, Heart, Users, Phone, HelpCircle, CalendarHeart, Gift, CheckSquare, MessageCircle, ExternalLink } from 'lucide-react';
 import { supabase } from '../../config';
 import { getAuthSession, clearSessionCache } from '../../lib/api';
 import { TAiLogo } from '../TAiLogo';
@@ -29,7 +29,10 @@ export const CourseLayout = () => {
     navigate('/login');
   };
 
-  const navItems = [
+  const activeProgram = localStorage.getItem('tai_active_program');
+  const isLaunchpad = activeProgram === 'launchpad';
+
+  let navItems = [
     { label: 'Course Material', path: '/dashboard', icon: Layout },
     { label: 'Grades & Progress', path: '/dashboard/grades', icon: Award },
     { label: 'Discussion Forums', path: '/dashboard/discussions', icon: MessageSquare },
@@ -38,6 +41,17 @@ export const CourseLayout = () => {
     { label: 'Q&A with Host', path: '/dashboard/qa', icon: HelpCircle },
     { label: 'Contact & Support', path: '/dashboard/contact', icon: Phone },
   ];
+
+  if (isLaunchpad) {
+    navItems.push(
+      { label: 'Anniversary', path: '/dashboard/profile', icon: CalendarHeart },
+      { label: 'Birthday', path: '/dashboard/profile', icon: Gift },
+      { label: 'AI FAQ', path: '/dashboard/faq', icon: HelpCircle },
+      { label: 'Buy Checklist', path: '/dashboard/checklist', icon: CheckSquare },
+      { label: 'Chat with Rep', path: 'https://wa.me/2340000000000', icon: MessageCircle }, // Replace with Miss Debby's number
+      { label: 'Anchor of Hope', path: 'https://anchorofhopecounseling.com', icon: ExternalLink }
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0b0f19] text-slate-300 font-sans flex flex-col md:flex-row">
@@ -67,6 +81,22 @@ export const CourseLayout = () => {
         <nav className="flex-1 py-6 px-4 space-y-1">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
+            const isExternal = item.path.startsWith('http');
+            if (isExternal) {
+              return (
+                <a
+                  key={item.label}
+                  href={item.path}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors text-slate-400 hover:bg-white/5 hover:text-white"
+                >
+                  <item.icon size={18} className="text-slate-500" />
+                  {item.label}
+                </a>
+              );
+            }
+
             return (
               <button
                 key={item.label}
