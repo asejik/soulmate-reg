@@ -92,23 +92,27 @@ export const DashboardPage = () => {
       <DashboardGateways data={data} isFullyCompleted={isEligibleForCertificate} requiresMidReview={requiresMidReview} hasCompletedFinalReview={hasCompletedFinalReview} setHasCompletedFinalReview={setHasCompletedFinalReview} />
       
       <div className="grid grid-cols-1 gap-8">
-        <div className="w-full bg-[#111827] border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
-          <img 
-            src="/thank you.jpeg" 
-            alt="Thank you for Ready for A Soulmate" 
-            className="w-full h-auto object-cover"
-          />
-        </div>
+        {data.active_program !== 'launchpad' && (
+          <div className="w-full bg-[#111827] border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
+            <img 
+              src="/thank you.jpeg" 
+              alt="Thank you for Ready for A Soulmate" 
+              className="w-full h-auto object-cover"
+            />
+          </div>
+        )}
 
         {data.intro_video_id && <IntroVideoCard videoId={data.intro_video_id} />}
         
-        <DashboardVideoCard 
-          videoId="R-UZOuLPSyo"
-          title="Basic Guide to Everyday Makeup💄"
-          subtitle="Grooming & Presentation"
-          description="Learn the essential techniques for a clean, professional, and confident everyday look. Enhance your presence and present the best version of yourself."
-          badge="Practical Guide"
-        />
+        {data.active_program !== 'launchpad' && (
+          <DashboardVideoCard 
+            videoId="R-UZOuLPSyo"
+            title="Basic Guide to Everyday Makeup💄"
+            subtitle="Grooming & Presentation"
+            description="Learn the essential techniques for a clean, professional, and confident everyday look. Enhance your presence and present the best version of yourself."
+            badge="Practical Guide"
+          />
+        )}
       </div>
 
       <ModuleAccordion

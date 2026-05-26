@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -86,7 +87,8 @@ func GetLesson(w http.ResponseWriter, r *http.Request) {
 		liveEnd := lesson.ScheduledStartTime.Add(time.Duration(*lesson.DurationMinutes) * time.Minute)
 		
 		lockDuration := 48 * time.Hour
-		if programName == "launchpad" && lessonPosition == 4 {
+		isLaunchpad := programName == "launchpad" || programName == "Couples Launchpad" || strings.Contains(strings.ToLower(programName), "launchpad")
+		if isLaunchpad && lessonPosition == 4 {
 			lockDuration = 120 * time.Hour // 5 days
 		}
 

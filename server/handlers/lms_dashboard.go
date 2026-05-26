@@ -52,7 +52,7 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		var count int
-		err := db.Pool.QueryRow(r.Context(), "SELECT COUNT(l.id) FROM public.lessons l JOIN public.modules m ON l.module_id = m.id WHERE m.program_name = $1", programName).Scan(&count)
+		err := db.Pool.QueryRow(r.Context(), "SELECT COUNT(l.id) FROM public.lessons l JOIN public.modules m ON l.module_id = m.id WHERE m.program_name = $1", programNameDisplay).Scan(&count)
 		totalLessonsChan <- result{count, err}
 	}()
 
@@ -63,7 +63,7 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 			JOIN public.lessons l ON lp.lesson_id = l.id 
 			JOIN public.modules m ON l.module_id = m.id 
 			WHERE lp.user_id = $1 AND (lp.is_completed = true OR lp.highest_watched_pct >= 80) AND m.program_name = $2
-		`, userID, programName).Scan(&count)
+		`, userID, programNameDisplay).Scan(&count)
 		completedLessonsChan <- result{count, err}
 	}()
 
@@ -116,7 +116,7 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 		LEFT JOIN public.lesson_progress lp ON l.id = lp.lesson_id AND lp.user_id = $2
 		WHERE m.program_name = $1
 		ORDER BY m.sort_order ASC, l.sort_order ASC
-	`, programName, userID)
+	`, programNameDisplay, userID)
 
 	modules := []DashModule{}
 	var currentModule *DashModule
