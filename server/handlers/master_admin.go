@@ -357,6 +357,7 @@ type CurriculumLesson struct {
 	SortOrder           int        `json:"sort_order"`
 	ScheduledStartTime  *time.Time `json:"scheduled_start_time"`
 	LiveDurationMinutes int        `json:"live_duration_minutes"`
+	QuizTitle           string     `json:"quiz_title"`
 }
 
 // GetAdminModules fetches modules for the dropdown in the UI
@@ -437,15 +438,25 @@ func CreateAdminLesson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := db.Pool.Exec(r.Context(), `
+	var newLessonID string
+	err := db.Pool.QueryRow(r.Context(), `
 		INSERT INTO public.lessons (module_id, title, description, video_id, estimated_time, assignment_prompt, sort_order, scheduled_start_time, live_duration_minutes)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-		l.ModuleID, l.Title, l.Description, l.VideoID, l.EstimatedTime, l.AssignmentPrompt, l.SortOrder, l.ScheduledStartTime, l.LiveDurationMinutes)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
+		l.ModuleID, l.Title, l.Description, l.VideoID, l.EstimatedTime, l.AssignmentPrompt, l.SortOrder, l.ScheduledStartTime, l.LiveDurationMinutes).Scan(&newLessonID)
 
 	if err != nil {
 		fmt.Println("💥 DB INSERT ERROR (Lesson):", err)
 		http.Error(w, "Failed to create lesson", http.StatusInternalServerError)
 		return
+	}
+
+	if l.QuizTitle != "" {
+		_, err = db.Pool.Exec(r.Context(), `
+			INSERT INTO public.quizzes (lesson_id, title) VALUES ($1, $2)
+		`, newLessonID, l.QuizTitle)
+		if err != nil {
+			fmt.Println("💥 DB INSERT ERROR (Quiz):", err)
+		}
 	}
 
 	w.WriteHeader(http.StatusCreated)
@@ -475,13 +486,15 @@ func GetAdminLessons(w http.ResponseWriter, r *http.Request) {
 		SortOrder           int        `json:"sort_order"`
 		ScheduledStartTime  *time.Time `json:"scheduled_start_time"`
 		LiveDurationMinutes int        `json:"live_duration_minutes"`
+		QuizTitle           string     `json:"quiz_title"`
 	}
 
 	rows, err := db.Pool.Query(r.Context(), `
 		SELECT l.id::text, l.module_id::text, m.title, m.program_name,
 			   l.title, COALESCE(l.description,''), COALESCE(l.video_id,''),
 			   COALESCE(l.estimated_time,''), COALESCE(l.assignment_prompt,''), l.sort_order,
-			   l.scheduled_start_time, COALESCE(l.live_duration_minutes, 0)::int
+			   l.scheduled_start_time, COALESCE(l.live_duration_minutes, 0)::int,
+			   COALESCE((SELECT title FROM public.quizzes q WHERE q.lesson_id = l.id LIMIT 1), '') as quiz_title
 		FROM public.lessons l
 		JOIN public.modules m ON l.module_id = m.id
 		ORDER BY m.program_name, m.sort_order, l.sort_order ASC
@@ -497,7 +510,7 @@ func GetAdminLessons(w http.ResponseWriter, r *http.Request) {
 		var l AdminLesson
 		if err := rows.Scan(&l.ID, &l.ModuleID, &l.ModuleTitle, &l.ProgramName, &l.Title,
 			&l.Description, &l.VideoID, &l.EstimatedTime, &l.AssignmentPrompt, &l.SortOrder,
-			&l.ScheduledStartTime, &l.LiveDurationMinutes); err == nil {
+			&l.ScheduledStartTime, &l.LiveDurationMinutes, &l.QuizTitle); err == nil {
 			lessons = append(lessons, l)
 		}
 	}
@@ -590,6 +603,19 @@ func UpdateAdminLesson(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to update lesson", http.StatusInternalServerError)
 		return
 	}
+
+	if l.QuizTitle != "" {
+		_, err = db.Pool.Exec(r.Context(), `
+			INSERT INTO public.quizzes (lesson_id, title) VALUES ($1, $2)
+			ON CONFLICT (lesson_id) DO UPDATE SET title = EXCLUDED.title
+		`, id, l.QuizTitle)
+		if err != nil {
+			fmt.Println("💥 DB UPDATE ERROR (Quiz):", err)
+		}
+	} else {
+		db.Pool.Exec(r.Context(), "DELETE FROM public.quizzes WHERE lesson_id = $1", id)
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"message": "Lesson updated"})
 }
