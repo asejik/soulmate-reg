@@ -30,6 +30,7 @@ func GetLesson(w http.ResponseWriter, r *http.Request) {
 		Progress            int        `json:"progress"`
 		DurationMinutes     *int       `json:"-"`          // server-side only; drives 48h locking
 		ClosingAt           *time.Time `json:"closing_at"` // non-nil during the 48h rewatch window
+		HasQuiz             bool       `json:"has_quiz"`
 	}
 
 	var programName string
@@ -37,7 +38,8 @@ func GetLesson(w http.ResponseWriter, r *http.Request) {
 		SELECT l.id, l.title, COALESCE(l.description, ''), l.video_id, COALESCE(l.estimated_time, ''), COALESCE(l.assignment_prompt, ''),
 			   m.program_name, l.scheduled_start_time, COALESCE(lp.is_completed OR lp.highest_watched_pct >= 80, false), COALESCE(lp.last_watched_seconds, 0.0)::float,
 			   COALESCE(lp.highest_watched_pct, 0)::int,
-			   l.live_duration_minutes
+			   l.live_duration_minutes,
+			   EXISTS(SELECT 1 FROM public.quizzes q WHERE q.lesson_id = l.id)
 		FROM public.lessons l
 		JOIN public.modules m ON l.module_id = m.id
 		LEFT JOIN public.lesson_progress lp ON l.id = lp.lesson_id AND lp.user_id = $2
@@ -46,7 +48,7 @@ func GetLesson(w http.ResponseWriter, r *http.Request) {
 		&lesson.ID, &lesson.Title, &lesson.Description, &lesson.VideoID, &lesson.EstimatedTime,
 		&lesson.AssignmentPrompt, &programName, &lesson.ScheduledStartTime, &lesson.IsCompleted,
 		&lesson.LastWatchedSeconds, &lesson.Progress,
-		&lesson.DurationMinutes,
+		&lesson.DurationMinutes, &lesson.HasQuiz,
 	)
 
 	if err != nil {

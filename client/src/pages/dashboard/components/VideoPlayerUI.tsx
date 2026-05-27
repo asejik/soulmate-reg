@@ -32,6 +32,7 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeCha
   } = useYouTubePlayer({
     videoId: lesson.videoId,
     scheduledStartTime: lesson.scheduled_start_time,
+    hasQuiz: lesson.has_quiz,
     initialTime: lesson.last_watched_seconds,
     onProgressChange: (pct) => { if (pct >= 80) setIsUnlocked(true); },
     onTimeUpdate: (seconds, percent) => {

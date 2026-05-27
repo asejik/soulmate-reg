@@ -11,6 +11,7 @@ declare global {
 interface UseYouTubePlayerOptions {
   videoId:            string;
   scheduledStartTime?: string | null;
+  hasQuiz?:           boolean;
   initialTime?:       number; // <-- Resume position
   onProgressChange:   (percent: number) => void;
   onTimeUpdate?:      (seconds: number, percent: number) => void; // <-- Auto-save callback
@@ -61,6 +62,7 @@ export function useYouTubePlayer({
   onTimeUpdate,
   onComplete,
   isCompleted = false,
+  hasQuiz = false,
 }: UseYouTubePlayerOptions): UseYouTubePlayerReturn {
   const containerRef    = useRef<HTMLDivElement>(null);
   const playerRef       = useRef<any>(null);
@@ -87,6 +89,35 @@ export function useYouTubePlayer({
   useEffect(() => { onProgressRef.current = onProgressChange; }, [onProgressChange]);
   useEffect(() => { onTimeUpdateRef.current = onTimeUpdate; }, [onTimeUpdate]);
   useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
+
+  // Standalone Live Engine logic (updates countdown regardless of playing state)
+  useEffect(() => {
+    if (!scheduledStartTime || hasCompletedRef.current) return;
+    const interval = setInterval(() => {
+      const startTimeMs = new Date(scheduledStartTime).getTime();
+      const videoStartTimeMs = startTimeMs + (hasQuiz ? 10 * 60 * 1000 : 0);
+      const nowMs = Date.now();
+      const offsetSec = (nowMs - videoStartTimeMs) / 1000;
+
+      if (offsetSec < 0) {
+        setIsWaiting(true);
+        setIsLiveMode(false);
+        setTimeLeft(Math.abs(Math.floor(offsetSec)));
+        if (isPlaying && playerRef.current) {
+          playerRef.current.pauseVideo();
+        }
+      } else if (offsetSec >= 0 && offsetSec < 3) {
+        // Auto-play exactly when countdown ends
+        setIsWaiting(false);
+        if (!isPlaying && playerRef.current) {
+          playerRef.current.playVideo();
+        }
+      } else {
+        setIsWaiting(false);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [scheduledStartTime, hasQuiz, isPlaying]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -118,12 +149,12 @@ export function useYouTubePlayer({
                 const duration = playerRef.current.getDuration();
                 if (!duration) return;
 
-                setProgressInSeconds(current);
+                 setProgressInSeconds(current);
 
                  // --- SIMULATED LIVE ENGINE (Running while Playing) ---
                  if (scheduledStartTime && !hasCompletedRef.current) {
                    const startTimeMs = new Date(scheduledStartTime).getTime();
-                   const videoStartTimeMs = startTimeMs + (10 * 60 * 1000); // 10 minutes for the quiz
+                   const videoStartTimeMs = startTimeMs + (hasQuiz ? 10 * 60 * 1000 : 0);
                    const nowMs = Date.now();
                    const offsetSec = (nowMs - videoStartTimeMs) / 1000;
 
@@ -131,11 +162,6 @@ export function useYouTubePlayer({
                      setIsLiveMode(true);
                      setIsWaiting(false);
                      if (Math.abs(offsetSec - current) > 3) playerRef.current.seekTo(offsetSec, true);
-                   } else if (offsetSec < 0) {
-                     setIsWaiting(true);
-                     setIsLiveMode(false);
-                     setTimeLeft(Math.abs(Math.floor(offsetSec)));
-                     playerRef.current.pauseVideo();
                    }
                  }
 

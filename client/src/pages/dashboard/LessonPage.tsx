@@ -10,7 +10,7 @@ export interface LessonData {
   id: string; title: string; description: string; videoId: string;
   assignmentPrompt: string; is_completed: boolean; is_locked: boolean;
   scheduled_start_time?: string | null; last_watched_seconds: number;
-  progress: number; closing_at?: string | null;
+  progress: number; closing_at?: string | null; has_quiz: boolean;
 }
 
 export const LessonPage = () => {
