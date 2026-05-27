@@ -8,6 +8,8 @@ interface Quiz {
   id: string;
   lesson_id: string;
   title: string;
+  question?: string;
+  created_at: string;
 }
 
 export const QuizOverlay = ({ lessonId }: { lessonId: string }) => {
@@ -93,13 +95,14 @@ export const QuizOverlay = ({ lessonId }: { lessonId: string }) => {
 
                 <div className="space-y-4">
                   <label className="block text-sm font-medium text-slate-300">
-                    Question 1: What is the main expectation for today's class?
+                    Question 1: {quiz.question || "What is the main expectation for today's class?"}
                   </label>
                   <textarea 
                     required
                     value={answers['q1'] || ''}
-                    onChange={e => setAnswers({ ...answers, q1: e.target.value })}
-                    className="w-full h-32 bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-pink-500/50 resize-none"
+                    onChange={(e) => setAnswers({ ...answers, q1: e.target.value })}
+                    rows={4}
+                    className="w-full bg-[#1e293b] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 resize-none"
                     placeholder="Type your answer here..."
                   />
                 </div>

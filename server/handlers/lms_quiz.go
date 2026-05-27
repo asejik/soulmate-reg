@@ -14,18 +14,20 @@ func GetActiveQuiz(w http.ResponseWriter, r *http.Request) {
 	lessonID := chi.URLParam(r, "id")
 	
 	var quiz struct {
-		ID       string `json:"id"`
-		LessonID string `json:"lesson_id"`
-		Title    string `json:"title"`
+		ID        string    `json:"id"`
+		LessonID  string    `json:"lesson_id"`
+		Title     string    `json:"title"`
+		Question  string    `json:"question"`
+		CreatedAt time.Time `json:"created_at"`
 	}
 	var scheduledStartTime *time.Time
 
 	err := db.Pool.QueryRow(r.Context(), `
-		SELECT q.id, q.lesson_id, q.title, l.scheduled_start_time
+		SELECT q.id, q.lesson_id, q.title, COALESCE(q.question, ''), q.created_at, l.scheduled_start_time
 		FROM public.quizzes q
 		JOIN public.lessons l ON q.lesson_id = l.id
 		WHERE q.lesson_id = $1
-	`, lessonID).Scan(&quiz.ID, &quiz.LessonID, &quiz.Title, &scheduledStartTime)
+	`, lessonID).Scan(&quiz.ID, &quiz.LessonID, &quiz.Title, &quiz.Question, &quiz.CreatedAt, &scheduledStartTime)
 
 	if err != nil {
 		http.Error(w, "No active quiz for this lesson.", http.StatusNotFound)

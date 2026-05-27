@@ -32,6 +32,7 @@ interface Lesson {
   scheduled_start_time?: string;
   live_duration_minutes?: number;
   quiz_title?: string;
+  quiz_question?: string;
 }
 
 type PanelMode =
@@ -309,6 +310,7 @@ const blankLesson = {
   scheduled_start_time: '',
   live_duration_minutes: 0,
   quiz_title: '',
+  quiz_question: '',
 };
 
 const LessonForm = ({
@@ -333,6 +335,7 @@ const LessonForm = ({
       scheduled_start_time: initial.scheduled_start_time ? new Date(initial.scheduled_start_time).toISOString().slice(0, 16) : '',
       live_duration_minutes: initial.live_duration_minutes ?? 0,
       quiz_title: initial.quiz_title || '',
+      quiz_question: initial.quiz_question || '',
     }
     : { ...blankLesson });
   const [saving, setSaving] = useState(false);
@@ -400,6 +403,11 @@ const LessonForm = ({
           <div className="text-[10px] text-slate-400 mb-1 leading-tight">If provided, enables a 10-min quiz window before video playback.</div>
           <input type="text" value={form.quiz_title} onChange={e => setForm({ ...form, quiz_title: e.target.value })} className={inputCls} placeholder="e.g. Class Assessment" />
         </Field>
+        {form.quiz_title && (
+          <Field label="Quiz Question (Optional)">
+            <textarea value={form.quiz_question || ''} onChange={e => setForm({ ...form, quiz_question: e.target.value })} rows={2} className={`${inputCls} resize-none`} placeholder="e.g. What is your expectation for today's class?" />
+          </Field>
+        )}
         <Field label="Description">
           <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={3} className={`${inputCls} resize-none`} placeholder="What will students learn?" />
         </Field>
