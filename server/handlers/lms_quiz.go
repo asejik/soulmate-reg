@@ -13,33 +13,44 @@ import (
 func GetActiveQuiz(w http.ResponseWriter, r *http.Request) {
 	lessonID := chi.URLParam(r, "id")
 	
-	// Load WAT Timezone
-	loc, err := time.LoadLocation("Africa/Lagos")
-	if err != nil {
-		loc = time.FixedZone("WAT", 3600) // Fallback to GMT+1
-	}
-	now := time.Now().In(loc)
-
-	// Check if we are between 20:00 and 20:10
-	if now.Hour() != 20 || now.Minute() > 10 {
-		http.Error(w, "Quiz is only available between 8:00 PM and 8:10 PM WAT.", http.StatusForbidden)
-		return
-	}
-
 	var quiz struct {
 		ID       string `json:"id"`
 		LessonID string `json:"lesson_id"`
 		Title    string `json:"title"`
 	}
+	var scheduledStartTime *time.Time
 
-	err = db.Pool.QueryRow(r.Context(), `
-		SELECT id, lesson_id, title 
-		FROM public.quizzes 
-		WHERE lesson_id = $1
-	`, lessonID).Scan(&quiz.ID, &quiz.LessonID, &quiz.Title)
+	err := db.Pool.QueryRow(r.Context(), `
+		SELECT q.id, q.lesson_id, q.title, l.scheduled_start_time
+		FROM public.quizzes q
+		JOIN public.lessons l ON q.lesson_id = l.id
+		WHERE q.lesson_id = $1
+	`, lessonID).Scan(&quiz.ID, &quiz.LessonID, &quiz.Title, &scheduledStartTime)
 
 	if err != nil {
 		http.Error(w, "No active quiz for this lesson.", http.StatusNotFound)
+		return
+	}
+
+	if scheduledStartTime == nil {
+		http.Error(w, "Lesson has no scheduled start time.", http.StatusForbidden)
+		return
+	}
+
+	now := time.Now().UTC()
+	start := scheduledStartTime.UTC()
+	end := start.Add(10 * time.Minute)
+
+	if now.Before(start) || now.After(end) {
+		http.Error(w, "Quiz is only available during the first 10 minutes of the live class.", http.StatusForbidden)
+		return
+	}
+
+	// Check if user already submitted the quiz
+	var submitted bool
+	db.Pool.QueryRow(r.Context(), "SELECT EXISTS(SELECT 1 FROM quiz_submissions WHERE quiz_id = $1 AND user_id = $2)", quiz.ID, r.Context().Value(userIDKey)).Scan(&submitted)
+	if submitted {
+		http.Error(w, "Quiz already submitted.", http.StatusForbidden)
 		return
 	}
 

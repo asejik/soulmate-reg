@@ -17,7 +17,6 @@ import { DiscussionsPage } from './pages/dashboard/DiscussionsPage';
 import { MidCohortReviewPage } from './pages/dashboard/MidCohortReviewPage';
 import { ContactPage } from './pages/dashboard/ContactPage';
 import { QAPage } from './pages/dashboard/QAPage';
-import { InteractiveChecklistPage } from './pages/dashboard/InteractiveChecklistPage';
 import { ProfilePage } from './pages/dashboard/ProfilePage';
 import { FAQPage } from './pages/dashboard/FAQPage';
 
@@ -50,7 +49,6 @@ export default function App() {
           <Route path="/dashboard/mid-review" element={<MidCohortReviewPage />} />
           <Route path="/dashboard/contact" element={<ContactPage />} />
           <Route path="/dashboard/qa" element={<QAPage />} />
-          <Route path="/dashboard/checklist" element={<InteractiveChecklistPage />} />
           <Route path="/dashboard/profile" element={<ProfilePage />} />
           <Route path="/dashboard/faq" element={<FAQPage />} />
         </Route>

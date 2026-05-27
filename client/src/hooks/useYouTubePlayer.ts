@@ -123,8 +123,9 @@ export function useYouTubePlayer({
                  // --- SIMULATED LIVE ENGINE (Running while Playing) ---
                  if (scheduledStartTime && !hasCompletedRef.current) {
                    const startTimeMs = new Date(scheduledStartTime).getTime();
+                   const videoStartTimeMs = startTimeMs + (10 * 60 * 1000); // 10 minutes for the quiz
                    const nowMs = Date.now();
-                   const offsetSec = (nowMs - startTimeMs) / 1000;
+                   const offsetSec = (nowMs - videoStartTimeMs) / 1000;
 
                    if (offsetSec >= 0 && offsetSec < duration) {
                      setIsLiveMode(true);
