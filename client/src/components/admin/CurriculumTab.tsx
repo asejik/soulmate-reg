@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  PlusCircle, ChevronRight, ChevronDown, BookOpen, FileVideo,
+  PlusCircle, ChevronRight, ChevronDown, FileVideo,
   Pencil, Trash2, X, AlertTriangle, Layers, Save, RotateCcw,
 } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
@@ -94,10 +94,10 @@ const SettingsForm = ({
       const res = await fetch(`${API_BASE_URL}/admin/settings`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ 
-           program_name: pName, 
-           mid_checkpoint_video_id: midID,
-           intro_video_id: introID
+        body: JSON.stringify({
+          program_name: pName,
+          mid_checkpoint_video_id: midID,
+          intro_video_id: introID
         })
       });
       if (res.ok) {
@@ -117,14 +117,14 @@ const SettingsForm = ({
   return (
     <>
       <ToastContainer toasts={toasts} onDismiss={dismiss} />
-    <div className="space-y-6">
+      <div className="space-y-6">
         {[activeProgramTab].map(p => {
           const s = (settings || []).find(st => st.program_name === p) || { mid_checkpoint_video_id: '', intro_video_id: '' };
           return (
             <div key={p} className="p-4 bg-white/3 rounded-2xl border border-white/5 space-y-4">
               <div className="flex items-center justify-between">
                 <span className={`text-[10px] font-bold px-3 py-1 rounded-full border ${PILL_COLOR[p]}`}>{p}</span>
-                <button 
+                <button
                   onClick={() => update(p, s.mid_checkpoint_video_id, s.intro_video_id)}
                   disabled={saving}
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-all text-xs font-bold flex items-center gap-2"
@@ -135,10 +135,10 @@ const SettingsForm = ({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Field label="Introductory Video ID">
-                  <input 
-                    type="text" 
-                    className={inputCls} 
-                    value={s.intro_video_id || ''} 
+                  <input
+                    type="text"
+                    className={inputCls}
+                    value={s.intro_video_id || ''}
                     onChange={e => {
                       const ns = [...settings];
                       const idx = ns.findIndex(st => st.program_name === p);
@@ -151,10 +151,10 @@ const SettingsForm = ({
                 </Field>
 
                 <Field label="Mid-Program Checkpoint Video ID">
-                  <input 
-                    type="text" 
-                    className={inputCls} 
-                    value={s.mid_checkpoint_video_id || ''} 
+                  <input
+                    type="text"
+                    className={inputCls}
+                    value={s.mid_checkpoint_video_id || ''}
                     onChange={e => {
                       const ns = [...settings];
                       const idx = ns.findIndex(st => st.program_name === p);
@@ -316,16 +316,16 @@ const LessonForm = ({
   const { toasts, dismiss, toast } = useToast();
   const [form, setForm] = useState(initial
     ? {
-        module_id: initial.module_id,
-        title: initial.title,
-        description: initial.description,
-        video_id: initial.video_id,
-        estimated_time: initial.estimated_time,
-        assignment_prompt: initial.assignment_prompt,
-        sort_order: initial.sort_order,
-        scheduled_start_time: initial.scheduled_start_time ? new Date(initial.scheduled_start_time).toISOString().slice(0, 16) : '',
-        live_duration_minutes: initial.live_duration_minutes ?? 0,
-      }
+      module_id: initial.module_id,
+      title: initial.title,
+      description: initial.description,
+      video_id: initial.video_id,
+      estimated_time: initial.estimated_time,
+      assignment_prompt: initial.assignment_prompt,
+      sort_order: initial.sort_order,
+      scheduled_start_time: initial.scheduled_start_time ? new Date(initial.scheduled_start_time).toISOString().slice(0, 16) : '',
+      live_duration_minutes: initial.live_duration_minutes ?? 0,
+    }
     : { ...blankLesson });
   const [saving, setSaving] = useState(false);
 
@@ -471,7 +471,7 @@ export const CurriculumTab = () => {
       // If we were editing the deleted item, reset panel
       setPanel(p => {
         if ((p.type === 'edit-module' && p.item.id === deleteTarget.id) ||
-            (p.type === 'edit-lesson' && p.item.id === deleteTarget.id)) {
+          (p.type === 'edit-lesson' && p.item.id === deleteTarget.id)) {
           return { type: 'create-module' };
         }
         return p;
@@ -533,8 +533,8 @@ export const CurriculumTab = () => {
               <PlusCircle size={15} /> <span className="sm:inline">Lesson</span>
             </button>
             <button
-               onClick={() => setPanel({ type: 'edit-settings' })}
-               className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600/20 border border-amber-500/30 text-amber-300 text-xs sm:text-sm font-bold hover:bg-amber-600/30 transition-colors"
+              onClick={() => setPanel({ type: 'edit-settings' })}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600/20 border border-amber-500/30 text-amber-300 text-xs sm:text-sm font-bold hover:bg-amber-600/30 transition-colors"
             >
               <RotateCcw size={15} /> <span className="sm:inline">Special</span>
             </button>
