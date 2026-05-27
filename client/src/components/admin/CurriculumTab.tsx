@@ -69,8 +69,10 @@ const PILL_COLOR: Record<string, string> = {
 
 const SettingsForm = ({
   onSave,
+  activeProgramTab,
 }: {
   onSave: () => void;
+  activeProgramTab: string;
 }) => {
   const { toasts, dismiss, toast } = useToast();
   const [settings, setSettings] = useState<any[]>([]);
@@ -116,7 +118,7 @@ const SettingsForm = ({
     <>
       <ToastContainer toasts={toasts} onDismiss={dismiss} />
     <div className="space-y-6">
-        {PROGRAMS.map(p => {
+        {[activeProgramTab].map(p => {
           const s = (settings || []).find(st => st.program_name === p) || { mid_checkpoint_video_id: '', intro_video_id: '' };
           return (
             <div key={p} className="p-4 bg-white/3 rounded-2xl border border-white/5 space-y-4">
@@ -420,6 +422,7 @@ export const CurriculumTab = () => {
   const [panel, setPanel] = useState<PanelMode>({ type: 'create-module' });
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [activeProgramTab, setActiveProgramTab] = useState<string>(PROGRAMS[0]);
 
   const fetchAll = useCallback(async () => {
     try {
@@ -514,7 +517,7 @@ export const CurriculumTab = () => {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div className="max-w-md">
             <h2 className="text-2xl sm:text-3xl font-bold text-white leading-tight">Curriculum Manager</h2>
-            <p className="text-slate-500 text-sm mt-1">{modules.length} modules · {lessons.length} lessons</p>
+            <p className="text-slate-500 text-sm mt-1">{modules.filter(m => m.program_name === activeProgramTab).length} modules · {lessons.filter(l => l.program_name === activeProgramTab || l.module_title === activeProgramTab || modules.find(m => m.id === l.module_id)?.program_name === activeProgramTab).length} lessons</p>
           </div>
           <div className="flex flex-wrap gap-2 w-full sm:w-auto">
             <button
@@ -543,16 +546,24 @@ export const CurriculumTab = () => {
 
           {/* LEFT: Curriculum Tree */}
           <div className="bg-[#0d0d1a] border border-white/5 rounded-2xl overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-white/5 flex items-center gap-2">
-              <BookOpen size={15} className="text-slate-500" />
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Curriculum Tree</span>
+            <div className="flex items-center border-b border-white/5">
+              {PROGRAMS.map(p => (
+                <button
+                  key={p}
+                  onClick={() => setActiveProgramTab(p)}
+                  className={`flex-1 px-5 py-3.5 text-xs font-bold uppercase tracking-widest transition-colors ${activeProgramTab === p ? 'bg-white/5 text-white border-b-2' : 'text-slate-500 hover:text-slate-300 hover:bg-white/2'}`}
+                  style={activeProgramTab === p ? { borderBottomColor: p === 'Couples Launchpad' ? '#ec4899' : '#6366f1' } : {}}
+                >
+                  {p}
+                </button>
+              ))}
             </div>
 
-            {modules.length === 0 ? (
-              <div className="py-16 text-center text-slate-600 text-sm italic">No modules yet. Create one →</div>
+            {modules.filter(m => m.program_name === activeProgramTab).length === 0 ? (
+              <div className="py-16 text-center text-slate-600 text-sm italic">No modules yet in {activeProgramTab}. Create one →</div>
             ) : (
               <div className="divide-y divide-white/5">
-                {modules.map(mod => {
+                {modules.filter(m => m.program_name === activeProgramTab).map(mod => {
                   const isExpanded = expandedModules.has(mod.id);
                   const modLessons = lessonsByModule[mod.id] ?? [];
                   const isEditingThis = panel.type === 'edit-module' && panel.item.id === mod.id;
@@ -676,7 +687,7 @@ export const CurriculumTab = () => {
                     />
                   )}
                   {panel.type === 'edit-settings' && (
-                    <SettingsForm onSave={fetchAll} />
+                    <SettingsForm onSave={fetchAll} activeProgramTab={activeProgramTab} />
                   )}
                 </motion.div>
               </AnimatePresence>
