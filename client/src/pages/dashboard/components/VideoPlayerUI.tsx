@@ -112,7 +112,6 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeCha
 
       {isWaiting && (
         <div className="absolute inset-0 z-50 bg-[#050510] flex flex-col items-center justify-center space-y-6">
-          <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay" />
           <div className="relative z-10 flex flex-col items-center">
             <div className="mb-6 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-black uppercase tracking-[0.3em] animate-pulse">
               Up Next: Video Premiere

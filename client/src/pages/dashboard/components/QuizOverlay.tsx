@@ -84,7 +84,7 @@ export const QuizOverlay = ({ lessonId }: { lessonId: string }) => {
     };
 
     checkQuiz();
-    const interval = setInterval(checkQuiz, 30000); // Check every 30s
+    const interval = setInterval(checkQuiz, 5000); // Check every 5s
     return () => clearInterval(interval);
   }, [lessonId]);
 

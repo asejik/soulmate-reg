@@ -41,15 +41,15 @@ func GetActiveQuiz(w http.ResponseWriter, r *http.Request) {
 	}
 
 	now := time.Now().UTC()
-	start := scheduledStartTime.UTC()
-	end := start.Add(10 * time.Minute)
+	end := scheduledStartTime.UTC()
+	start := end.Add(-10 * time.Minute)
 
 	if now.Before(start) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{"status": "waiting"})
 		return
 	}
-	
+
 	if now.After(end) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{"status": "expired"})
