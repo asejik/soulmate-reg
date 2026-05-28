@@ -19,6 +19,7 @@ func GetActiveQuiz(w http.ResponseWriter, r *http.Request) {
 		Title     string    `json:"title"`
 		Question  string    `json:"question"`
 		CreatedAt time.Time `json:"created_at"`
+		ExpiresAt time.Time `json:"expires_at"`
 	}
 	var scheduledStartTime *time.Time
 
@@ -43,6 +44,7 @@ func GetActiveQuiz(w http.ResponseWriter, r *http.Request) {
 	now := time.Now().UTC()
 	start := scheduledStartTime.UTC()
 	end := start.Add(3 * time.Minute)
+	quiz.ExpiresAt = end
 
 	if now.Before(start) {
 		w.Header().Set("Content-Type", "application/json")

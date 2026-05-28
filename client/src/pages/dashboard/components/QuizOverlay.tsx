@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, CheckCircle, Clock } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, X } from 'lucide-react';
 import { API_BASE_URL } from '../../../config';
 import { getAuthSession, postLMS } from '../../../lib/api';
 
@@ -10,6 +10,7 @@ interface Quiz {
   title: string;
   question?: string;
   created_at: string;
+  expires_at: string;
 }
 
 interface ParsedQuestion {
@@ -54,6 +55,7 @@ export const QuizOverlay = ({ lessonId }: { lessonId: string }) => {
   
   const [parsedQuestions, setParsedQuestions] = useState<ParsedQuestion[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
 
   useEffect(() => {
     if (quiz?.question) {
@@ -64,6 +66,29 @@ export const QuizOverlay = ({ lessonId }: { lessonId: string }) => {
   }, [quiz]);
 
   useEffect(() => {
+    if (!quiz || !quiz.expires_at || isSubmitted) return;
+    
+    const calculateTime = () => {
+      const end = new Date(quiz.expires_at).getTime();
+      const now = Date.now();
+      return Math.max(0, Math.floor((end - now) / 1000));
+    };
+
+    setTimeRemaining(calculateTime());
+    const interval = setInterval(() => {
+      const remaining = calculateTime();
+      setTimeRemaining(remaining);
+      if (remaining === 0) {
+        clearInterval(interval);
+        // Auto-submit if time runs out
+        if (!isSubmitted) handleSubmit();
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [quiz, isSubmitted]);
+
+  useEffect(() => {
     // Check if a quiz is active
     const checkQuiz = async () => {
       try {
@@ -72,30 +97,30 @@ export const QuizOverlay = ({ lessonId }: { lessonId: string }) => {
           headers: { 'Authorization': `Bearer ${session?.access_token}` }
         });
         
-        if (res.ok) {
+        if (res.status === 200) {
           const data = await res.json();
-          if (data.status === 'waiting' || data.status === 'expired' || data.status === 'no_schedule') {
+          if (data.status === 'waiting') return; // Not started yet
+          if (data.status === 'expired') {
+             setIsOpen(false);
+             return;
+          }
+          if (data.status === 'submitted') {
             setIsOpen(false);
             return;
           }
-          if (data.already_submitted) {
-            setIsSubmitted(true);
-            setIsOpen(false);
-            return;
+          if (data.id) {
+            setQuiz(data);
+            setIsOpen(true);
           }
-          setQuiz(data);
-          setIsOpen(true);
-        } else {
-          setIsOpen(false);
         }
       } catch (e) {
-        setQuiz(null);
-        setIsOpen(false);
+        console.error("Failed to check quiz:", e);
       }
     };
 
+    // Check immediately, then poll every 5s just in case
     checkQuiz();
-    const interval = setInterval(checkQuiz, 5000); // Check every 5s
+    const interval = setInterval(checkQuiz, 5000);
     return () => clearInterval(interval);
   }, [lessonId]);
 
@@ -103,7 +128,7 @@ export const QuizOverlay = ({ lessonId }: { lessonId: string }) => {
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (Object.keys(answers).length === 0) return;
+    if (Object.keys(answers).length === 0 && timeRemaining && timeRemaining > 0) return;
     setIsSubmitting(true);
     
     let correctCount = 0;
@@ -120,9 +145,9 @@ export const QuizOverlay = ({ lessonId }: { lessonId: string }) => {
     try {
       await postLMS(`/lms/lessons/${lessonId}/quiz`, { answers, score: correctCount, total_questions: total });
       setIsSubmitted(true);
-      setTimeout(() => setIsOpen(false), 5000); // Leave open a bit longer so they can read their score
-    } catch (e) {
-      console.error(e);
+      setTimeout(() => setIsOpen(false), 15000); // Leave open a bit longer so they can read their score
+    } catch (err) {
+      console.error(err);
     } finally {
       setIsSubmitting(false);
     }
@@ -155,12 +180,22 @@ export const QuizOverlay = ({ lessonId }: { lessonId: string }) => {
             initial={{ scale: 0.9, y: 20 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.9, y: 20 }}
-            className="w-full max-w-lg bg-[#111827] border border-pink-500/30 rounded-3xl p-8 shadow-[0_0_50px_rgba(236,72,153,0.15)] flex flex-col max-h-[90vh]"
+            className="w-full max-w-lg bg-[#111827] border border-pink-500/30 rounded-3xl p-8 shadow-[0_0_50px_rgba(236,72,153,0.15)] flex flex-col max-h-[90vh] relative"
           >
+            {isSubmitted && (
+              <button 
+                onClick={() => setIsOpen(false)} 
+                className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-colors"
+              >
+                <X size={20} />
+              </button>
+            )}
+            
             {isSubmitted ? (
-              <div className="text-center space-y-4 py-8">
+              <div className="text-center space-y-4 py-8 mt-4">
                 <CheckCircle className="text-green-500 mx-auto" size={48} />
                 <h2 className="text-2xl font-bold text-white">Quiz Submitted!</h2>
+                <h3 className="text-lg font-medium text-slate-300">{quiz.title}</h3>
                 {scoreInfo && scoreInfo.total > 0 && (
                   <div className="py-4 bg-white/5 rounded-xl border border-white/10 my-6">
                     <div className="text-4xl font-black text-pink-400 mb-1">{scoreInfo.percentage}%</div>
@@ -176,7 +211,8 @@ export const QuizOverlay = ({ lessonId }: { lessonId: string }) => {
                 <div className="flex items-center justify-between border-b border-white/5 pb-4 shrink-0">
                   <h2 className="text-xl font-bold text-white">{quiz.title}</h2>
                   <div className="flex items-center gap-2 text-pink-400 bg-pink-500/10 px-3 py-1 rounded-full text-xs font-bold animate-pulse">
-                    <Clock size={14} /> Time-bound
+                    <Clock size={14} /> 
+                    {timeRemaining !== null ? `${Math.floor(timeRemaining / 60)}:${(timeRemaining % 60).toString().padStart(2, '0')}` : 'Time-bound'}
                   </div>
                 </div>
 
