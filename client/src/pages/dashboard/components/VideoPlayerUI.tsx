@@ -112,17 +112,32 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeCha
 
       {isWaiting && (
         <div className="absolute inset-0 z-50 bg-[#050510] flex flex-col items-center justify-center space-y-6">
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="mb-6 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-black uppercase tracking-[0.3em] animate-pulse">
-              Up Next: Video Premiere
+          {(lesson.has_quiz && timeLeft > 600) ? (
+            <div className="relative z-10 flex flex-col items-center">
+              <div className="mb-6 px-4 py-1.5 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-500 text-[10px] font-black uppercase tracking-[0.3em] animate-pulse">
+                Up Next: Pre-Lesson Quiz
+              </div>
+              <div className="text-2xl sm:text-4xl md:text-5xl font-black text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.1)] text-center px-4 leading-tight">
+                Preparing your <br/>
+                <span className="text-pink-400">Pre-Lesson Quiz</span>...
+              </div>
+              <p className="mt-6 text-slate-400 font-medium text-center max-w-sm px-4 text-sm leading-relaxed">
+                Please wait. The interactive quiz will appear automatically on this screen shortly.
+              </p>
             </div>
-            <div className="text-4xl sm:text-6xl md:text-8xl font-black text-white tabular-nums drop-shadow-[0_0_30px_rgba(255,255,255,0.1)]">
-              {formatCountdown(timeLeft)}
+          ) : (
+            <div className="relative z-10 flex flex-col items-center">
+              <div className="mb-6 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-black uppercase tracking-[0.3em] animate-pulse">
+                Up Next: Video Premiere
+              </div>
+              <div className="text-4xl sm:text-6xl md:text-8xl font-black text-white tabular-nums drop-shadow-[0_0_30px_rgba(255,255,255,0.1)]">
+                {formatCountdown(timeLeft)}
+              </div>
+              <p className="mt-8 text-slate-400 font-medium text-center max-w-xs px-4">
+                Sit tight! The live session will begin automatically in a few moments.
+              </p>
             </div>
-            <p className="mt-8 text-slate-400 font-medium text-center max-w-xs px-4">
-              Sit tight! The live session will begin automatically in a few moments.
-            </p>
-          </div>
+          )}
           <div className="absolute bottom-10 left-10 right-10 h-1 bg-white/5 rounded-full overflow-hidden">
              <div className="h-full bg-amber-500/40 animate-scale-x w-full" />
           </div>
