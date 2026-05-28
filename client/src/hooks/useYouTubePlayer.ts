@@ -173,7 +173,7 @@ export function useYouTubePlayer({
                  // --- SIMULATED LIVE ENGINE (Running while Playing) ---
                  if (scheduledStartTime && !hasCompletedRef.current) {
                    const startTimeMs = new Date(scheduledStartTime).getTime();
-                   const videoStartTimeMs = startTimeMs + (hasQuiz ? 10 * 60 * 1000 : 0);
+                   const videoStartTimeMs = startTimeMs + (hasQuiz ? 3 * 60 * 1000 : 0);
                    const nowMs = Date.now();
                    const offsetSec = (nowMs - videoStartTimeMs) / 1000;
 

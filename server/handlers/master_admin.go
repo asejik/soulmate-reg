@@ -130,11 +130,13 @@ type AdminSubmission struct {
 	SubmittedAt   time.Time  `json:"submitted_at"`
 	AdminFeedback *string    `json:"admin_feedback"`
 	FeedbackAt    *time.Time `json:"feedback_at"`
+	Type          string     `json:"type"`
+	Score         *int       `json:"score"`
+	TotalQuestions *int      `json:"total_questions"`
 }
 
 // GetAdminSubmissions fetches all assignment submissions for review
 func GetAdminSubmissions(w http.ResponseWriter, r *http.Request) {
-	// 1. Double-Lock Security
 	userID := r.Context().Value(userIDKey).(string)
 
 	var adminEmail string
@@ -144,23 +146,47 @@ func GetAdminSubmissions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 2. Fetch submissions using the EXACT column names
 	rows, err := db.Pool.Query(r.Context(), `
 		SELECT
 			sub.id::text,
 			COALESCE(cl.full_name, p.full_name, 'Unknown User') AS student_name,
 			au.email,
 			l.title AS lesson_title,
-			sub.content,
+			sub.content AS submission_url,
 			sub.submitted_at,
 			sub.admin_feedback,
-			sub.feedback_at
+			sub.feedback_at,
+			'assignment' AS type,
+			NULL::INT AS score,
+			NULL::INT AS total_questions
 		FROM public.assignment_submissions sub
 		JOIN auth.users au ON sub.user_id = au.id
 		JOIN public.lessons l ON sub.lesson_id = l.id
 		LEFT JOIN public.couples_launchpad cl ON lower(au.email) = lower(cl.email)
 		LEFT JOIN public.participants p ON lower(au.email) = lower(p.email)
-		ORDER BY sub.submitted_at DESC
+
+		UNION ALL
+
+		SELECT
+			qs.id::text,
+			COALESCE(cl.full_name, p.full_name, 'Unknown User') AS student_name,
+			au.email,
+			l.title AS lesson_title,
+			qs.answers::text AS submission_url,
+			qs.submitted_at,
+			NULL AS admin_feedback,
+			NULL AS feedback_at,
+			'quiz' AS type,
+			qs.score,
+			qs.total_questions
+		FROM public.quiz_submissions qs
+		JOIN public.quizzes q ON qs.quiz_id = q.id
+		JOIN public.lessons l ON q.lesson_id = l.id
+		JOIN auth.users au ON qs.user_id = au.id
+		LEFT JOIN public.couples_launchpad cl ON lower(au.email) = lower(cl.email)
+		LEFT JOIN public.participants p ON lower(au.email) = lower(p.email)
+
+		ORDER BY submitted_at DESC
 	`)
 
 	if err != nil {
@@ -173,8 +199,7 @@ func GetAdminSubmissions(w http.ResponseWriter, r *http.Request) {
 	var submissions []AdminSubmission
 	for rows.Next() {
 		var s AdminSubmission
-		// Scan directly into the SubmissionURL and SubmittedAt fields of our Go struct
-		if err := rows.Scan(&s.ID, &s.StudentName, &s.Email, &s.LessonTitle, &s.SubmissionURL, &s.SubmittedAt, &s.AdminFeedback, &s.FeedbackAt); err != nil {
+		if err := rows.Scan(&s.ID, &s.StudentName, &s.Email, &s.LessonTitle, &s.SubmissionURL, &s.SubmittedAt, &s.AdminFeedback, &s.FeedbackAt, &s.Type, &s.Score, &s.TotalQuestions); err != nil {
 			fmt.Println("💥 DB SCAN ERROR:", err)
 			continue
 		}

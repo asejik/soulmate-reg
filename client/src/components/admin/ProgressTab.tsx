@@ -170,7 +170,12 @@ export const ProgressTab = () => {
                         <td className="p-5"><div className="font-bold text-white">{sub.student_name}</div><div className="text-xs text-slate-500">{sub.email}</div></td>
                         <td className="p-5 font-medium text-indigo-300">{sub.lesson_title}</td>
                         <td className="p-5">
-                          {isUrl(sub.submission_url) ? (
+                          {sub.type === 'quiz' ? (
+                            <button onClick={() => setTextModal({ name: sub.student_name, content: `Score: ${sub.score} / ${sub.total_questions}\n\nAnswers:\n${JSON.stringify(JSON.parse(sub.submission_url), null, 2)}` })}
+                              className="px-4 py-2 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white rounded-lg transition-colors text-xs font-bold flex items-center gap-2 w-max">
+                              {sub.score != null ? `${Math.round((sub.score / Math.max(1, sub.total_questions)) * 100)}% (${sub.score}/${sub.total_questions})` : 'Quiz Submitted'}
+                            </button>
+                          ) : isUrl(sub.submission_url) ? (
                             <a href={sub.submission_url} target="_blank" rel="noopener noreferrer"
                               className="px-4 py-2 bg-pink-500/10 text-pink-400 hover:bg-pink-500 hover:text-white rounded-lg transition-colors inline-block text-xs font-bold">
                               View Assignment
@@ -183,16 +188,20 @@ export const ProgressTab = () => {
                           )}
                         </td>
                         <td className="p-5">
-                          <button
-                            onClick={() => openFeedbackModal(sub)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                              sub.admin_feedback
-                                ? 'bg-teal-500/15 text-teal-400 hover:bg-teal-500 hover:text-white'
-                                : 'bg-white/5 text-slate-500 hover:bg-white/10 hover:text-white'
-                            }`}
-                          >
-                            {sub.admin_feedback ? 'Edit Feedback' : 'Leave Feedback'}
-                          </button>
+                          {sub.type === 'quiz' ? (
+                            <span className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 bg-white/5 border border-white/5">Auto-Graded</span>
+                          ) : (
+                            <button
+                              onClick={() => openFeedbackModal(sub)}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                                sub.admin_feedback
+                                  ? 'bg-teal-500/15 text-teal-400 hover:bg-teal-500 hover:text-white'
+                                  : 'bg-white/5 text-slate-500 hover:bg-white/10 hover:text-white'
+                              }`}
+                            >
+                              {sub.admin_feedback ? 'Edit Feedback' : 'Leave Feedback'}
+                            </button>
+                          )}
                         </td>
                         <td className="p-5 text-slate-500">{new Date(sub.submitted_at).toLocaleDateString()}</td>
                       </tr>

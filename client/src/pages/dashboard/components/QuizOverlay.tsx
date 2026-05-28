@@ -16,6 +16,7 @@ interface ParsedQuestion {
   id: string;
   questionText: string;
   options: string[];
+  correctAnswer?: string;
 }
 
 function parseQuestions(rawText: string): ParsedQuestion[] {
@@ -27,7 +28,17 @@ function parseQuestions(rawText: string): ParsedQuestion[] {
     const firstOptionIdx = lines.findIndex(l => /^[A-Ea-e][\.\)]\s/.test(l));
     
     if (firstOptionIdx > 0) {
-      return { id: `q${i + 1}`, questionText: lines.slice(0, firstOptionIdx).join(' '), options: lines.slice(firstOptionIdx) };
+      let correctAnswer = '';
+      const rawOptions = lines.slice(firstOptionIdx);
+      const cleanedOptions = rawOptions.map(opt => {
+        if (opt.endsWith('*')) {
+          const clean = opt.slice(0, -1).trim();
+          correctAnswer = clean;
+          return clean;
+        }
+        return opt;
+      });
+      return { id: `q${i + 1}`, questionText: lines.slice(0, firstOptionIdx).join(' '), options: cleanedOptions, correctAnswer };
     } else {
       return { id: `q${i + 1}`, questionText: lines.join(' '), options: [] };
     }
@@ -88,14 +99,28 @@ export const QuizOverlay = ({ lessonId }: { lessonId: string }) => {
     return () => clearInterval(interval);
   }, [lessonId]);
 
+  const [scoreInfo, setScoreInfo] = useState<{ score: number, total: number, percentage: number } | null>(null);
+
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (Object.keys(answers).length === 0) return;
     setIsSubmitting(true);
+    
+    let correctCount = 0;
+    parsedQuestions.forEach(q => {
+      if (q.correctAnswer && answers[q.id] === q.correctAnswer) {
+        correctCount++;
+      }
+    });
+    const total = parsedQuestions.length;
+    const percentage = total > 0 ? Math.round((correctCount / total) * 100) : 0;
+    
+    setScoreInfo({ score: correctCount, total, percentage });
+
     try {
-      await postLMS(`/lms/lessons/${lessonId}/quiz`, { answers });
+      await postLMS(`/lms/lessons/${lessonId}/quiz`, { answers, score: correctCount, total_questions: total });
       setIsSubmitted(true);
-      setTimeout(() => setIsOpen(false), 3000);
+      setTimeout(() => setIsOpen(false), 5000); // Leave open a bit longer so they can read their score
     } catch (e) {
       console.error(e);
     } finally {
@@ -136,7 +161,15 @@ export const QuizOverlay = ({ lessonId }: { lessonId: string }) => {
               <div className="text-center space-y-4 py-8">
                 <CheckCircle className="text-green-500 mx-auto" size={48} />
                 <h2 className="text-2xl font-bold text-white">Quiz Submitted!</h2>
-                <p className="text-slate-400">Great job being early. Enjoy the class!</p>
+                {scoreInfo && scoreInfo.total > 0 && (
+                  <div className="py-4 bg-white/5 rounded-xl border border-white/10 my-6">
+                    <div className="text-4xl font-black text-pink-400 mb-1">{scoreInfo.percentage}%</div>
+                    <div className="text-slate-300 font-medium text-sm">
+                      You scored {scoreInfo.score} out of {scoreInfo.total} correct
+                    </div>
+                  </div>
+                )}
+                <p className="text-slate-400">Great job. Enjoy the class!</p>
               </div>
             ) : (
               <div className="space-y-6 flex-1 overflow-y-auto pr-2 custom-scrollbar">

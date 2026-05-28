@@ -77,7 +77,9 @@ func SubmitQuiz(w http.ResponseWriter, r *http.Request) {
 	lessonID := chi.URLParam(r, "id")
 
 	var req struct {
-		Answers map[string]interface{} `json:"answers"`
+		Answers        map[string]interface{} `json:"answers"`
+		Score          int                    `json:"score"`
+		TotalQuestions int                    `json:"total_questions"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid payload", http.StatusBadRequest)
@@ -94,9 +96,9 @@ func SubmitQuiz(w http.ResponseWriter, r *http.Request) {
 	answersJSON, _ := json.Marshal(req.Answers)
 
 	_, err = db.Pool.Exec(r.Context(), `
-		INSERT INTO public.quiz_submissions (quiz_id, user_id, answers)
-		VALUES ($1, $2, $3)
-	`, quizID, userID, string(answersJSON))
+		INSERT INTO public.quiz_submissions (quiz_id, user_id, answers, score, total_questions)
+		VALUES ($1, $2, $3, $4, $5)
+	`, quizID, userID, string(answersJSON), req.Score, req.TotalQuestions)
 
 	if err != nil {
 		http.Error(w, "Failed to submit quiz", http.StatusInternalServerError)
