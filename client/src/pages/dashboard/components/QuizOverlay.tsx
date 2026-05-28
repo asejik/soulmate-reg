@@ -27,12 +27,21 @@ export const QuizOverlay = ({ lessonId }: { lessonId: string }) => {
         const res = await fetch(`${API_BASE_URL}/lms/lessons/${lessonId}/quiz`, {
           headers: { 'Authorization': `Bearer ${session?.access_token}` }
         });
+        
         if (res.ok) {
           const data = await res.json();
+          if (data.status === 'waiting' || data.status === 'expired' || data.status === 'no_schedule') {
+            setIsOpen(false);
+            return;
+          }
+          if (data.already_submitted) {
+            setIsSubmitted(true);
+            setIsOpen(false);
+            return;
+          }
           setQuiz(data);
           setIsOpen(true);
         } else {
-          setQuiz(null);
           setIsOpen(false);
         }
       } catch (e) {

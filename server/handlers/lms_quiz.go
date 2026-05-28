@@ -35,7 +35,8 @@ func GetActiveQuiz(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if scheduledStartTime == nil {
-		http.Error(w, "Lesson has no scheduled start time.", http.StatusForbidden)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{"status": "no_schedule"})
 		return
 	}
 
@@ -43,16 +44,27 @@ func GetActiveQuiz(w http.ResponseWriter, r *http.Request) {
 	start := scheduledStartTime.UTC()
 	end := start.Add(10 * time.Minute)
 
-	if now.Before(start) || now.After(end) {
-		http.Error(w, "Quiz is only available during the first 10 minutes of the live class.", http.StatusForbidden)
+	if now.Before(start) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{"status": "waiting"})
+		return
+	}
+	
+	if now.After(end) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{"status": "expired"})
 		return
 	}
 
 	// Check if user already submitted the quiz
 	var submitted bool
 	db.Pool.QueryRow(r.Context(), "SELECT EXISTS(SELECT 1 FROM quiz_submissions WHERE quiz_id = $1 AND user_id = $2)", quiz.ID, r.Context().Value(userIDKey)).Scan(&submitted)
+	
 	if submitted {
-		http.Error(w, "Quiz already submitted.", http.StatusForbidden)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"already_submitted": true,
+		})
 		return
 	}
 
