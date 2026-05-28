@@ -103,21 +103,27 @@ export function useYouTubePlayer({
         setIsWaiting(true);
         setIsLiveMode(false);
         setTimeLeft(Math.abs(Math.floor(offsetSec)));
-        if (isPlaying && playerRef.current) {
-          playerRef.current.pauseVideo();
+        
+        // Pause if it somehow started playing during the wait
+        if (playerRef.current && playerRef.current.getPlayerState) {
+           if (playerRef.current.getPlayerState() === window.YT?.PlayerState?.PLAYING) {
+             playerRef.current.pauseVideo();
+           }
         }
       } else if (offsetSec >= 0 && offsetSec < 3) {
         // Auto-play exactly when countdown ends
         setIsWaiting(false);
-        if (!isPlaying && playerRef.current) {
-          playerRef.current.playVideo();
+        if (playerRef.current && playerRef.current.getPlayerState) {
+           if (playerRef.current.getPlayerState() !== window.YT?.PlayerState?.PLAYING) {
+             playerRef.current.playVideo();
+           }
         }
       } else {
         setIsWaiting(false);
       }
     }, 1000);
     return () => clearInterval(interval);
-  }, [scheduledStartTime, hasQuiz, isPlaying]);
+  }, [scheduledStartTime, hasQuiz]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -217,31 +223,7 @@ export function useYouTubePlayer({
     };
   }, [videoId, scheduledStartTime, initialTime]);
 
-  // --- SEPARATE PREMIERE COUNTDOWN TICKER ---
-  useEffect(() => {
-    if (!scheduledStartTime || hasCompletedRef.current) return;
-    
-    const ticker = setInterval(() => {
-      const startTimeMs = new Date(scheduledStartTime).getTime();
-      const nowMs = Date.now();
-      const diffSec = (startTimeMs - nowMs) / 1000;
 
-      if (diffSec > 0) {
-        setIsWaiting(true);
-        setTimeLeft(Math.floor(diffSec));
-      } else {
-        // Time is up!
-        if (isWaiting) {
-          setIsWaiting(false);
-          if (playerRef.current && playerRef.current.playVideo) {
-            playerRef.current.playVideo();
-          }
-        }
-      }
-    }, 1000);
-
-    return () => clearInterval(ticker);
-  }, [scheduledStartTime, isWaiting]);
 
   const togglePlay = () => {
     if (!playerRef.current) return;
