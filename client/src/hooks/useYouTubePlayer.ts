@@ -132,11 +132,24 @@ export function useYouTubePlayer({
     loadYouTubeApi().then(() => {
       if (destroyed || !containerRef.current) return;
 
+      const isLiveAndWaiting = scheduledStartTime && new Date(scheduledStartTime).getTime() + (hasQuiz ? 10 * 60 * 1000 : 0) > Date.now();
+
       playerRef.current = new window.YT.Player(containerRef.current, {
         videoId,
         width:  '100%',
         height: '100%',
-        playerVars: { controls: 0, modestbranding: 1, rel: 0, disablekb: 1, fs: 0, iv_load_policy: 3, playsinline: 1, showinfo: 0, start: initialTime > 0 ? Math.floor(initialTime) : 0 },
+        playerVars: { 
+          autoplay: isLiveAndWaiting ? 0 : 1,
+          controls: 0, 
+          modestbranding: 1, 
+          rel: 0, 
+          disablekb: 1, 
+          fs: 0, 
+          iv_load_policy: 3, 
+          playsinline: 1, 
+          showinfo: 0, 
+          start: initialTime > 0 ? Math.floor(initialTime) : 0 
+        },
         events: {
           onReady: (event: any) => {
             if (event.target && event.target.getVolume) {
