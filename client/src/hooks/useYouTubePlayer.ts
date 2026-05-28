@@ -95,7 +95,7 @@ export function useYouTubePlayer({
     if (!scheduledStartTime || hasCompletedRef.current) return;
     const interval = setInterval(() => {
       const startTimeMs = new Date(scheduledStartTime).getTime();
-      const videoStartTimeMs = startTimeMs;
+      const videoStartTimeMs = startTimeMs + (hasQuiz ? 10 * 60 * 1000 : 0);
       const nowMs = Date.now();
       const offsetSec = (nowMs - videoStartTimeMs) / 1000;
 
@@ -132,7 +132,7 @@ export function useYouTubePlayer({
     loadYouTubeApi().then(() => {
       if (destroyed || !containerRef.current) return;
 
-      const isLiveAndWaiting = scheduledStartTime && new Date(scheduledStartTime).getTime() > Date.now();
+      const isLiveAndWaiting = scheduledStartTime && new Date(scheduledStartTime).getTime() + (hasQuiz ? 10 * 60 * 1000 : 0) > Date.now();
 
       playerRef.current = new window.YT.Player(containerRef.current, {
         videoId,
