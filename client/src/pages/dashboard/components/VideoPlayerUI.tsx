@@ -112,7 +112,7 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeCha
 
       {isWaiting && (
         <div className="absolute inset-0 z-50 bg-[#050510] flex flex-col items-center justify-center space-y-6">
-          {(lesson.has_quiz && timeLeft > 600) ? (
+          {(lesson.has_quiz && timeLeft > 180) ? (
             <div className="relative z-10 flex flex-col items-center">
               <div className="mb-6 px-4 py-1.5 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-500 text-[10px] font-black uppercase tracking-[0.3em] animate-pulse">
                 Up Next: Pre-Lesson Quiz
@@ -120,6 +120,9 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeCha
               <div className="text-2xl sm:text-4xl md:text-5xl font-black text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.1)] text-center px-4 leading-tight">
                 Preparing your <br/>
                 <span className="text-pink-400">Pre-Lesson Quiz</span>...
+              </div>
+              <div className="mt-8 text-3xl font-mono font-bold text-pink-300 drop-shadow-[0_0_15px_rgba(244,114,182,0.4)]">
+                {formatCountdown(timeLeft - 180)}
               </div>
               <p className="mt-6 text-slate-400 font-medium text-center max-w-sm px-4 text-sm leading-relaxed">
                 Please wait. The interactive quiz will appear automatically on this screen shortly.

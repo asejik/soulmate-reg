@@ -42,7 +42,7 @@ func GetActiveQuiz(w http.ResponseWriter, r *http.Request) {
 
 	now := time.Now().UTC()
 	start := scheduledStartTime.UTC()
-	end := start.Add(10 * time.Minute)
+	end := start.Add(3 * time.Minute)
 
 	if now.Before(start) {
 		w.Header().Set("Content-Type", "application/json")
