@@ -90,7 +90,9 @@ func GetLesson(w http.ResponseWriter, r *http.Request) {
 		
 		lockDuration := 48 * time.Hour
 		isLaunchpad := programName == "launchpad" || programName == "Couples Launchpad" || strings.Contains(strings.ToLower(programName), "launchpad")
-		if isLaunchpad && lessonPosition == 4 {
+		
+		// The lesson right before the mid-program checkpoint stays open for 5 days
+		if isLaunchpad && lessonPosition == (totalLessons+1)/2 {
 			lockDuration = 120 * time.Hour // 5 days
 		}
 

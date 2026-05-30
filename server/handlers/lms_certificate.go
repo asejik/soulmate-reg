@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/asejik/soulmate-reg/server/db"
@@ -16,7 +17,9 @@ func GenerateCertificate(w http.ResponseWriter, r *http.Request) {
 	programName, _, _ := resolveActiveProgram(r.Context(), userID, requestedProgram)
 
 	displayProgramName := "Ready for a Soulmate"
-	if programName == "launchpad" { displayProgramName = "Couples' Launchpad 5.0" }
+	if programName == "launchpad" || strings.Contains(strings.ToLower(programName), "launchpad") {
+		displayProgramName = "Couples' Launchpad"
+	}
 
 	// 1. Eligibility Check: 66% Completion + Final Review Submitted
 	var totalLessons, completedLessons int
