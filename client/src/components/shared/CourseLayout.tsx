@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Award, MessageSquare, Menu, X, LogOut, Layout, Heart, Users, Phone, HelpCircle, CalendarHeart, Gift, MessageCircle, ExternalLink } from 'lucide-react';
+import { Award, MessageSquare, Menu, X, LogOut, Layout, Heart, Users, Phone, HelpCircle, Gift, MessageCircle } from 'lucide-react';
 import { supabase } from '../../config';
 import { getAuthSession, clearSessionCache } from '../../lib/api';
 import { TAiLogo } from '../TAiLogo';
@@ -44,11 +44,9 @@ export const CourseLayout = () => {
 
   if (isLaunchpad) {
     navItems.push(
-      { label: 'Anniversary', path: '/dashboard/profile', icon: CalendarHeart },
-      { label: 'Birthday', path: '/dashboard/profile', icon: Gift },
+      { label: 'Celebration', path: '/dashboard/celebration', icon: Gift },
       { label: 'AI FAQ', path: '/dashboard/faq', icon: HelpCircle },
-      { label: 'Chat with Rep', path: 'https://wa.me/2340000000000', icon: MessageCircle }, // Replace with Miss Debby's number
-      { label: 'Anchor of Hope', path: 'https://anchorofhopecounseling.com', icon: ExternalLink }
+      { label: 'Chat with Rep', path: 'https://wa.me/2340000000000', icon: MessageCircle }
     );
   }
 

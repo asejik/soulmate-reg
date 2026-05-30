@@ -17,7 +17,7 @@ import { DiscussionsPage } from './pages/dashboard/DiscussionsPage';
 import { MidCohortReviewPage } from './pages/dashboard/MidCohortReviewPage';
 import { ContactPage } from './pages/dashboard/ContactPage';
 import { QAPage } from './pages/dashboard/QAPage';
-import { ProfilePage } from './pages/dashboard/ProfilePage';
+import { CelebrationPage } from './pages/dashboard/CelebrationPage';
 import { FAQPage } from './pages/dashboard/FAQPage';
 
 export default function App() {
@@ -49,7 +49,7 @@ export default function App() {
           <Route path="/dashboard/mid-review" element={<MidCohortReviewPage />} />
           <Route path="/dashboard/contact" element={<ContactPage />} />
           <Route path="/dashboard/qa" element={<QAPage />} />
-          <Route path="/dashboard/profile" element={<ProfilePage />} />
+          <Route path="/dashboard/celebration" element={<CelebrationPage />} />
           <Route path="/dashboard/faq" element={<FAQPage />} />
         </Route>
 

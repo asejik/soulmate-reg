@@ -16,6 +16,10 @@ interface Props {
 export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false, activity }: Props) => {
   const navigate = useNavigate();
   const { toasts, dismiss, toast } = useToast();
+  
+  const activeProgram = localStorage.getItem('tai_active_program');
+  const isLaunchpad = activeProgram === 'launchpad';
+
   const [activeTab, setActiveTab] = useState<'overview' | 'assignment' | 'discussion' | 'participants'>('overview');
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState('');
@@ -125,7 +129,7 @@ export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false, activity }:
           
           <button onClick={() => setActiveTab('assignment')} className={`flex-1 min-w-[80px] sm:min-w-[140px] flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-6 py-4 text-[10px] sm:text-xs md:text-sm font-bold border-b-2 transition-all ${activeTab === 'assignment' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-slate-400'}`}>
             <PenTool size={14} className="sm:w-[18px] sm:h-[18px]" /> 
-            <span>Assignment</span>
+            <span>{isLaunchpad ? 'Reflection' : 'Assignment'}</span>
             {isUnlocked && !lesson.is_completed && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse hidden sm:block"></span>}
           </button>
 
@@ -163,7 +167,7 @@ export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false, activity }:
                     <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/5 rounded-full flex items-center justify-center text-slate-500">
                       <Lock size={24} className="sm:w-8 sm:h-8" />
                     </div>
-                    <h3 className="text-lg sm:text-xl font-bold text-white">Assignment Locked</h3>
+                    <h3 className="text-lg sm:text-xl font-bold text-white">{isLaunchpad ? 'Reflection Locked' : 'Assignment Locked'}</h3>
                     <p className="text-sm sm:text-base text-slate-400">Please watch at least 80% of the video to unlock.</p>
                   </div>
                 ) : !isSubmissionLoaded ? (
@@ -178,7 +182,7 @@ export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false, activity }:
                         <CheckCircle2 size={20} />
                       </div>
                       <div>
-                        <h3 className="font-bold text-white text-sm sm:text-base">Assignment Submitted</h3>
+                        <h3 className="font-bold text-white text-sm sm:text-base">{isLaunchpad ? 'Reflection Submitted' : 'Assignment Submitted'}</h3>
                         <p className="text-xs text-slate-500">Thank you for your submission</p>
                       </div>
                     </div>
@@ -220,7 +224,7 @@ export const LessonTabs = ({ lesson, isUnlocked, isLiveMode = false, activity }:
                         <button type="button" onClick={() => setSubmissionType('text')} className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold transition-all ${submissionType === 'text' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}><FileText size={14} className="sm:w-4 sm:h-4" /> Text</button>
                       </div>
                       {submissionType === 'link' ? <input type="url" required value={submissionValue} onChange={(e) => setSubmissionValue(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl py-3 px-4 text-sm text-white focus:border-blue-500/50 transition-colors" placeholder="https://..." /> : <textarea required rows={4} value={submissionValue} onChange={(e) => setSubmissionValue(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl py-3 px-4 text-sm text-white resize-none focus:border-blue-500/50 transition-colors" placeholder="Write your submission here..." />}
-                      <button type="submit" disabled={isSubmitting || !submissionValue} className="w-full py-3.5 sm:py-4 bg-white text-black font-bold rounded-xl hover:bg-slate-200 active:scale-[0.98] transition-all text-sm sm:text-base">{isSubmitting ? 'Submitting...' : 'Submit Assignment'}</button>
+                      <button type="submit" disabled={isSubmitting || !submissionValue} className="w-full py-3.5 sm:py-4 bg-white text-black font-bold rounded-xl hover:bg-slate-200 active:scale-[0.98] transition-all text-sm sm:text-base">{isSubmitting ? 'Submitting...' : (isLaunchpad ? 'Submit Reflection' : 'Submit Assignment')}</button>
                     </form>
                   </div>
                 )}

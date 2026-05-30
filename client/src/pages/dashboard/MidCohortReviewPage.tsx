@@ -15,6 +15,9 @@ export const MidCohortReviewPage = () => {
   const [videoId, setVideoId] = useState('');
   const [isUnlocked, setIsUnlocked] = useState(false);
   
+  const activeProgram = localStorage.getItem('tai_active_program');
+  const isLaunchpad = activeProgram === 'launchpad';
+  
   // Custom Modal States
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -154,7 +157,9 @@ export const MidCohortReviewPage = () => {
       {/* Midpoint Reflection Prompt */}
       <div className="bg-[#111827] border border-white/10 rounded-2xl p-6 md:p-8 space-y-5">
         <div className="space-y-1">
-          <p className="text-amber-400 italic font-semibold text-base">Midpoint Reflection at Ready for A Soulmate</p>
+          <p className="text-amber-400 italic font-semibold text-base">
+            Midpoint Reflection at {isLaunchpad ? 'Couples Launchpad' : 'Ready for A Soulmate'}
+          </p>
         </div>
 
         <div className="space-y-2 text-slate-300 text-sm leading-relaxed">
