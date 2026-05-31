@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"strings"
@@ -21,15 +23,19 @@ func GenerateCertificate(w http.ResponseWriter, r *http.Request) {
 		displayProgramName = "Couples' Launchpad"
 	}
 
+	// dbProgramName is the display name stored in the modules table, e.g. "Couples Launchpad"
+	// programName is the short key used in program_reviews, e.g. "launchpad"
+	dbProgramName := displayProgramName
+
 	// 1. Eligibility Check: 66% Completion + Final Review Submitted
 	var totalLessons, completedLessons int
-	db.Pool.QueryRow(r.Context(), "SELECT COUNT(l.id) FROM public.lessons l JOIN public.modules m ON l.module_id = m.id WHERE m.program_name = $1", programName).Scan(&totalLessons)
+	db.Pool.QueryRow(r.Context(), "SELECT COUNT(l.id) FROM public.lessons l JOIN public.modules m ON l.module_id = m.id WHERE m.program_name = $1", dbProgramName).Scan(&totalLessons)
 	db.Pool.QueryRow(r.Context(), `
 		SELECT COUNT(lp.lesson_id) FROM public.lesson_progress lp 
 		JOIN public.lessons l ON lp.lesson_id = l.id 
 		JOIN public.modules m ON l.module_id = m.id 
 		WHERE lp.user_id = $1 AND (lp.is_completed = true OR lp.highest_watched_pct >= 80) AND m.program_name = $2
-	`, userID, programName).Scan(&completedLessons)
+	`, userID, dbProgramName).Scan(&completedLessons)
 
 	var hasCompletedFinalReview bool
 	db.Pool.QueryRow(r.Context(), `
@@ -45,8 +51,18 @@ func GenerateCertificate(w http.ResponseWriter, r *http.Request) {
 		completionRate = float64(completedLessons) / float64(totalLessons)
 	}
 
-	if !hasCompletedFinalReview || completionRate < 0.66 {
-		http.Error(w, "You are not yet eligible for a certificate. Please ensure you have at least 66% completion (8 of 12 lessons) and have submitted your final cohort review.", http.StatusForbidden)
+	requiredRate := 0.66
+	if programName == "launchpad" || strings.Contains(strings.ToLower(programName), "launchpad") {
+		requiredRate = 1.0
+	}
+
+	requiredLessons := int(math.Ceil(float64(totalLessons) * requiredRate))
+	if requiredLessons < 1 && totalLessons > 0 {
+		requiredLessons = 1
+	}
+
+	if !hasCompletedFinalReview || completionRate < requiredRate {
+		http.Error(w, fmt.Sprintf("You are not yet eligible for a certificate. Please ensure you have at least %d%% completion (%d of %d lessons) and have submitted your final cohort review.", int(requiredRate*100), requiredLessons, totalLessons), http.StatusForbidden)
 		return
 	}
 

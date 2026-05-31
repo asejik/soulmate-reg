@@ -82,8 +82,9 @@ export const DashboardPage = () => {
   if (!data) return <div className="flex flex-col items-center justify-center min-h-[50vh]"><button onClick={() => navigate('/login')} className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition">Return to Login</button></div>;
 
   const progressPercentage = Math.round((data.cohort.completed_lessons / data.cohort.total_lessons) * 100);
-  const isEligibleForCertificate = progressPercentage >= 66 && hasCompletedFinalReview;
-  const hasReachedFinalStep = progressPercentage >= 66;
+  const requiredPercentage = data.active_program === 'launchpad' ? 100 : 66;
+  const isEligibleForCertificate = progressPercentage >= requiredPercentage && hasCompletedFinalReview;
+  const hasReachedFinalStep = progressPercentage >= requiredPercentage;
   const requiresMidReview = data.has_reached_midway && !data.has_completed_mid_review;
 
   return (
