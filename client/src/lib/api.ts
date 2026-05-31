@@ -39,29 +39,47 @@ export function clearSessionCache() {
 
 // ─── API Helpers ───────────────────────────────────────────────────────────────
 
+const _requestCache = new Map<string, { promise: Promise<any>, timestamp: number }>();
+const REQUEST_CACHE_TTL = 2000; // 2 seconds TTL to prevent double-fetches on component mount
+
 export async function fetchLMS(endpoint: string) {
+  const now = Date.now();
+  const cached = _requestCache.get(endpoint);
+
+  if (cached && (now - cached.timestamp < REQUEST_CACHE_TTL)) {
+    return cached.promise;
+  }
+
   const session = await getAuthSession();
 
   if (!session) {
     throw new Error('No active session found. Please log in.');
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  const promise = fetch(`${API_BASE_URL}${endpoint}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${session.access_token}`
     }
+  }).then(response => {
+    if (!response.ok) {
+      throw new Error(`Backend rejected the request: ${response.statusText}`);
+    }
+    return response.json();
+  }).catch(err => {
+    _requestCache.delete(endpoint);
+    throw err;
   });
 
-  if (!response.ok) {
-    throw new Error(`Backend rejected the request: ${response.statusText}`);
-  }
-
-  return response.json();
+  _requestCache.set(endpoint, { promise, timestamp: now });
+  return promise;
 }
 
 export async function postLMS(endpoint: string, body: any) {
+  // Clear cache on any mutation to ensure subsequent GETs are fresh
+  _requestCache.clear();
+
   const session = await getAuthSession();
 
   if (!session) {

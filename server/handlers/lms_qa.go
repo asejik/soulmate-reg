@@ -30,7 +30,7 @@ func GetUserQuestions(w http.ResponseWriter, r *http.Request) {
 		SELECT id, user_id, program_name, question_text, answer_text, is_answered, answered_at, created_at
 		FROM public.questions
 		WHERE user_id = $1 AND program_name = $2
-		ORDER BY created_at DESC
+		ORDER BY created_at DESC LIMIT 500
 	`, userID, programName)
 
 	if err != nil {
@@ -96,7 +96,7 @@ func GetAllQuestionsForAdmin(w http.ResponseWriter, r *http.Request) {
 		LEFT JOIN auth.users au ON q.user_id = au.id
 		LEFT JOIN public.couples_launchpad cl ON lower(au.email) = lower(cl.email)
 		LEFT JOIN public.participants p ON lower(au.email) = lower(p.email)
-		ORDER BY q.is_answered ASC, q.created_at DESC
+		ORDER BY q.is_answered ASC, q.created_at DESC LIMIT 1000
 	`)
 
 	if err != nil {

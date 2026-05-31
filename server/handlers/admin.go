@@ -102,7 +102,7 @@ func GetClanParticipants(w http.ResponseWriter, r *http.Request) {
 		       age_group, religion, church_name, instagram_handle, relationship_status, clan_id
 		FROM participants
 		WHERE clan_id = $1
-		ORDER BY created_at DESC
+		ORDER BY created_at DESC LIMIT 2000
 	`, clanID)
 
 	if err != nil {

@@ -56,7 +56,7 @@ func GetLessonComments(w http.ResponseWriter, r *http.Request) {
 		SELECT c.id, c.lesson_id, l.title, c.content, c.created_at, COALESCE(cl.full_name, p.full_name, 'Participant') AS user_name
 		FROM public.lesson_comments c JOIN public.lessons l ON c.lesson_id = l.id JOIN auth.users au ON c.user_id = au.id
 		LEFT JOIN public.couples_launchpad cl ON lower(au.email) = lower(cl.email) LEFT JOIN public.participants p ON lower(au.email) = lower(p.email)
-		WHERE c.lesson_id = $1 ORDER BY c.created_at DESC
+		WHERE c.lesson_id = $1 ORDER BY c.created_at DESC LIMIT 500
 	`, lessonID)
 	defer rows.Close()
 
