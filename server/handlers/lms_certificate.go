@@ -31,22 +31,35 @@ func GenerateCertificate(w http.ResponseWriter, r *http.Request) {
 
 	// 1. Eligibility Check: 66% Completion + Final Review Submitted
 	var totalLessons, completedLessons int
-	db.Pool.QueryRow(r.Context(), "SELECT COUNT(l.id) FROM public.lessons l JOIN public.modules m ON l.module_id = m.id WHERE m.program_name = $1", dbProgramName).Scan(&totalLessons)
-	db.Pool.QueryRow(r.Context(), `
+	err := db.Pool.QueryRow(r.Context(), "SELECT COUNT(l.id) FROM public.lessons l JOIN public.modules m ON l.module_id = m.id WHERE m.program_name = $1", dbProgramName).Scan(&totalLessons)
+	if err != nil {
+		http.Error(w, "Failed to check course curriculum. Please try again.", http.StatusInternalServerError)
+		return
+	}
+
+	err = db.Pool.QueryRow(r.Context(), `
 		SELECT COUNT(lp.lesson_id) FROM public.lesson_progress lp 
 		JOIN public.lessons l ON lp.lesson_id = l.id 
 		JOIN public.modules m ON l.module_id = m.id 
 		WHERE lp.user_id = $1 AND (lp.is_completed = true OR lp.highest_watched_pct >= 80) AND m.program_name = $2
 	`, userID, dbProgramName).Scan(&completedLessons)
+	if err != nil {
+		http.Error(w, "Failed to verify completion progress. Please try again.", http.StatusInternalServerError)
+		return
+	}
 
 	var hasCompletedFinalReview bool
-	db.Pool.QueryRow(r.Context(), `
+	err = db.Pool.QueryRow(r.Context(), `
 		SELECT EXISTS(
 			SELECT 1 FROM public.program_reviews 
 			WHERE user_id = $1 AND program_name = $2 
 			AND review_type IN ('final', 'final_video', 'final_google', 'final_instagram')
 		)
 	`, userID, programName).Scan(&hasCompletedFinalReview)
+	if err != nil {
+		http.Error(w, "Failed to verify review status. Please try again.", http.StatusInternalServerError)
+		return
+	}
 
 	completionRate := 0.0
 	if totalLessons > 0 {
