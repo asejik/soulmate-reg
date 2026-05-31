@@ -69,7 +69,7 @@ export const DashboardGateways = ({ data, isFullyCompleted, hasReachedFinalStep,
           
           <div className="max-w-2xl mx-auto text-center space-y-4 pt-4 border-t border-white/5 flex flex-col items-center">
             <p className="text-slate-300 text-base leading-relaxed whitespace-pre-line">
-              Welcome to the end of Ready for A Soulmate Cohort 3!!! Share your experience on the link below.{"\n"}
+              Welcome to the end of {data.active_program === 'launchpad' ? 'Couples Launchpad' : 'Ready for A Soulmate Cohort 3'}!!! Share your experience on the link below.{"\n"}
               Do well to connect with others.{"\n"}{"\n"}
               Have a beautiful life ahead ❤️
             </p>

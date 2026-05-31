@@ -23,9 +23,11 @@ func GenerateCertificate(w http.ResponseWriter, r *http.Request) {
 		displayProgramName = "Couples' Launchpad"
 	}
 
-	// dbProgramName is the display name stored in the modules table, e.g. "Couples Launchpad"
-	// programName is the short key used in program_reviews, e.g. "launchpad"
-	dbProgramName := displayProgramName
+	// dbProgramName is the exact name stored in the modules table, e.g. "Couples Launchpad"
+	dbProgramName := "Ready for a Soulmate"
+	if programName == "launchpad" || strings.Contains(strings.ToLower(programName), "launchpad") {
+		dbProgramName = "Couples Launchpad"
+	}
 
 	// 1. Eligibility Check: 66% Completion + Final Review Submitted
 	var totalLessons, completedLessons int
