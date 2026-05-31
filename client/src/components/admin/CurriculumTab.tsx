@@ -55,6 +55,19 @@ async function authHeaders() {
   return { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` };
 }
 
+/** Convert a UTC ISO string → datetime-local value in the user's local timezone */
+function toLocalDatetimeInput(isoString: string): string {
+  const date = new Date(isoString);
+  const offsetMs = date.getTimezoneOffset() * 60000;
+  const local = new Date(date.getTime() - offsetMs);
+  return local.toISOString().slice(0, 16);
+}
+
+/** Convert a datetime-local string (treated as local time by Date constructor) → UTC ISO string */
+function fromLocalDatetimeInput(localStr: string): string {
+  return new Date(localStr).toISOString();
+}
+
 const PROGRAMS = ['Ready for a Soulmate', 'Couples Launchpad'];
 
 const LABEL: Record<string, string> = {
@@ -332,7 +345,7 @@ const LessonForm = ({
       estimated_time: initial.estimated_time,
       assignment_prompt: initial.assignment_prompt,
       sort_order: initial.sort_order,
-      scheduled_start_time: initial.scheduled_start_time ? new Date(initial.scheduled_start_time).toISOString().slice(0, 16) : '',
+      scheduled_start_time: initial.scheduled_start_time ? toLocalDatetimeInput(initial.scheduled_start_time) : '',
       live_duration_minutes: initial.live_duration_minutes ?? 0,
       quiz_title: initial.quiz_title || '',
       quiz_question: initial.quiz_question || '',
@@ -351,7 +364,7 @@ const LessonForm = ({
       const payload = {
         ...form,
         sort_order: Number(form.sort_order),
-        scheduled_start_time: form.scheduled_start_time ? new Date(form.scheduled_start_time).toISOString() : null
+        scheduled_start_time: form.scheduled_start_time ? fromLocalDatetimeInput(form.scheduled_start_time) : null
       };
       const res = await fetch(url, { method, headers, body: JSON.stringify(payload) });
       if (!res.ok) throw new Error(await res.text());
@@ -382,6 +395,9 @@ const LessonForm = ({
         </Field>
         <Field label="Lesson Title">
           <input required type="text" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className={inputCls} placeholder="e.g. Understanding Your Worth" />
+        </Field>
+        <Field label="Estimated Time">
+          <input type="text" value={form.estimated_time} onChange={e => setForm({ ...form, estimated_time: e.target.value })} className={inputCls} placeholder="e.g. 15 mins" />
         </Field>
         <div className="grid grid-cols-2 gap-4">
           <Field label="YouTube Video ID">

@@ -221,6 +221,10 @@ export function useYouTubePlayer({
                   onProgressRef.current(100);
                   onCompleteRef.current();
                 }
+                // Save 0 seconds so next time the user plays the video, it starts from the beginning
+                if (onTimeUpdateRef.current) {
+                  onTimeUpdateRef.current(0, 0);
+                }
               }
               if (event.data === window.YT.PlayerState.PAUSED && hasCompletedRef.current) setIsEnded(true);
             }
@@ -247,6 +251,8 @@ export function useYouTubePlayer({
       if (hasCompletedRef.current) {
         hasCompletedRef.current = false;
         setIsEnded(false); setProgress(0); playerRef.current.seekTo(0);
+        // Reset last_watched_seconds to 0 in DB so a page reload also starts from 0
+        if (onTimeUpdateRef.current) onTimeUpdateRef.current(0, 0);
       }
       playerRef.current.playVideo();
     }
