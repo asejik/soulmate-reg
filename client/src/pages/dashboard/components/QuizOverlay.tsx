@@ -65,6 +65,8 @@ export const QuizOverlay = ({ lessonId }: { lessonId: string }) => {
     }
   }, [quiz]);
 
+  const [hasTimedOut, setHasTimedOut] = useState(false);
+
   useEffect(() => {
     if (!quiz || !quiz.expires_at || isSubmitted) return;
     
@@ -81,7 +83,10 @@ export const QuizOverlay = ({ lessonId }: { lessonId: string }) => {
       if (remaining === 0) {
         clearInterval(interval);
         // Auto-submit if time runs out
-        if (!isSubmitted) handleSubmit();
+        if (!isSubmitted) {
+          setHasTimedOut(true);
+          handleSubmit(undefined, true);
+        }
       }
     }, 1000);
 
@@ -126,9 +131,9 @@ export const QuizOverlay = ({ lessonId }: { lessonId: string }) => {
 
   const [scoreInfo, setScoreInfo] = useState<{ score: number, total: number, percentage: number } | null>(null);
 
-  const handleSubmit = async (e?: React.FormEvent) => {
+  const handleSubmit = async (e?: React.FormEvent, isTimeout = false) => {
     if (e) e.preventDefault();
-    if (Object.keys(answers).length === 0 && timeRemaining && timeRemaining > 0) return;
+    if (!isTimeout && Object.keys(answers).length === 0 && timeRemaining && timeRemaining > 0) return;
     setIsSubmitting(true);
     
     let correctCount = 0;
@@ -175,12 +180,14 @@ export const QuizOverlay = ({ lessonId }: { lessonId: string }) => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          onClick={() => { if (isSubmitted) setIsOpen(false); }}
         >
           <motion.div 
             initial={{ scale: 0.9, y: 20 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.9, y: 20 }}
             className="w-full max-w-lg bg-[#111827] border border-pink-500/30 rounded-3xl p-8 shadow-[0_0_50px_rgba(236,72,153,0.15)] flex flex-col max-h-[90vh] relative"
+            onClick={(e) => e.stopPropagation()}
           >
             {isSubmitted && (
               <button 
@@ -194,7 +201,12 @@ export const QuizOverlay = ({ lessonId }: { lessonId: string }) => {
             {isSubmitted ? (
               <div className="text-center space-y-4 py-8 mt-4">
                 <CheckCircle className="text-green-500 mx-auto" size={48} />
-                <h2 className="text-2xl font-bold text-white">Quiz Submitted!</h2>
+                <h2 className="text-2xl font-bold text-white">
+                  {hasTimedOut ? "Time's Up!" : "Quiz Submitted!"}
+                </h2>
+                {hasTimedOut && (
+                  <p className="text-amber-400 text-sm mb-2">Your progress has been automatically saved.</p>
+                )}
                 <h3 className="text-lg font-medium text-slate-300">{quiz.title}</h3>
                 {scoreInfo && scoreInfo.total > 0 && (
                   <div className="py-4 bg-white/5 rounded-xl border border-white/10 my-6">
