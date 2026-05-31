@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, Volume2, VolumeX, PlayCircle } from 'lucide-react';
+import { Play, Pause, RotateCcw, Volume2, VolumeX, PlayCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { useYouTubePlayer } from '../../../hooks/useYouTubePlayer';
 
 interface Props {
@@ -100,6 +100,7 @@ const ActivePlayer = ({ videoId }: { videoId: string }) => {
 
 export const DashboardVideoCard = ({ videoId, title, subtitle, description, badge }: Props) => {
   const [isStarted, setIsStarted] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   if (!videoId) return null;
 
@@ -127,7 +128,6 @@ export const DashboardVideoCard = ({ videoId, title, subtitle, description, badg
               <PlayCircle className="w-6 h-6 md:w-12 md:h-12 fill-white/80" />
             </div>
             <h2 className="text-lg md:text-3xl font-bold text-white mb-1 md:mb-2 tracking-tight line-clamp-1">{subtitle || title}</h2>
-            <p className="text-white/70 text-xs sm:text-sm md:text-base max-w-md line-clamp-3 md:line-clamp-4 px-2">{description}</p>
           </div>
 
           {badge && (
@@ -140,6 +140,26 @@ export const DashboardVideoCard = ({ videoId, title, subtitle, description, badg
         </div>
       ) : (
         <ActivePlayer videoId={videoId} />
+      )}
+
+      {description && (
+        <div className="bg-[#111827] border border-white/5 rounded-2xl overflow-hidden shadow-sm">
+          <button 
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
+          >
+            <span className="text-sm font-bold text-white tracking-wide">Overview</span>
+            {isExpanded ? <ChevronUp size={18} className="text-slate-400" /> : <ChevronDown size={18} className="text-slate-400" />}
+          </button>
+          
+          <div 
+            className={`transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}`}
+          >
+            <div className="p-4 pt-0 text-sm text-slate-300 leading-relaxed whitespace-pre-line border-t border-white/5 mt-2">
+              <div className="pt-3">{description}</div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
