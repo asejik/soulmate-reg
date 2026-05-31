@@ -122,17 +122,17 @@ export const DashboardVideoCard = ({ videoId, title, subtitle, description, badg
           <img src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`} alt={title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
           <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors" />
           
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
-            <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white mb-6 group-hover:scale-110 group-hover:bg-white/20 transition-all duration-500 border border-white/10">
-              <PlayCircle size={48} className="fill-white/80" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 md:p-6 overflow-hidden">
+            <div className="w-12 h-12 md:w-20 md:h-20 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white mb-3 md:mb-6 group-hover:scale-110 group-hover:bg-white/20 transition-all duration-500 border border-white/10 flex-shrink-0">
+              <PlayCircle className="w-6 h-6 md:w-12 md:h-12 fill-white/80" />
             </div>
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-2 tracking-tight">{subtitle || title}</h2>
-            <p className="text-white/70 text-sm md:text-base max-w-md">{description}</p>
+            <h2 className="text-lg md:text-3xl font-bold text-white mb-1 md:mb-2 tracking-tight line-clamp-1">{subtitle || title}</h2>
+            <p className="text-white/70 text-xs sm:text-sm md:text-base max-w-md line-clamp-3 md:line-clamp-4 px-2">{description}</p>
           </div>
 
           {badge && (
-            <div className="absolute bottom-6 right-6">
-              <span className="px-3 py-1 bg-black/60 backdrop-blur-md rounded-full border border-white/10 text-[10px] font-bold text-white uppercase tracking-widest">
+            <div className="absolute top-4 right-4 md:top-auto md:bottom-6 md:right-6">
+              <span className="px-2 md:px-3 py-1 bg-black/60 backdrop-blur-md rounded-full border border-white/10 text-[8px] md:text-[10px] font-bold text-white uppercase tracking-widest shadow-lg">
                 {badge}
               </span>
             </div>
