@@ -96,11 +96,12 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		var videoID string
-		db.Pool.QueryRow(r.Context(), "SELECT COALESCE(intro_video_id, '') FROM public.program_settings WHERE program_name = $1", programNameDisplay).Scan(&videoID)
-		if videoID == "" {
-			db.Pool.QueryRow(r.Context(), "SELECT COALESCE(intro_video_id, '') FROM public.program_settings WHERE program_name ILIKE $1 LIMIT 1", "%"+programName+"%").Scan(&videoID)
+		var introDesc string
+		db.Pool.QueryRow(r.Context(), "SELECT COALESCE(intro_video_id, ''), COALESCE(intro_video_description, '') FROM public.program_settings WHERE program_name = $1", programNameDisplay).Scan(&videoID, &introDesc)
+		if videoID == "" && introDesc == "" {
+			db.Pool.QueryRow(r.Context(), "SELECT COALESCE(intro_video_id, ''), COALESCE(intro_video_description, '') FROM public.program_settings WHERE program_name ILIKE $1 LIMIT 1", "%"+programName+"%").Scan(&videoID, &introDesc)
 		}
-		introVideoChan <- result{videoID, nil}
+		introVideoChan <- result{map[string]string{"id": videoID, "desc": introDesc}, nil}
 	}()
 
 	// Continue with the main module query while others run
@@ -195,10 +196,17 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 	midwayPos := (totalCount + 1) / 2
 	hasReachedMidway := maxFinishedIndex >= midwayPos
 
+	var introVideoID, introVideoDesc string
+	if introMap, ok := resIntro.val.(map[string]string); ok {
+		introVideoID = introMap["id"]
+		introVideoDesc = introMap["desc"]
+	}
+
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"user_id": userID, "has_completed_final_review": resFinal.val, "has_completed_mid_review": resMid.val,
 		"checkpoint_video_id": resVideo.val,
-		"intro_video_id": resIntro.val,
+		"intro_video_id": introVideoID,
+		"intro_video_description": introVideoDesc,
 		"has_reached_midway": hasReachedMidway,
 		"active_program": programName, "enrolled_programs": enrolledPrograms,
 		"cohort": map[string]interface{}{"name": programNameDisplay, "total_lessons": resTotal.val, "completed_lessons": resCompleted.val},

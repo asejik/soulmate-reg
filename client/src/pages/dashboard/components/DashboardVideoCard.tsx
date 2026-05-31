@@ -146,12 +146,12 @@ export const DashboardVideoCard = ({ videoId, title, subtitle, description, badg
 };
 
 // Maintain alias for backward compatibility
-export const IntroVideoCard = ({ videoId }: { videoId: string }) => (
+export const IntroVideoCard = ({ videoId, description }: { videoId: string; description?: string }) => (
   <DashboardVideoCard 
     videoId={videoId} 
     title="Introductory Video" 
     subtitle="Watch Introduction"
-    description="Start your journey here with a quick welcome video about the program."
+    description={description || "Start your journey here with a quick welcome video about the program."}
     badge="Standalone Content"
   />
 );

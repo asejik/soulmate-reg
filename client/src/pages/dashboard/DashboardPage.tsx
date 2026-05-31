@@ -21,6 +21,7 @@ export interface DashboardData {
   has_reached_midway: boolean;
   checkpoint_video_id: string;
   intro_video_id: string;
+  intro_video_description?: string;
   active_program: string; enrolled_programs: string[];
   cohort: { name: string; total_lessons: number; completed_lessons: number; };
   next_lesson: { id: string; title: string; estimated_time: string; };
@@ -104,7 +105,7 @@ export const DashboardPage = () => {
           </div>
         )}
 
-        {data.intro_video_id && <IntroVideoCard videoId={data.intro_video_id} />}
+        {data.intro_video_id && <IntroVideoCard videoId={data.intro_video_id} description={data.intro_video_description} />}
         
         {data.active_program !== 'launchpad' && (
           <DashboardVideoCard 

@@ -102,7 +102,7 @@ const SettingsForm = ({
     fetchSettings();
   }, []);
 
-  const update = async (pName: string, midID: string, introID: string) => {
+  const update = async (pName: string, midID: string, introID: string, introDesc: string) => {
     setSaving(true);
     try {
       const headers = await authHeaders();
@@ -112,7 +112,8 @@ const SettingsForm = ({
         body: JSON.stringify({
           program_name: pName,
           mid_checkpoint_video_id: midID,
-          intro_video_id: introID
+          intro_video_id: introID,
+          intro_video_description: introDesc
         })
       });
       if (res.ok) {
@@ -134,13 +135,13 @@ const SettingsForm = ({
       <ToastContainer toasts={toasts} onDismiss={dismiss} />
       <div className="space-y-6">
         {[activeProgramTab].map(p => {
-          const s = (settings || []).find(st => st.program_name === p) || { mid_checkpoint_video_id: '', intro_video_id: '' };
+          const s = (settings || []).find(st => st.program_name === p) || { mid_checkpoint_video_id: '', intro_video_id: '', intro_video_description: '' };
           return (
             <div key={p} className="p-4 bg-white/3 rounded-2xl border border-white/5 space-y-4">
               <div className="flex items-center justify-between">
                 <span className={`text-[10px] font-bold px-3 py-1 rounded-full border ${PILL_COLOR[p]}`}>{p}</span>
                 <button
-                  onClick={() => update(p, s.mid_checkpoint_video_id, s.intro_video_id)}
+                  onClick={() => update(p, s.mid_checkpoint_video_id, s.intro_video_id, s.intro_video_description)}
                   disabled={saving}
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-all text-xs font-bold flex items-center gap-2"
                 >
@@ -162,6 +163,22 @@ const SettingsForm = ({
                       setSettings(ns);
                     }}
                     placeholder="YouTube ID (e.g. dQw4w9WgXcQ)"
+                  />
+                </Field>
+
+                <Field label="Introductory Video Description">
+                  <textarea
+                    rows={3}
+                    className={`${inputCls} resize-none`}
+                    value={s.intro_video_description || ''}
+                    onChange={e => {
+                      const ns = [...settings];
+                      const idx = ns.findIndex(st => st.program_name === p);
+                      if (idx >= 0) ns[idx].intro_video_description = e.target.value;
+                      else ns.push({ program_name: p, intro_video_description: e.target.value });
+                      setSettings(ns);
+                    }}
+                    placeholder="Provide an overview or description for the introductory video"
                   />
                 </Field>
 
