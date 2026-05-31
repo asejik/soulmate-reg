@@ -33,7 +33,7 @@ export const VideoPlayerUI = ({ lesson, isUnlocked, setIsUnlocked, onLiveModeCha
     videoId: lesson.videoId,
     scheduledStartTime: lesson.scheduled_start_time,
     hasQuiz: lesson.has_quiz,
-    initialTime: lesson.is_completed ? 0 : lesson.last_watched_seconds,
+    initialTime: lesson.last_watched_seconds,
     onProgressChange: (pct) => { if (pct >= 80) setIsUnlocked(true); },
     onTimeUpdate: (seconds, percent) => {
       postLMS(`/lms/lessons/${lesson.id}/progress`, { seconds, percent })
