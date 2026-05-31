@@ -82,14 +82,15 @@ export const DashboardPage = () => {
   if (!data) return <div className="flex flex-col items-center justify-center min-h-[50vh]"><button onClick={() => navigate('/login')} className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition">Return to Login</button></div>;
 
   const progressPercentage = Math.round((data.cohort.completed_lessons / data.cohort.total_lessons) * 100);
-  const isEligibleForCertificate = progressPercentage >= 66;
+  const isEligibleForCertificate = progressPercentage >= 66 && hasCompletedFinalReview;
+  const hasReachedFinalStep = progressPercentage >= 66;
   const requiresMidReview = data.has_reached_midway && !data.has_completed_mid_review;
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-20 px-4 md:px-0">
       <DashboardHeader data={data} progressPercentage={progressPercentage} isFullyCompleted={isEligibleForCertificate} hasCompletedFinalReview={hasCompletedFinalReview} />
       <AnnouncementBanner />
-      <DashboardGateways data={data} isFullyCompleted={isEligibleForCertificate} requiresMidReview={requiresMidReview} hasCompletedFinalReview={hasCompletedFinalReview} setHasCompletedFinalReview={setHasCompletedFinalReview} />
+      <DashboardGateways data={data} isFullyCompleted={isEligibleForCertificate} hasReachedFinalStep={hasReachedFinalStep} requiresMidReview={requiresMidReview} hasCompletedFinalReview={hasCompletedFinalReview} setHasCompletedFinalReview={setHasCompletedFinalReview} />
       
       <div className="grid grid-cols-1 gap-8">
         {data.active_program !== 'launchpad' && (

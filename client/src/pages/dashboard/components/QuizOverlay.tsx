@@ -158,10 +158,18 @@ export const QuizOverlay = ({ lessonId }: { lessonId: string }) => {
     }
   };
   
+  const getRemarkForScore = (pct: number): { text: string; color: string } => {
+    if (pct >= 90) return { text: "Outstanding! You truly mastered this material. Enjoy the class!", color: "text-green-400" };
+    if (pct >= 75) return { text: "Great job! You have a solid understanding. Enjoy the class!", color: "text-green-400" };
+    if (pct >= 60) return { text: "Well done! Keep reviewing and you'll keep growing.", color: "text-blue-400" };
+    if (pct >= 40) return { text: "Good effort! Pay close attention during the class — it will all click!", color: "text-amber-400" };
+    return { text: "Keep going! Every step forward is progress. Give this class your full attention.", color: "text-amber-400" };
+  };
+
   const handleNext = () => {
     if (currentIdx < parsedQuestions.length - 1) setCurrentIdx(prev => prev + 1);
   };
-  
+
   const handlePrev = () => {
     if (currentIdx > 0) setCurrentIdx(prev => prev - 1);
   };
@@ -208,15 +216,20 @@ export const QuizOverlay = ({ lessonId }: { lessonId: string }) => {
                   <p className="text-amber-400 text-sm mb-2">Your progress has been automatically saved.</p>
                 )}
                 <h3 className="text-lg font-medium text-slate-300">{quiz.title}</h3>
-                {scoreInfo && scoreInfo.total > 0 && (
-                  <div className="py-4 bg-white/5 rounded-xl border border-white/10 my-6">
-                    <div className="text-4xl font-black text-pink-400 mb-1">{scoreInfo.percentage}%</div>
-                    <div className="text-slate-300 font-medium text-sm">
-                      You scored {scoreInfo.score} out of {scoreInfo.total} correct
-                    </div>
-                  </div>
-                )}
-                <p className="text-slate-400">Great job. Enjoy the class!</p>
+                {scoreInfo && scoreInfo.total > 0 && (() => {
+                  const remark = getRemarkForScore(scoreInfo.percentage);
+                  return (
+                    <>
+                      <div className="py-4 bg-white/5 rounded-xl border border-white/10 my-6">
+                        <div className="text-4xl font-black text-pink-400 mb-1">{scoreInfo.percentage}%</div>
+                        <div className="text-slate-300 font-medium text-sm">
+                          You scored {scoreInfo.score} out of {scoreInfo.total} correct
+                        </div>
+                      </div>
+                      <p className={`font-medium ${remark.color}`}>{remark.text}</p>
+                    </>
+                  );
+                })()}
               </div>
             ) : (
               <div className="space-y-6 flex-1 overflow-y-auto pr-2 custom-scrollbar">

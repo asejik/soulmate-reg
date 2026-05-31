@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { postLMS } from '../../../lib/api';
 import { StatusModal } from './StatusModal';
 
-export const DashboardGateways = ({ data, isFullyCompleted, requiresMidReview, hasCompletedFinalReview, setHasCompletedFinalReview }: any) => {
+export const DashboardGateways = ({ data, isFullyCompleted, hasReachedFinalStep, requiresMidReview, hasCompletedFinalReview, setHasCompletedFinalReview }: any) => {
   const navigate = useNavigate();
   const [isReviewSubmitting, setIsReviewSubmitting] = useState(false);
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
@@ -28,35 +28,35 @@ export const DashboardGateways = ({ data, isFullyCompleted, requiresMidReview, h
   };
 
   if (isFullyCompleted) {
-    if (hasCompletedFinalReview) {
-      return (
-        <div className="relative group overflow-hidden rounded-3xl border border-white/10 bg-[#111827] p-8 shadow-2xl transition-all duration-500 hover:border-blue-500/30">
-          <div className="absolute inset-x-0 -top-px h-px w-full bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
-          <div className="relative flex flex-col md:flex-row items-center gap-8">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20 ring-8 ring-blue-500/10">
-              <Star size={40} className="animate-pulse" />
-            </div>
-            <div className="flex-1 text-center md:text-left space-y-2">
-              <h3 className="text-3xl font-extrabold text-white tracking-tight leading-none">Graduation Complete!</h3>
-              <p className="text-slate-400 text-lg leading-relaxed max-w-xl">Congratulations on successfully finishing your journey. Your commitment and growth are truly inspiring. Your official certificate is ready for you below!</p>
-            </div>
-            <div className="shrink-0 w-full md:w-auto">
-               <button 
-                  onClick={() => {
-                     const btn = document.getElementById('tai-main-cert-btn') as HTMLButtonElement;
-                     if (btn) btn.click();
-                  }}
-                  className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-white text-black font-extrabold rounded-2xl hover:bg-slate-200 transition-all shadow-xl shadow-white/5 active:scale-95"
-               >
-                  <Star className="fill-black" size={18} />
-                  Download Certificate
-               </button>
-            </div>
+    return (
+      <div className="relative group overflow-hidden rounded-3xl border border-white/10 bg-[#111827] p-8 shadow-2xl transition-all duration-500 hover:border-blue-500/30">
+        <div className="absolute inset-x-0 -top-px h-px w-full bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
+        <div className="relative flex flex-col md:flex-row items-center gap-8">
+          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20 ring-8 ring-blue-500/10">
+            <Star size={40} className="animate-pulse" />
+          </div>
+          <div className="flex-1 text-center md:text-left space-y-2">
+            <h3 className="text-3xl font-extrabold text-white tracking-tight leading-none">Graduation Complete!</h3>
+            <p className="text-slate-400 text-lg leading-relaxed max-w-xl">Congratulations on successfully finishing your journey. Your commitment and growth are truly inspiring. Your official certificate is ready for you below!</p>
+          </div>
+          <div className="shrink-0 w-full md:w-auto">
+             <button 
+                onClick={() => {
+                   const btn = document.getElementById('tai-main-cert-btn') as HTMLButtonElement;
+                   if (btn) btn.click();
+                }}
+                className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-white text-black font-extrabold rounded-2xl hover:bg-slate-200 transition-all shadow-xl shadow-white/5 active:scale-95"
+             >
+               <Star className="fill-black" size={18} />
+               Download Certificate
+             </button>
           </div>
         </div>
-      );
-    }
+      </div>
+    );
+  }
 
+  if (hasReachedFinalStep && !hasCompletedFinalReview) {
     return (
       <div className="bg-[#111827] border border-blue-500/30 rounded-2xl overflow-hidden shadow-[0_0_30px_-10px_rgba(59,130,246,0.2)]">
         <div className="p-8 space-y-6">
@@ -84,6 +84,14 @@ export const DashboardGateways = ({ data, isFullyCompleted, requiresMidReview, h
             </button>
           </div>
         </div>
+
+        <StatusModal
+          isOpen={isErrorModalOpen}
+          onClose={() => setIsErrorModalOpen(false)}
+          type="error"
+          title="Review Not Submitted"
+          message="We encountered an issue while saving your final review. Please try again or check your internet connection."
+        />
       </div>
     );
   }
