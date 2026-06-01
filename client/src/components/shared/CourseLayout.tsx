@@ -13,13 +13,27 @@ export const CourseLayout = () => {
   const [userInitial, setUserInitial] = useState('U');
   const [userEmail, setUserEmail] = useState('');
 
-  // Fetch the logged-in user's email to create a dynamic avatar
+  const [userFullName, setUserFullName] = useState('');
+
+  // Fetch the logged-in user's profile to create a dynamic avatar and display name
   useEffect(() => {
-    getAuthSession().then((session) => {
-      if (session?.user?.email) {
-        setUserEmail(session.user.email);
-        setUserInitial(session.user.email.charAt(0).toUpperCase());
-      }
+    import('../../lib/api').then(({ fetchLMS }) => {
+      fetchLMS('/lms/profile').then((data: any) => {
+        if (data.email) {
+          setUserEmail(data.email);
+          setUserFullName(data.full_name || '');
+          const initialStr = data.full_name ? data.full_name : data.email;
+          setUserInitial(initialStr.charAt(0).toUpperCase());
+        }
+      }).catch(() => {
+        // Fallback to session if API fails
+        getAuthSession().then((session) => {
+          if (session?.user?.email) {
+            setUserEmail(session.user.email);
+            setUserInitial(session.user.email.charAt(0).toUpperCase());
+          }
+        });
+      });
     });
   }, []);
 
@@ -141,7 +155,8 @@ export const CourseLayout = () => {
             {/* The Hover Tooltip */}
             <div className="absolute right-0 top-10 w-max px-3 py-2 bg-[#111827] border border-white/10 text-xs text-slate-300 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl">
               <span className="block text-slate-500 mb-0.5">Signed in as</span>
-              <span className="font-bold text-white">{userEmail}</span>
+              {userFullName && <span className="block font-bold text-white mb-0.5">{userFullName}</span>}
+              <span className={userFullName ? "text-slate-400" : "font-bold text-white"}>{userEmail}</span>
             </div>
           </div>
         </header>

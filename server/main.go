@@ -92,6 +92,7 @@ func main() {
 		})
 
 		r.Get("/api/lms/dashboard", handlers.GetDashboard)
+		r.Get("/api/lms/profile", handlers.GetProfile)
 		r.Get("/api/lms/lessons/{id}", handlers.GetLesson)
 		r.Get("/api/lms/lessons/{id}/quiz", handlers.GetActiveQuiz)
 		r.Post("/api/lms/lessons/{id}/quiz", handlers.SubmitQuiz)

@@ -16,6 +16,7 @@ export interface DashboardLesson {
 export interface DashboardModule { id: string; title: string; lessons: DashboardLesson[]; }
 export interface DashboardData {
   user_id: string; 
+  full_name: string;
   has_completed_final_review: boolean; 
   has_completed_mid_review: boolean;
   has_reached_midway: boolean;

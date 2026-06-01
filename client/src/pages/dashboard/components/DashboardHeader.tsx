@@ -50,10 +50,13 @@ export const DashboardHeader = ({ data, progressPercentage, isFullyCompleted, ha
     }
   };
 
+  const firstName = data.full_name ? data.full_name.split(' ')[0] : 'Student';
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
+          <div className="text-pink-500 font-bold tracking-wider text-sm mb-1 uppercase">Welcome, {firstName} 👋</div>
           <h1 className="text-3xl font-bold text-white tracking-tight mb-2">{data.cohort.name}</h1>
           <p className="text-slate-400 text-sm">Review syllabus, track your progress, and continue your learning journey.</p>
         </div>

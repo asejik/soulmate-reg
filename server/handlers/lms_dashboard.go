@@ -49,6 +49,19 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 	midReviewChan := make(chan result, 1)
 	checkpointVideoChan := make(chan result, 1)
 	introVideoChan := make(chan result, 1)
+	fullNameChan := make(chan result, 1)
+
+	go func() {
+		var fullName string
+		err := db.Pool.QueryRow(r.Context(), `
+			SELECT COALESCE(cl.full_name, p.full_name, '')
+			FROM auth.users au
+			LEFT JOIN public.participants p ON au.email = p.email
+			LEFT JOIN public.couples_launchpad cl ON au.email = cl.email
+			WHERE au.id = $1
+		`, userID).Scan(&fullName)
+		fullNameChan <- result{fullName, err}
+	}()
 
 	go func() {
 		var count int
@@ -185,6 +198,7 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 	resMid := <-midReviewChan
 	resVideo := <-checkpointVideoChan
 	resIntro := <-introVideoChan
+	resFullName := <-fullNameChan
 
 	totalCount := 0
 	if val, ok := resTotal.val.(int); ok {
@@ -203,7 +217,7 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"user_id": userID, "has_completed_final_review": resFinal.val, "has_completed_mid_review": resMid.val,
+		"user_id": userID, "full_name": resFullName.val, "has_completed_final_review": resFinal.val, "has_completed_mid_review": resMid.val,
 		"checkpoint_video_id": resVideo.val,
 		"intro_video_id": introVideoID,
 		"intro_video_description": introVideoDesc,
@@ -211,5 +225,28 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 		"active_program": programName, "enrolled_programs": enrolledPrograms,
 		"cohort": map[string]interface{}{"name": programNameDisplay, "total_lessons": resTotal.val, "completed_lessons": resCompleted.val},
 		"curriculum": modules, "next_lesson": map[string]interface{}{"id": nextLessonID},
+	})
+}
+
+func GetProfile(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(userIDKey).(string)
+	var fullName, email string
+
+	err := db.Pool.QueryRow(r.Context(), `
+		SELECT COALESCE(cl.full_name, p.full_name, ''), au.email
+		FROM auth.users au
+		LEFT JOIN public.participants p ON au.email = p.email
+		LEFT JOIN public.couples_launchpad cl ON au.email = cl.email
+		WHERE au.id = $1
+	`, userID).Scan(&fullName, &email)
+
+	if err != nil {
+		http.Error(w, "Profile not found", http.StatusNotFound)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{
+		"full_name": fullName,
+		"email":     email,
 	})
 }
