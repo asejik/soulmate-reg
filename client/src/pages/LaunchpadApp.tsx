@@ -32,6 +32,37 @@ export const LaunchpadApp = () => {
     }
   };
 
+  const isClosed = true;
+
+  if (isClosed) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="bg-mesh fixed inset-0 pointer-events-none" />
+        <div className="bg-beam fixed inset-0 pointer-events-none" />
+
+        <div className="fixed top-6 right-6 md:top-8 md:right-8 z-50">
+          <Link
+            to="/login"
+            className="flex items-center gap-2 px-5 py-2.5 bg-black/20 hover:bg-black/40 border border-white/10 rounded-full text-sm font-bold text-slate-300 hover:text-white transition-all backdrop-blur-md shadow-[0_0_30px_-10px_rgba(236,72,153,0.3)]"
+          >
+            <LogIn size={16} className="text-pink-400" />
+            <span>Participant Login</span>
+          </Link>
+        </div>
+
+        <div className="relative z-10 max-w-md w-full p-8 glass-card rounded-3xl text-center space-y-6 text-white border border-white/10">
+          <h2 className="text-3xl font-bold tracking-tight">Registration Closed</h2>
+          <p className="text-slate-300 text-sm leading-relaxed">
+            Thank you for your interest in Couple's Launchpad. The registration window for this cohort is now officially closed.
+          </p>
+          <Link to="/" className="inline-block px-6 py-3 bg-pink-600 hover:bg-pink-500 rounded-xl font-bold transition-colors">
+            Return to Homepage
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden">
       <div className="bg-mesh fixed inset-0 pointer-events-none" />
