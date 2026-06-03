@@ -17,6 +17,7 @@ func isAdminEmail(email string) bool {
 		"asejik@gmail.com",
 		"temitopeayenigba@gmail.com",
 		"winneridigbe@gmail.com",
+		"adedejiolaide11@gmail.com",
 	}
 	for _, admin := range allowedAdmins {
 		if email == admin {
