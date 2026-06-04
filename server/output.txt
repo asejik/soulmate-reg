@@ -1,7 +1,0 @@
-Duplicate email: davidolufemik@gmail.com (Count: 2)
-Duplicate email: olaniyiprincess18@gmail.com (Count: 2)
-Duplicate email: michealeunice05@gmail.com (Count: 7)
-Duplicate email: festusayomikun@gmail.com (Count: 2)
-Duplicate email: peaceabalaka11@gmail.com (Count: 17)
-Found 5 duplicated emails.
-Deleted 25 duplicate rows.
