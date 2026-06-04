@@ -194,7 +194,7 @@ export const QuizOverlay = ({ lessonId }: { lessonId: string }) => {
             initial={{ scale: 0.9, y: 20 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.9, y: 20 }}
-            className="w-full max-w-lg bg-[#111827] border border-pink-500/30 rounded-3xl p-8 shadow-[0_0_50px_rgba(236,72,153,0.15)] flex flex-col max-h-[90vh] relative"
+            className="w-full max-w-lg bg-[#111827] border border-pink-500/30 rounded-2xl md:rounded-3xl p-5 md:p-8 shadow-[0_0_50px_rgba(236,72,153,0.15)] flex flex-col max-h-[90vh] relative"
             onClick={(e) => e.stopPropagation()}
           >
             {isSubmitted && (
@@ -209,33 +209,33 @@ export const QuizOverlay = ({ lessonId }: { lessonId: string }) => {
             {isSubmitted ? (
               <div className="text-center space-y-4 py-8 mt-4">
                 <CheckCircle className="text-green-500 mx-auto" size={48} />
-                <h2 className="text-2xl font-bold text-white">
+                <h2 className="text-xl md:text-2xl font-bold text-white">
                   {hasTimedOut ? "Time's Up!" : "Quiz Submitted!"}
                 </h2>
                 {hasTimedOut && (
-                  <p className="text-amber-400 text-sm mb-2">Your progress has been automatically saved.</p>
+                  <p className="text-amber-400 text-xs md:text-sm mb-2">Your progress has been automatically saved.</p>
                 )}
-                <h3 className="text-lg font-medium text-slate-300">{quiz.title}</h3>
+                <h3 className="text-base md:text-lg font-medium text-slate-300">{quiz.title}</h3>
                 {scoreInfo && scoreInfo.total > 0 && (() => {
                   const remark = getRemarkForScore(scoreInfo.percentage);
                   return (
                     <>
-                      <div className="py-4 bg-white/5 rounded-xl border border-white/10 my-6">
-                        <div className="text-4xl font-black text-pink-400 mb-1">{scoreInfo.percentage}%</div>
-                        <div className="text-slate-300 font-medium text-sm">
+                      <div className="py-4 bg-white/5 rounded-xl border border-white/10 my-4 md:my-6">
+                        <div className="text-3xl md:text-4xl font-black text-pink-400 mb-1">{scoreInfo.percentage}%</div>
+                        <div className="text-slate-300 font-medium text-xs md:text-sm">
                           You scored {scoreInfo.score} out of {scoreInfo.total} correct
                         </div>
                       </div>
-                      <p className={`font-medium ${remark.color}`}>{remark.text}</p>
+                      <p className={`font-medium text-sm md:text-base ${remark.color}`}>{remark.text}</p>
                     </>
                   );
                 })()}
               </div>
             ) : (
-              <div className="space-y-6 flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                <div className="flex items-center justify-between border-b border-white/5 pb-4 shrink-0">
-                  <h2 className="text-xl font-bold text-white">{quiz.title}</h2>
-                  <div className="flex items-center gap-2 text-pink-400 bg-pink-500/10 px-3 py-1 rounded-full text-xs font-bold animate-pulse">
+              <div className="space-y-5 md:space-y-6 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b border-white/5 pb-4 shrink-0">
+                  <h2 className="text-lg md:text-xl font-bold text-white leading-snug">{quiz.title}</h2>
+                  <div className="flex items-center gap-2 text-pink-400 bg-pink-500/10 px-3 py-1.5 rounded-full text-xs font-bold animate-pulse self-start sm:self-auto shrink-0">
                     <Clock size={14} /> 
                     {timeRemaining !== null ? `${Math.floor(timeRemaining / 60)}:${(timeRemaining % 60).toString().padStart(2, '0')}` : 'Time-bound'}
                   </div>
@@ -255,7 +255,7 @@ export const QuizOverlay = ({ lessonId }: { lessonId: string }) => {
                         <button
                           key={i}
                           onClick={() => setAnswers({ ...answers, [currentQ.id]: opt })}
-                          className={`w-full text-left px-4 py-3 rounded-xl border transition-all ${
+                          className={`w-full text-left px-4 py-3 rounded-xl border transition-all text-sm md:text-base leading-snug ${
                             currentAnswer === opt 
                               ? 'bg-pink-500/20 border-pink-500 text-white'
                               : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
@@ -271,17 +271,17 @@ export const QuizOverlay = ({ lessonId }: { lessonId: string }) => {
                       value={currentAnswer}
                       onChange={(e) => setAnswers({ ...answers, [currentQ.id]: e.target.value })}
                       rows={4}
-                      className="w-full mt-4 bg-[#1e293b] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 resize-none"
+                      className="w-full mt-4 bg-[#1e293b] border border-white/10 rounded-xl px-4 py-3 text-sm md:text-base text-white placeholder-slate-500 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 resize-none"
                       placeholder="Type your answer here..."
                     />
                   )}
                 </div>
 
-                <div className="flex items-center gap-3 pt-4 shrink-0">
+                <div className="flex items-center gap-2 sm:gap-3 pt-4 shrink-0">
                   <button 
                     onClick={handlePrev}
                     disabled={currentIdx === 0}
-                    className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white font-semibold rounded-xl transition-all disabled:opacity-30"
+                    className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white text-sm md:text-base font-semibold rounded-xl transition-all disabled:opacity-30"
                   >
                     Previous
                   </button>
@@ -290,7 +290,7 @@ export const QuizOverlay = ({ lessonId }: { lessonId: string }) => {
                     <button 
                       onClick={() => handleSubmit()}
                       disabled={isSubmitting || !currentAnswer}
-                      className="flex-[2] py-3 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-400 hover:to-rose-400 text-white font-bold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                      className="flex-[2] py-3 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-400 hover:to-rose-400 text-white text-sm md:text-base font-bold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                       {isSubmitting ? <Loader2 className="animate-spin" /> : 'Submit Quiz'}
                     </button>
@@ -298,7 +298,7 @@ export const QuizOverlay = ({ lessonId }: { lessonId: string }) => {
                     <button 
                       onClick={handleNext}
                       disabled={!currentAnswer}
-                      className="flex-[2] py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-all disabled:opacity-50"
+                      className="flex-[2] py-3 bg-white/10 hover:bg-white/20 text-white text-sm md:text-base font-bold rounded-xl transition-all disabled:opacity-50"
                     >
                       Next
                     </button>
