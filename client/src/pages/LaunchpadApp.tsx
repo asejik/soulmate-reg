@@ -32,7 +32,7 @@ export const LaunchpadApp = () => {
     }
   };
 
-  const isClosed = true;
+  const isClosed = false;
 
   if (isClosed) {
     return (
