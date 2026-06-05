@@ -2,11 +2,13 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/asejik/soulmate-reg/server/db"
@@ -111,8 +113,28 @@ func ClaimAccount(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if isLaunchpad && req.Code != "" {
+		// Enforce that they didn't input their own email as spouseEmail
+		if strings.EqualFold(req.Email, req.SpouseEmail) {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"message": "You cannot use your own email to verify your account."})
+			return
+		}
+
+		// Enforce that spouseEmail is actually linked to req.Email in couples_launchpad
+		connected, err := verifySpouseConnection(r.Context(), req.Email, req.SpouseEmail)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"message": "Database verification failed during spouse connection check"})
+			return
+		}
+		if !connected {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"message": "The provided spouse email is not registered as your partner."})
+			return
+		}
+
 		var valid bool
-		err := db.Pool.QueryRow(r.Context(), `
+		err = db.Pool.QueryRow(r.Context(), `
 			SELECT EXISTS(
 				SELECT 1 FROM public.verification_codes 
 				WHERE lower(spouse_email) = lower($1) AND code = $2 AND used = false AND expires_at > NOW()
@@ -166,4 +188,89 @@ func ClaimAccount(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "Account successfully claimed! You can now log in.",
 	})
+}
+
+// verifySpouseConnection checks if two emails are registered as spouses in public.couples_launchpad
+func verifySpouseConnection(ctx context.Context, email, spouseEmail string) (bool, error) {
+	if strings.EqualFold(email, spouseEmail) {
+		return false, nil
+	}
+
+	var wa1, swa1, name1, sname1 string
+	err := db.Pool.QueryRow(ctx, `
+		SELECT COALESCE(whatsapp_number, ''), COALESCE(spouse_whatsapp, ''), COALESCE(full_name, ''), COALESCE(spouse_name, '') 
+		FROM public.couples_launchpad 
+		WHERE lower(email) = lower($1)
+	`, email).Scan(&wa1, &swa1, &name1, &sname1)
+	if err != nil {
+		return false, err
+	}
+
+	var wa2, swa2, name2, sname2 string
+	err = db.Pool.QueryRow(ctx, `
+		SELECT COALESCE(whatsapp_number, ''), COALESCE(spouse_whatsapp, ''), COALESCE(full_name, ''), COALESCE(spouse_name, '') 
+		FROM public.couples_launchpad 
+		WHERE lower(email) = lower($1)
+	`, spouseEmail).Scan(&wa2, &swa2, &name2, &sname2)
+	if err != nil {
+		return false, err
+	}
+
+	// 1. Phone match check
+	if isPhoneMatch(swa1, wa2) || isPhoneMatch(wa1, swa2) {
+		return true, nil
+	}
+
+	// 2. Name match fallback (check if spouse name contains any word of full name)
+	if checkNameMatch(sname1, name2) || checkNameMatch(sname2, name1) {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func cleanPhone(p string) string {
+	var digits []rune
+	for _, r := range p {
+		if r >= '0' && r <= '9' {
+			digits = append(digits, r)
+		}
+	}
+	s := string(digits)
+	if len(s) > 10 {
+		return s[len(s)-10:]
+	}
+	return s
+}
+
+func isPhoneMatch(p1, p2 string) bool {
+	c1 := cleanPhone(p1)
+	c2 := cleanPhone(p2)
+	return c1 != "" && c1 == c2
+}
+
+func checkNameMatch(spouseName, fullName string) bool {
+	sName := strings.ToLower(strings.TrimSpace(spouseName))
+	fName := strings.ToLower(strings.TrimSpace(fullName))
+	if sName == "" || fName == "" {
+		return false
+	}
+
+	sWords := strings.Fields(sName)
+	fWords := strings.Fields(fName)
+
+	for _, sw := range sWords {
+		if len(sw) < 3 {
+			continue
+		}
+		for _, fw := range fWords {
+			if len(fw) < 3 {
+				continue
+			}
+			if sw == fw {
+				return true
+			}
+		}
+	}
+	return false
 }
