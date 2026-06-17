@@ -211,7 +211,7 @@ export const MidCohortReviewPage = () => {
                 onClick={() => setHasClickedGoogleLink(true)}
                 className="inline-flex items-center gap-2 text-amber-400 hover:text-amber-300 font-bold underline decoration-amber-500/30 underline-offset-4 mb-4"
               >
-                Soulmate Relationship Google Review Page
+                {isLaunchpad ? "Couple's Launchpad Google Review Page" : "Soulmate Relationship Google Review Page"}
               </a>
 
               {hasClickedGoogleLink && (

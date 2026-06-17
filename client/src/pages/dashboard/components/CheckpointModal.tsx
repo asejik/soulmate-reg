@@ -83,7 +83,9 @@ export const CheckpointModal = ({ isOpen, onClose }: Props) => {
 
             {/* Bottom Accent */}
             <div className="bg-[#0b0f19] p-4 text-center border-t border-white/5">
-              <p className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-600">Soulmate Relationship Roadmap</p>
+              <p className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-600">
+                {localStorage.getItem('tai_active_program') === 'launchpad' ? "Couple's Launchpad Roadmap" : "Soulmate Relationship Roadmap"}
+              </p>
             </div>
           </motion.div>
         </div>
