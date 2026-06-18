@@ -21,6 +21,7 @@ export const LessonPage = () => {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [isLiveMode, setIsLiveMode] = useState(false);
   const [activity, setActivity] = useState<{ count: number, participants: string[] }>({ count: 0, participants: [] });
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleLiveModeChange = useCallback((live: boolean) => setIsLiveMode(live), []);
 
@@ -30,7 +31,10 @@ export const LessonPage = () => {
       setLesson(data);
       setIsUnlocked(data.is_completed || data.progress >= 80);
       setIsLoading(false);
-    }).catch(() => setIsLoading(false));
+    }).catch((err) => {
+      setErrorMsg(err.message || 'Failed to load lesson');
+      setIsLoading(false);
+    });
   }, [id]);
 
   // Activity polling: count and specific names
@@ -50,7 +54,31 @@ export const LessonPage = () => {
   }, [id, isLiveMode]);
 
   if (isLoading) return <div className="flex items-center justify-center min-h-[50vh]"><div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" /></div>;
-  if (!lesson) return <div className="flex flex-col items-center justify-center min-h-[50vh]"><button onClick={() => navigate('/dashboard')} className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg">Back</button></div>;
+  if (!lesson) {
+    const isCheckpointError = errorMsg?.includes('Checkpoint Required');
+    
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] px-4 space-y-6 text-center">
+        {isCheckpointError ? (
+          <>
+            <div className="w-20 h-20 bg-amber-500/10 rounded-full flex items-center justify-center text-amber-500 mb-2">
+              <Lock size={40} />
+            </div>
+            <h2 className="text-2xl font-bold text-white max-w-md leading-relaxed">
+              Attend to your Mid-Program Feedback to Proceed
+            </h2>
+            <button onClick={() => navigate('/dashboard')} className="px-8 py-4 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl shadow-lg transition-all mt-4">
+              Go to Dashboard
+            </button>
+          </>
+        ) : (
+          <button onClick={() => navigate('/dashboard')} className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg">
+            Back
+          </button>
+        )}
+      </div>
+    );
+  }
 
   if (lesson.is_locked) {
     return (

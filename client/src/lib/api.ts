@@ -62,9 +62,10 @@ export async function fetchLMS(endpoint: string) {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${session.access_token}`
     }
-  }).then(response => {
+  }).then(async response => {
     if (!response.ok) {
-      throw new Error(`Backend rejected the request: ${response.statusText}`);
+      const errText = await response.text();
+      throw new Error(errText || `Backend rejected the request: ${response.statusText}`);
     }
     return response.json();
   }).catch(err => {
