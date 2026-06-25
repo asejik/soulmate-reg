@@ -84,9 +84,10 @@ export const DashboardPage = () => {
   if (!data) return <div className="flex flex-col items-center justify-center min-h-[50vh]"><button onClick={() => navigate('/login')} className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition">Return to Login</button></div>;
 
   const progressPercentage = Math.round((data.cohort.completed_lessons / data.cohort.total_lessons) * 100);
-  const requiredPercentage = data.active_program === 'launchpad' ? 100 : 66;
-  const isEligibleForCertificate = progressPercentage >= requiredPercentage && hasCompletedFinalReview;
-  const hasReachedFinalStep = progressPercentage >= requiredPercentage;
+  const isLaunchpad = data.active_program === 'launchpad';
+  const requiredPercentage = isLaunchpad ? 100 : 66;
+  const isEligibleForCertificate = progressPercentage >= requiredPercentage && (isLaunchpad || hasCompletedFinalReview);
+  const hasReachedFinalStep = progressPercentage >= requiredPercentage && !isLaunchpad;
   const requiresMidReview = data.has_reached_midway && !data.has_completed_mid_review;
 
   return (
@@ -104,6 +105,23 @@ export const DashboardPage = () => {
               className="w-full h-auto object-cover"
             />
           </div>
+        )}
+
+        {data.active_program === 'launchpad' && (
+          <>
+            <div className="w-full bg-[#111827] border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
+              <img 
+                src="/thank-you-launchpad.png" 
+                alt="Thank you for Couples Launchpad" 
+                className="w-full h-auto object-cover"
+              />
+            </div>
+            <DashboardVideoCard 
+              videoId="qB6UDkrpvM4"
+              title="Giving"
+              description=""
+            />
+          </>
         )}
 
         {data.intro_video_id && <IntroVideoCard videoId={data.intro_video_id} description={data.intro_video_description} />}

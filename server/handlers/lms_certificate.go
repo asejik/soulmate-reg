@@ -67,7 +67,8 @@ func GenerateCertificate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	requiredRate := 0.66
-	if programName == "launchpad" || strings.Contains(strings.ToLower(programName), "launchpad") {
+	isLaunchpad := programName == "launchpad" || strings.Contains(strings.ToLower(programName), "launchpad")
+	if isLaunchpad {
 		requiredRate = 1.0
 	}
 
@@ -76,7 +77,7 @@ func GenerateCertificate(w http.ResponseWriter, r *http.Request) {
 		requiredLessons = 1
 	}
 
-	if !hasCompletedFinalReview || completionRate < requiredRate {
+	if (!hasCompletedFinalReview && !isLaunchpad) || completionRate < requiredRate {
 		http.Error(w, fmt.Sprintf("You are not yet eligible for a certificate. Please ensure you have at least %d%% completion (%d of %d lessons) and have submitted your final cohort review.", int(requiredRate*100), requiredLessons, totalLessons), http.StatusForbidden)
 		return
 	}
