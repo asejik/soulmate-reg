@@ -12,7 +12,7 @@ interface Props {
   hasCompletedFinalReview: boolean;
 }
 
-export const DashboardHeader = ({ data, progressPercentage, isFullyCompleted, hasCompletedFinalReview }: Props) => {
+export const DashboardHeader = ({ data, progressPercentage, isFullyCompleted }: Props) => {
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
 
   const handleSwitchProgram = (newProgram: string) => {
@@ -87,10 +87,10 @@ export const DashboardHeader = ({ data, progressPercentage, isFullyCompleted, ha
             <div className="h-full bg-blue-500 rounded-full transition-all duration-1000 ease-out" style={{ width: `${progressPercentage}%` }} />
           </div>
         </div>
-        {isFullyCompleted && hasCompletedFinalReview && (
-          <button 
+        {isFullyCompleted && (
+          <button
             id="tai-main-cert-btn"
-            onClick={handleDownloadCertificate} 
+            onClick={handleDownloadCertificate}
             className="w-full md:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-lg transition-colors shrink-0"
           >
             Download Certificate
@@ -98,12 +98,12 @@ export const DashboardHeader = ({ data, progressPercentage, isFullyCompleted, ha
         )}
       </div>
 
-      <StatusModal 
-        isOpen={isErrorModalOpen} 
-        onClose={() => setIsErrorModalOpen(false)} 
-        type="error" 
-        title="Download Error" 
-        message={errorMessage} 
+      <StatusModal
+        isOpen={isErrorModalOpen}
+        onClose={() => setIsErrorModalOpen(false)}
+        type="error"
+        title="Download Error"
+        message={errorMessage}
       />
     </div>
   );
